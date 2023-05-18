@@ -1,39 +1,32 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Wave-95/boards/server/internal/config"
-	"github.com/golang-migrate/migrate/v4"
-	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func Migrate(dbConfig config.DatabaseConfig) error {
-	url := buildConnectionURL(dbConfig)
-	m, err := migrate.New(
-		"file:db/migrations",
-		url)
-
-	if err != nil {
-		return err
-	}
-	if err := m.Up(); err != nil {
-		if err == migrate.ErrNoChange {
-			fmt.Println("No migration changes")
-			return nil
-		}
-		return err
-	}
-	fmt.Println("Successfully ran db migrations.")
-	return nil
+type DB struct {
+	*pgxpool.Pool
 }
 
-func buildConnectionURL(dbConfig config.DatabaseConfig) string {
+func Connect(cfg config.DatabaseConfig) (*DB, error) {
+	url := buildConnectionURL(cfg)
+	db, err := pgxpool.New(context.Background(), url)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("Connected to database")
+	return &DB{db}, nil
+}
+
+func buildConnectionURL(cfg config.DatabaseConfig) string {
 	return fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable",
-		dbConfig.User,
-		dbConfig.Password,
-		dbConfig.Host,
-		dbConfig.Port,
-		dbConfig.Name)
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.Name)
 }

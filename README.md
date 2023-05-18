@@ -15,3 +15,5 @@ First access the container's terminal
 Now that you have access to the installed `golang-migrate` library, you can run migrations in the container:
 
 `migrate create -ext sql -dir db/migrations -seq create_users_table`
+
+Migrations are run on server start. 
