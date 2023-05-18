@@ -21,6 +21,7 @@ func TestConnect(t *testing.T) {
 	}
 
 	db, err := Connect(cfg.DatabaseConfig)
+	defer db.Close()
 
 	assert.NotNil(t, db)
 	assert.NoError(t, err)
