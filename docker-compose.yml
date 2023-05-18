@@ -21,3 +21,20 @@ services:
       - ./server:/app
     env_file:
       - server/.env
+    depends_on:
+      - db
+  db:
+    image: postgres
+    environment:
+      POSTGRES_DB: "boards"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - db-data:/var/lib/postgresql/data
+volumes:
+  db-data:
