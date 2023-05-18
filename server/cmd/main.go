@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/Wave-95/boards/server/db"
@@ -20,7 +19,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error loading config: %v", err)
 	}
-	fmt.Println(cfg)
 	// Run migrations
 	err = db.Migrate(cfg.DatabaseConfig)
 	if err != nil {

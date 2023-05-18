@@ -25,7 +25,7 @@ func Migrate(dbConfig config.DatabaseConfig) error {
 		}
 		return err
 	}
-	fmt.Println("Successfully run db migrations.")
+	fmt.Println("Successfully ran db migrations.")
 	return nil
 }
 
