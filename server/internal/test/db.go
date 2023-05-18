@@ -1,22 +1,24 @@
-package main
+package test
 
 import (
-	"log"
+	"testing"
 
 	"github.com/Wave-95/boards/server/db"
 	"github.com/Wave-95/boards/server/internal/config"
 )
 
-func main() {
+func DB(t *testing.T) *db.DB {
 	// load env vars into config
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		t.Errorf("Issue loading config:%v", err)
+		t.FailNow()
 	}
 	// connect to db
 	db, err := db.Connect(cfg.DatabaseConfig)
 	if err != nil {
-		log.Fatalf("Error connecting to db: %v", err)
+		t.Errorf("Issue connecting db:%v", err)
+		t.FailNow()
 	}
-	defer db.Close()
+	return db
 }
