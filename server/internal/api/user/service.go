@@ -2,12 +2,16 @@ package user
 
 import (
 	"errors"
+	"time"
 
+	"github.com/Wave-95/boards/server/internal/entity"
 	"github.com/go-playground/validator/v10"
+	"github.com/google/uuid"
 )
 
 var ErrInvalidEmail = errors.New("Invalid email address")
 
+// TODO: Add validation for password
 type CreateUserInput struct {
 	Name     string
 	Email    string `validate:"email"`
@@ -28,18 +32,37 @@ func (input *CreateUserInput) Validate() error {
 }
 
 type Service interface {
-	CreateUser(input CreateUserInput) error
+	CreateUser(input CreateUserInput) (*User, error)
 }
 
+type User struct {
+	entity.User
+}
 type service struct {
 	repo Repository
 }
 
-func (s *service) CreateUser(input CreateUserInput) error {
+func (s *service) CreateUser(input CreateUserInput) (*User, error) {
 	if err := input.Validate(); err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+
+	id := uuid.New()
+	now := time.Now()
+	user := entity.User{
+		Id:        id,
+		Name:      input.Name,
+		Email:     input.Email,
+		Password:  input.Password,
+		IsGuest:   input.IsGuest,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	err := s.repo.CreateUser(user)
+	if err != nil {
+		return nil, err
+	}
+	return &User{user}, nil
 }
 
 func NewService(repo Repository) Service {
