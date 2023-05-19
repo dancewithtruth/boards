@@ -6,13 +6,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wave-95/boards/server/internal/entity"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHandleCreateUser(t *testing.T) {
-	mockRepo := &mockRepository{make(map[uuid.UUID]entity.User)}
+	mockRepo := &mockRepository{make(map[uuid.UUID]User)}
 	service := NewService(mockRepo)
 	api := NewAPI(service)
 

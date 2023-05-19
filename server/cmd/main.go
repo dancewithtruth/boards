@@ -12,32 +12,35 @@ import (
 	"github.com/Wave-95/boards/server/db"
 	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/config"
+	"github.com/Wave-95/boards/server/internal/middleware"
+	"github.com/Wave-95/boards/server/pkg/logger"
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
+	logger := logger.New()
 	// load env vars into config
 	cfg, err := config.Load()
 	if err != nil {
-		log.Fatalf("Error loading config: %v", err)
+		logger.Fatalf("Error loading config: %v", err)
 	}
 	// connect to db
 	db, err := db.Connect(cfg.DatabaseConfig)
 	if err != nil {
-		log.Fatalf("Error connecting to db: %v", err)
+		logger.Fatalf("Error connecting to db: %v", err)
 	}
 	defer db.Close()
 
 	// setup server
 	r := chi.NewRouter()
-	server := http.Server{Addr: ":8080", Handler: buildHandler(r, db)}
+	server := http.Server{Addr: ":8080", Handler: buildHandler(r, db, logger)}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
 	go func() {
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("Could not start server: %s", err)
+			logger.Fatalf("Could not start server: %s", err)
 		}
 	}()
 
@@ -49,7 +52,10 @@ func main() {
 	}
 }
 
-func buildHandler(r chi.Router, db *db.DB) chi.Router {
+func buildHandler(r chi.Router, db *db.DB, logger logger.Logger) chi.Router {
+	// set up middleware
+	r.Use(middleware.RequestLogger(logger))
+
 	// register user handlers
 	userRepo := user.NewRepository(db)
 	userService := user.NewService(userRepo)

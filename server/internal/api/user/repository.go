@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/Wave-95/boards/server/db"
-	"github.com/Wave-95/boards/server/internal/entity"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -18,7 +17,7 @@ var (
 )
 
 type Repository interface {
-	CreateUser(user entity.User) error
+	CreateUser(user User) error
 	DeleteUser(userId uuid.UUID) error
 }
 
@@ -26,7 +25,7 @@ type repository struct {
 	db *db.DB
 }
 
-func (r *repository) CreateUser(user entity.User) error {
+func (r *repository) CreateUser(user User) error {
 	ctx := context.Background()
 	sql := "INSERT INTO users (id, name, email, password, is_guest, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 	_, err := r.db.Exec(ctx, sql, user.Id, user.Name, user.Email, user.Password, user.IsGuest, user.CreatedAt, user.UpdatedAt)

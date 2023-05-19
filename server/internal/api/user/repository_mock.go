@@ -1,15 +1,14 @@
 package user
 
 import (
-	"github.com/Wave-95/boards/server/internal/entity"
 	"github.com/google/uuid"
 )
 
 type mockRepository struct {
-	users map[uuid.UUID]entity.User
+	users map[uuid.UUID]User
 }
 
-func (r *mockRepository) CreateUser(user entity.User) error {
+func (r *mockRepository) CreateUser(user User) error {
 	r.users[user.Id] = user
 	return nil
 }

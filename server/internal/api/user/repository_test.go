@@ -4,7 +4,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wave-95/boards/server/internal/entity"
 	"github.com/Wave-95/boards/server/internal/test"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -34,10 +33,10 @@ func TestRepository(t *testing.T) {
 	})
 }
 
-func newTestUser() entity.User {
+func newTestUser() User {
 	email := uuid.New().String() + "email.com"
 	password := "password123"
-	user := entity.User{
+	user := User{
 		Id:        uuid.New(),
 		Name:      "testname",
 		Email:     &email,

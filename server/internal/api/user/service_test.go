@@ -3,19 +3,18 @@ package user
 import (
 	"testing"
 
-	"github.com/Wave-95/boards/server/internal/entity"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService(t *testing.T) {
-	mockRepo := &mockRepository{make(map[uuid.UUID]entity.User)}
+	mockRepo := &mockRepository{make(map[uuid.UUID]User)}
 	service := NewService(mockRepo)
 	assert.NotNil(t, service)
 
 	email := "testemail@gmail.com"
 	password := "password123!"
-	input := CreateUserInput{
+	input := &CreateUserInput{
 		Name:     "Name",
 		Email:    &email,
 		Password: &password,
