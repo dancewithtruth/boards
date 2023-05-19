@@ -14,11 +14,13 @@ import (
 	"github.com/Wave-95/boards/server/internal/config"
 	"github.com/Wave-95/boards/server/internal/middleware"
 	"github.com/Wave-95/boards/server/pkg/logger"
+	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/go-chi/chi/v5"
 )
 
 func main() {
 	logger := logger.New()
+	validator := validator.New()
 	// load env vars into config
 	cfg, err := config.Load()
 	if err != nil {
@@ -33,7 +35,7 @@ func main() {
 
 	// setup server
 	r := chi.NewRouter()
-	server := http.Server{Addr: ":8080", Handler: buildHandler(r, db, logger)}
+	server := http.Server{Addr: ":8080", Handler: buildHandler(r, db, logger, validator)}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
@@ -52,14 +54,14 @@ func main() {
 	}
 }
 
-func buildHandler(r chi.Router, db *db.DB, logger logger.Logger) chi.Router {
+func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate) chi.Router {
 	// set up middleware
 	r.Use(middleware.RequestLogger(logger))
 
 	// register user handlers
 	userRepo := user.NewRepository(db)
-	userService := user.NewService(userRepo)
-	userAPI := user.NewAPI(userService)
+	userService := user.NewService(userRepo, v)
+	userAPI := user.NewAPI(userService, v)
 	userAPI.RegisterHandlers(r)
 
 	return r

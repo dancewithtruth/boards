@@ -1,14 +1,16 @@
 package user
 
 import (
+	"context"
+
 	"github.com/google/uuid"
 )
 
 type mockRepository struct {
-	users map[uuid.UUID]User
+	users map[uuid.UUID]*User
 }
 
-func (r *mockRepository) CreateUser(user User) error {
+func (r *mockRepository) CreateUser(ctx context.Context, user *User) error {
 	r.users[user.Id] = user
 	return nil
 }

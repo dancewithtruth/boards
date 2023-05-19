@@ -1,6 +1,7 @@
 package user
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -16,14 +17,14 @@ func TestRepository(t *testing.T) {
 	testUser := newTestUser()
 
 	t.Run("Create user", func(t *testing.T) {
-		err := repo.CreateUser(testUser)
+		err := repo.CreateUser(context.Background(), testUser)
 		assert.NoError(t, err)
 	})
 
 	t.Run("Create user with non-unique email", func(t *testing.T) {
 		testUserBadEmail := testUser
 		testUserBadEmail.Id = uuid.New()
-		err := repo.CreateUser(testUserBadEmail)
+		err := repo.CreateUser(context.Background(), testUserBadEmail)
 		assert.ErrorIs(t, err, ErrUniqueEmailConstraint)
 	})
 
@@ -33,10 +34,10 @@ func TestRepository(t *testing.T) {
 	})
 }
 
-func newTestUser() User {
+func newTestUser() *User {
 	email := uuid.New().String() + "email.com"
 	password := "password123"
-	user := User{
+	user := &User{
 		Id:        uuid.New(),
 		Name:      "testname",
 		Email:     &email,

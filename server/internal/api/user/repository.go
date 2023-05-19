@@ -17,7 +17,7 @@ var (
 )
 
 type Repository interface {
-	CreateUser(user User) error
+	CreateUser(ctx context.Context, user *User) error
 	DeleteUser(userId uuid.UUID) error
 }
 
@@ -25,8 +25,7 @@ type repository struct {
 	db *db.DB
 }
 
-func (r *repository) CreateUser(user User) error {
-	ctx := context.Background()
+func (r *repository) CreateUser(ctx context.Context, user *User) error {
 	sql := "INSERT INTO users (id, name, email, password, is_guest, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 	_, err := r.db.Exec(ctx, sql, user.Id, user.Name, user.Email, user.Password, user.IsGuest, user.CreatedAt, user.UpdatedAt)
 	if err != nil {

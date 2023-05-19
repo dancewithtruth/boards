@@ -7,6 +7,7 @@ import (
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
 	"github.com/Wave-95/boards/server/pkg/logger"
+	"github.com/Wave-95/boards/server/pkg/validator"
 )
 
 var (
@@ -16,11 +17,12 @@ var (
 )
 
 type API struct {
-	service Service
+	service   Service
+	validator validator.Validate
 }
 
-func NewAPI(service Service) API {
-	return API{service: service}
+func NewAPI(service Service, validator validator.Validate) API {
+	return API{service: service, validator: validator}
 }
 
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -37,10 +39,14 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// TODO: Validate request
+	// validate request
+	if err := api.validator.Struct(request); err != nil {
+		logger.Errorf("Issue validating request: %v", err)
+		endpoint.WriteWithError(w, http.StatusBadRequest, err)
+	}
 
 	// create user
-	user, err := api.service.CreateUser(request.ToInput())
+	user, err := api.service.CreateUser(ctx, request.ToInput())
 	if err != nil {
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrInternalServerError)
 		return

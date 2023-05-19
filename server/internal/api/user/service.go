@@ -1,39 +1,31 @@
 package user
 
 import (
-	"errors"
+	"context"
 	"time"
 
+	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 )
 
-var ErrInvalidEmail = errors.New("Invalid email address")
-
-// func (input *CreateUserInput) Validate() error {
-// 	v := validator.New()
-// 	if err := v.Struct(input); err != nil {
-// 		for _, err := range err.(validator.ValidationErrors) {
-// 			if err.Field() == "Email" {
-// 				return ErrInvalidEmail
-// 			}
-// 		}
-// 	}
-// 	return nil
-// }
-
 type Service interface {
-	CreateUser(input *CreateUserInput) (*User, error)
+	CreateUser(ctx context.Context, input *CreateUserInput) (*User, error)
 }
 
 type service struct {
-	repo Repository
+	repo      Repository
+	validator validator.Validate
 }
 
-func (s *service) CreateUser(input *CreateUserInput) (*User, error) {
-	// TODO: Validate input
+func (s *service) CreateUser(ctx context.Context, input *CreateUserInput) (*User, error) {
+	// validate input
+	if err := s.validator.Struct(input); err != nil {
+		return nil, err
+	}
+
 	id := uuid.New()
 	now := time.Now()
-	user := User{
+	user := &User{
 		Id:        id,
 		Name:      input.Name,
 		Email:     input.Email,
@@ -42,13 +34,13 @@ func (s *service) CreateUser(input *CreateUserInput) (*User, error) {
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	err := s.repo.CreateUser(user)
+	err := s.repo.CreateUser(ctx, user)
 	if err != nil {
 		return nil, err
 	}
-	return &user, nil
+	return user, nil
 }
 
-func NewService(repo Repository) Service {
-	return &service{repo: repo}
+func NewService(repo Repository, validator validator.Validate) Service {
+	return &service{repo: repo, validator: validator}
 }
