@@ -23,8 +23,8 @@ type ErrResponse struct {
 }
 
 func WriteWithError(w http.ResponseWriter, statusCode int, errMsg string) {
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	errResponse := ErrResponse{
 		Status:  statusCode,
 		Message: errMsg,
@@ -33,8 +33,8 @@ func WriteWithError(w http.ResponseWriter, statusCode int, errMsg string) {
 }
 
 func WriteWithStatus(w http.ResponseWriter, statusCode int, data interface{}) {
-	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(statusCode)
 	json.NewEncoder(w).Encode(data)
 }
 
@@ -58,7 +58,7 @@ func HandleValidationErr(w http.ResponseWriter, err error) {
 		case "required":
 			errMsg = fmt.Sprintf("%s is a required field", fieldErr.Field())
 		default:
-			errMsg = fmt.Sprintf("something wrong on %s; %s", fieldErr.Field(), fieldErr.Tag())
+			errMsg = fmt.Sprintf("Invalid input on %s", fieldErr.Field())
 		}
 	}
 	WriteWithError(w, http.StatusBadRequest, errMsg)

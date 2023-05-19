@@ -28,9 +28,9 @@ func (u *User) ToDto() *CreateUserResponse {
 }
 
 type CreateUserRequest struct {
-	Name     string  `json:"name" validate:"required"`
-	Email    *string `json:"email"`
-	Password *string `json:"password"`
+	Name     string  `json:"name" validate:"required,min=2"`
+	Email    *string `json:"email" validate:"omitempty,email,required"`
+	Password *string `json:"password" validate:"omitempty,min=8"`
 	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
 }
 
