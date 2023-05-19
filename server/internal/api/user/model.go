@@ -45,7 +45,7 @@ func (r *CreateUserRequest) ToInput() *CreateUserInput {
 
 // TODO: Add validation for password
 type CreateUserInput struct {
-	Name     string
+	Name     string  `validate:"required"`
 	Email    *string `validate:"omitempty,email"`
 	Password *string
 	IsGuest  bool

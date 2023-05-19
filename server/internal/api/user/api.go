@@ -2,7 +2,6 @@ package user
 
 import (
 	"encoding/json"
-	"errors"
 	"net/http"
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
@@ -10,10 +9,8 @@ import (
 	"github.com/Wave-95/boards/server/pkg/validator"
 )
 
-var (
-	ErrMissingName              = errors.New("Missing name")
-	ErrInvalidCreateUserRequest = errors.New("Invalid create user request")
-	ErrInternalServerError      = errors.New("Issue creating user")
+const (
+	ErrMsgInternalServer = "Issue creating user"
 )
 
 type API struct {
@@ -33,8 +30,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var request CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
 		logger.Errorf("Issue decoding request: %v", err)
-		err = endpoint.HandleDecodeErr(err, ErrInvalidCreateUserRequest)
-		endpoint.WriteWithError(w, http.StatusBadRequest, err)
+		endpoint.HandleDecodeErr(w, err)
 		return
 	}
 	defer r.Body.Close()
@@ -42,13 +38,14 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// validate request
 	if err := api.validator.Struct(request); err != nil {
 		logger.Errorf("Issue validating request: %v", err)
-		endpoint.WriteWithError(w, http.StatusBadRequest, err)
+		endpoint.HandleValidationErr(w, err)
+		return
 	}
 
 	// create user
 	user, err := api.service.CreateUser(ctx, request.ToInput())
 	if err != nil {
-		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrInternalServerError)
+		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
 
