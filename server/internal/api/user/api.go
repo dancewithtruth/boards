@@ -59,7 +59,8 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var createUserRequest CreateUserRequest
 	json.NewDecoder(r.Body).Decode(&createUserRequest)
 	if err := createUserRequest.Validate(); err != nil {
-		response.RespondWithError(w, http.StatusBadRequest, err)
+		response.WriteWithError(w, http.StatusBadRequest, err)
+		return
 	}
 
 	// create user
@@ -71,7 +72,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := api.service.CreateUser(input)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		response.WriteWithError(w, http.StatusInternalServerError, ErrInternalServerError)
 		return
 	}
 
@@ -85,5 +86,5 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
-	json.NewEncoder(w).Encode(createUserResponse)
+	response.WriteWithStatus(w, http.StatusCreated, createUserResponse)
 }
