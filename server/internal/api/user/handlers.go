@@ -16,7 +16,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// decode request
 	var request CreateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-		logger.Errorf("Issue decoding request: %v", err)
+		logger.Errorf("handler: failed to decode request: %v", err)
 		endpoint.HandleDecodeErr(w, err)
 		return
 	}
@@ -24,27 +24,23 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// validate request
 	if err := api.validator.Struct(request); err != nil {
-		logger.Errorf("Issue validating request: %v", err)
+		logger.Errorf("handler: failed to validate request: %v", err)
 		endpoint.HandleValidationErr(w, err)
 		return
 	}
 
-	// create user
+	// create user and handle errors
 	user, err := api.service.CreateUser(ctx, request.ToInput())
 	if err != nil {
-		handleCreateUserErrors(w, err)
+		switch {
+		case errors.Is(err, ErrEmailAlreadyExists):
+			endpoint.WriteWithError(w, http.StatusConflict, ErrEmailAlreadyExists.Error())
+		default:
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
 		return
 	}
 
 	// write response
 	endpoint.WriteWithStatus(w, http.StatusCreated, user.ToDto())
-}
-
-func handleCreateUserErrors(w http.ResponseWriter, err error) {
-	if errors.Is(err, ErrUniqueEmailConstraint) {
-		endpoint.WriteWithError(w, http.StatusConflict, ErrUniqueEmailConstraint.Error())
-		return
-	}
-	endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
-	return
 }

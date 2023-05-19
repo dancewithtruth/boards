@@ -25,7 +25,7 @@ func TestRepository(t *testing.T) {
 		testUserBadEmail := testUser
 		testUserBadEmail.Id = uuid.New()
 		err := repo.CreateUser(context.Background(), testUserBadEmail)
-		assert.ErrorIs(t, err, ErrUniqueEmailConstraint)
+		assert.ErrorIs(t, err, ErrEmailAlreadyExists)
 	})
 
 	t.Run("Delete user", func(t *testing.T) {

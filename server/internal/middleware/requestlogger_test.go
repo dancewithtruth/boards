@@ -26,7 +26,7 @@ func TestRequestLogger(t *testing.T) {
 		assert.Equal(t, FieldRequestID, log.Context[0].Key)
 		assert.Equal(t, FieldCorrelationID, log.Context[1].Key)
 		assert.Equal(t, FieldDuration, log.Context[2].Key)
-		assert.Equal(t, "[STATUS 404] GET: /", log.Entry.Message)
+		assert.Equal(t, "[404] GET: /", log.Entry.Message)
 	})
 
 }

@@ -28,7 +28,7 @@ func (u *User) ToDto() *CreateUserResponse {
 }
 
 type CreateUserRequest struct {
-	Name     string  `json:"name" validate:"required,min=2"`
+	Name     string  `json:"name" validate:"required,min=3"`
 	Email    *string `json:"email" validate:"omitempty,email,required"`
 	Password *string `json:"password" validate:"omitempty,min=8"`
 	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
@@ -45,8 +45,8 @@ func (r *CreateUserRequest) ToInput() *CreateUserInput {
 
 // TODO: Add validation for password
 type CreateUserInput struct {
-	Name     string  `validate:"required"`
-	Email    *string `validate:"omitempty,email"`
+	Name     string
+	Email    *string
 	Password *string
 	IsGuest  bool
 }

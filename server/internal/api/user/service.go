@@ -2,9 +2,9 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"github.com/Wave-95/boards/server/pkg/logger"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 )
@@ -19,8 +19,6 @@ type service struct {
 }
 
 func (s *service) CreateUser(ctx context.Context, input *CreateUserInput) (*User, error) {
-	logger := logger.FromContext(ctx)
-
 	id := uuid.New()
 	now := time.Now()
 	user := &User{
@@ -34,8 +32,7 @@ func (s *service) CreateUser(ctx context.Context, input *CreateUserInput) (*User
 	}
 	err := s.repo.CreateUser(ctx, user)
 	if err != nil {
-		logger.Errorf("Issue creating user:%v", err)
-		return nil, err
+		return nil, fmt.Errorf("service: failed to create user: %w", err)
 	}
 	return user, nil
 }
