@@ -13,10 +13,12 @@ func TestService(t *testing.T) {
 	service := NewService(mockRepo)
 	assert.NotNil(t, service)
 
+	email := "testemail@gmail.com"
+	password := "password123!"
 	input := CreateUserInput{
 		Name:     "Name",
-		Email:    "testemail@gmail.com",
-		Password: "password123!",
+		Email:    &email,
+		Password: &password,
 		IsGuest:  false,
 	}
 	t.Run("Create user", func(t *testing.T) {
@@ -28,7 +30,9 @@ func TestService(t *testing.T) {
 
 		t.Run("with an invalid email", func(t *testing.T) {
 			invalidInput := input
-			invalidInput.Email = "xyz.com"
+			invalidEmail := "blah.com"
+
+			invalidInput.Email = &invalidEmail
 			_, err := service.CreateUser(invalidInput)
 			assert.ErrorIs(t, err, ErrInvalidEmail)
 		})

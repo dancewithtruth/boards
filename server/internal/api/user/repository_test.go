@@ -36,11 +36,12 @@ func TestRepository(t *testing.T) {
 
 func newTestUser() entity.User {
 	email := uuid.New().String() + "email.com"
+	password := "password123"
 	user := entity.User{
 		Id:        uuid.New(),
 		Name:      "testname",
-		Email:     email,
-		Password:  "password123!",
+		Email:     &email,
+		Password:  &password,
 		IsGuest:   false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

@@ -26,10 +26,10 @@ func NewAPI(service Service) API {
 }
 
 type CreateUserRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	IsGuest  bool   `json:"is_guest"`
+	Name     string  `json:"name" validate:"required"`
+	Email    *string `json:"email"`
+	Password *string `json:"password"`
+	IsGuest  bool    `json:"is_guest"`
 }
 
 func (req *CreateUserRequest) Validate() error {
@@ -48,7 +48,7 @@ func (req *CreateUserRequest) Validate() error {
 type CreateUserResponse struct {
 	Id        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
-	Email     string    `json:"email"`
+	Email     *string   `json:"email"`
 	IsGuest   bool      `json:"is_guest"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -57,7 +57,12 @@ type CreateUserResponse struct {
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// decode request and validate
 	var createUserRequest CreateUserRequest
-	json.NewDecoder(r.Body).Decode(&createUserRequest)
+	err := json.NewDecoder(r.Body).Decode(&createUserRequest)
+	if err != nil {
+		response.WriteWithError(w, http.StatusBadRequest, ErrInvalidCreateUserRequest)
+		return
+	}
+	defer r.Body.Close()
 	if err := createUserRequest.Validate(); err != nil {
 		response.WriteWithError(w, http.StatusBadRequest, err)
 		return
@@ -77,7 +82,6 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write response
-	w.WriteHeader(http.StatusCreated)
 	createUserResponse := CreateUserResponse{
 		Id:        user.Id,
 		Name:      user.Name,

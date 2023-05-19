@@ -14,8 +14,8 @@ var ErrInvalidEmail = errors.New("Invalid email address")
 // TODO: Add validation for password
 type CreateUserInput struct {
 	Name     string
-	Email    string `validate:"email"`
-	Password string
+	Email    *string `validate:"omitempty,email"`
+	Password *string
 	IsGuest  bool
 }
 
