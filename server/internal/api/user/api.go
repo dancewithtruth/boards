@@ -1,12 +1,11 @@
 package user
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
 	"time"
 
-	"github.com/Wave-95/boards/server/internal/response"
+	"github.com/Wave-95/boards/server/internal/endpoint"
 	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
@@ -29,7 +28,7 @@ type CreateUserRequest struct {
 	Name     string  `json:"name" validate:"required"`
 	Email    *string `json:"email"`
 	Password *string `json:"password"`
-	IsGuest  bool    `json:"is_guest"`
+	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
 }
 
 func (req *CreateUserRequest) Validate() error {
@@ -57,14 +56,9 @@ type CreateUserResponse struct {
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// decode request and validate
 	var createUserRequest CreateUserRequest
-	err := json.NewDecoder(r.Body).Decode(&createUserRequest)
+	err := endpoint.DecodeAndValidate(w, r, &createUserRequest, ErrInvalidCreateUserRequest)
 	if err != nil {
-		response.WriteWithError(w, http.StatusBadRequest, ErrInvalidCreateUserRequest)
-		return
-	}
-	defer r.Body.Close()
-	if err := createUserRequest.Validate(); err != nil {
-		response.WriteWithError(w, http.StatusBadRequest, err)
+		endpoint.WriteWithError(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -77,7 +71,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := api.service.CreateUser(input)
 	if err != nil {
-		response.WriteWithError(w, http.StatusInternalServerError, ErrInternalServerError)
+		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrInternalServerError)
 		return
 	}
 
@@ -90,5 +84,5 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		CreatedAt: user.CreatedAt,
 		UpdatedAt: user.UpdatedAt,
 	}
-	response.WriteWithStatus(w, http.StatusCreated, createUserResponse)
+	endpoint.WriteWithStatus(w, http.StatusCreated, createUserResponse)
 }

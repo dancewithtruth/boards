@@ -20,6 +20,5 @@ func TestHandleCreateUser(t *testing.T) {
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodPost, "/users", payload)
 	api.HandleCreateUser(res, req)
-
-	assert.Equal(t, res.Code, http.StatusCreated)
+	assert.Equal(t, http.StatusCreated, res.Code)
 }
