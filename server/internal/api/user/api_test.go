@@ -16,7 +16,7 @@ func TestHandleCreateUser(t *testing.T) {
 	service := NewService(mockRepo)
 	api := NewAPI(service)
 
-	payload := strings.NewReader(`{"name":"john doe", "email": "john@gmail.com", "password":"password123", "is_guest":"false"}`)
+	payload := strings.NewReader(`{"name":"john doe", "email": "john@gmail.com", "password":"password123", "is_guest":false}`)
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodPost, "/users", payload)
 	api.HandleCreateUser(res, req)
