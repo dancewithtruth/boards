@@ -58,7 +58,7 @@ func main() {
 func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate, cfg *config.Config) chi.Router {
 	// set up middleware
 	r.Use(middleware.RequestLogger(logger))
-
+	r.Use(middleware.Cors())
 	// register user handlers
 	userRepo := user.NewRepository(db)
 	userService := user.NewService(userRepo, v)
