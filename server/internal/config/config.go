@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -13,6 +14,9 @@ const (
 	DBNameKey     = "DB_NAME"
 	DBUserKey     = "DB_USER"
 	DBPasswordKey = "DB_PASSWORD"
+
+	JWTSigningKey = "JWT_SIGNING_KEY"
+	JWTExpiration = "JWT_EXPIRATION"
 )
 
 type DatabaseConfig struct {
@@ -33,6 +37,8 @@ func (dbConfig *DatabaseConfig) Validate() error {
 
 type Config struct {
 	DatabaseConfig DatabaseConfig
+	JwtSigningKey  string
+	JwtExpiration  int
 }
 
 func Load() (*Config, error) {
@@ -40,7 +46,19 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Config{DatabaseConfig: databaseConfig}, nil
+
+	jwtSigningKey := os.Getenv(JWTSigningKey)
+	jwtExpirationStr := os.Getenv(JWTExpiration)
+	jwtExpiration, err := strconv.Atoi(jwtExpirationStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWT expiration value: %w", err)
+	}
+
+	return &Config{
+		DatabaseConfig: databaseConfig,
+		JwtSigningKey:  jwtSigningKey,
+		JwtExpiration:  jwtExpiration,
+	}, nil
 }
 
 func getDatabaseConfig() (DatabaseConfig, error) {

@@ -8,15 +8,18 @@ import (
 	"github.com/Wave-95/boards/server/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
 var (
 	ErrEmailAlreadyExists = errors.New("User with this email already exists")
+	ErrUserDoesNotExist   = errors.New("User does not exist")
 )
 
 type Repository interface {
 	CreateUser(ctx context.Context, user *User) error
+	GetUserByLogin(ctx context.Context, email, password string) (*User, error)
 	DeleteUser(userId uuid.UUID) error
 }
 
@@ -35,6 +38,28 @@ func (r *repository) CreateUser(ctx context.Context, user *User) error {
 		return fmt.Errorf("repository: failed to create user: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) GetUserByLogin(ctx context.Context, email, password string) (*User, error) {
+	sql := "SELECT * FROM users WHERE email = $1 and password = $2"
+	user := &User{}
+	// TODO: make scanning more robust
+	err := r.db.QueryRow(ctx, sql, email, password).Scan(
+		&user.Id,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.IsGuest,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserDoesNotExist
+		}
+		return nil, fmt.Errorf("repository: failed to get user by login credentials: %w", err)
+	}
+	return user, nil
 }
 
 func (r *repository) DeleteUser(userId uuid.UUID) error {

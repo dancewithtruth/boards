@@ -28,6 +28,23 @@ func TestRepository(t *testing.T) {
 		assert.ErrorIs(t, err, ErrEmailAlreadyExists)
 	})
 
+	t.Run("Get user by email and password", func(t *testing.T) {
+		t.Run("email and password exist", func(t *testing.T) {
+			user, err := repo.GetUserByLogin(context.Background(), *testUser.Email, *testUser.Password)
+			assert.NoError(t, err)
+			assert.Equal(t, testUser.Email, user.Email)
+		})
+
+		t.Run("email and password do not exist", func(t *testing.T) {
+			emailNotFound := "abc123@gmail.com"
+			passwordNotFound := "password1111"
+			user, err := repo.GetUserByLogin(context.Background(), emailNotFound, passwordNotFound)
+			assert.Nil(t, user)
+			assert.ErrorIs(t, err, ErrUserDoesNotExist)
+		})
+
+	})
+
 	t.Run("Delete user", func(t *testing.T) {
 		err := repo.DeleteUser(testUser.Id)
 		assert.NoError(t, err)

@@ -19,5 +19,7 @@ func NewAPI(service Service, validator validator.Validate) API {
 }
 
 func (api *API) RegisterHandlers(r chi.Router) {
-	r.Post("/users", api.HandleCreateUser)
+	r.Route("/users", func(r chi.Router) {
+		r.Post("/", api.HandleCreateUser)
+	})
 }

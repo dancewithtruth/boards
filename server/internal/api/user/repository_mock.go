@@ -15,7 +15,20 @@ func (r *mockRepository) CreateUser(ctx context.Context, user *User) error {
 	return nil
 }
 
+func (r *mockRepository) GetUserByLogin(ctx context.Context, email, password string) (*User, error) {
+	for _, user := range r.users {
+		if email == *user.Email && password == *user.Password {
+			return user, nil
+		}
+	}
+	return nil, ErrUserDoesNotExist
+}
+
 func (r *mockRepository) DeleteUser(userId uuid.UUID) error {
 	delete(r.users, userId)
 	return nil
+}
+
+func NewMockRepository(users map[uuid.UUID]*User) Repository {
+	return &mockRepository{users}
 }

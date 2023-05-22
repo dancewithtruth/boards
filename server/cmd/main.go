@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/server/db"
+	"github.com/Wave-95/boards/server/internal/api/auth"
 	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/config"
 	"github.com/Wave-95/boards/server/internal/middleware"
@@ -35,7 +36,7 @@ func main() {
 
 	// setup server
 	r := chi.NewRouter()
-	server := http.Server{Addr: ":8080", Handler: buildHandler(r, db, logger, validator)}
+	server := http.Server{Addr: ":8080", Handler: buildHandler(r, db, logger, validator, cfg)}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
@@ -54,7 +55,7 @@ func main() {
 	}
 }
 
-func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate) chi.Router {
+func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate, cfg *config.Config) chi.Router {
 	// set up middleware
 	r.Use(middleware.RequestLogger(logger))
 
@@ -63,6 +64,11 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	userService := user.NewService(userRepo, v)
 	userAPI := user.NewAPI(userService, v)
 	userAPI.RegisterHandlers(r)
+
+	// register auth handlers
+	authService := auth.NewService(userRepo, cfg.JwtSigningKey, cfg.JwtExpiration)
+	authAPI := auth.NewAPI(authService, v)
+	authAPI.RegisterHandlers(r)
 
 	return r
 }
