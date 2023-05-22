@@ -16,13 +16,15 @@ import (
 )
 
 func TestHandleLogin(t *testing.T) {
+	jwtSecret := "abc123"
+	jwtExpiration := 24
 	validator := validator.New()
 	mockRepo := user.NewMockRepository(make(map[uuid.UUID]*user.User))
 	mockRepo.CreateUser(context.Background(), newTestUser())
-	service := NewService(mockRepo, "abc123", 24)
+	service := NewService(mockRepo, jwtSecret, jwtExpiration)
 	api := NewAPI(service, validator)
 
-	t.Run("successful log in", func(t *testing.T) {
+	t.Run("handler returns token on valid login", func(t *testing.T) {
 		payload := strings.NewReader(`{"email":"johndoe@gmail.com", "password": "password123"}`)
 		res := httptest.NewRecorder()
 		req, _ := http.NewRequest(http.MethodPost, "/auth/login", payload)
@@ -34,7 +36,7 @@ func TestHandleLogin(t *testing.T) {
 		assert.NotEmpty(t, response.Token)
 	})
 
-	t.Run("unsuccessful log in", func(t *testing.T) {
+	t.Run("handler returns response on invalid login", func(t *testing.T) {
 		payload := strings.NewReader(`{"email":"nonexisting@gmail.com", "password": "nonexisting"}`)
 		res := httptest.NewRecorder()
 		req, _ := http.NewRequest(http.MethodPost, "/auth/login", payload)

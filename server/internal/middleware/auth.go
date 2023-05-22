@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
+	"github.com/Wave-95/boards/server/pkg/logger"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -20,28 +21,33 @@ const (
 	ErrMsgInvalidToken = "Invalid token"
 )
 
+// Auth creates a middleware function that retrieves a bearer token and validates the token.
+// The middleware sets the userId in the jwt payload into the request context. If the token is
+// invalid, it will write an Unauthorized response.
 func Auth(jwtSecret string) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			bearerString := r.Header.Get("Authorization")
-			token := strings.Split(bearerString, " ")[1]
+			ctx := r.Context()
+			logger := logger.FromContext(ctx)
+			authHeader := r.Header.Get("Authorization")
 
-			if token == "" {
+			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer") {
 				endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgMissingToken)
 			}
-			//Do auth
+
+			token := strings.TrimPrefix(authHeader, "Bearer ")
 			userId, err := verifyToken(token, jwtSecret)
 			if err != nil {
+				logger.Errorf("handler: issue verifying jwt token: %w", err)
 				endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
 			}
-			ctx := withUser(r.Context(), userId)
-			r = r.WithContext(ctx)
+			r = r.WithContext(withUser(ctx, userId))
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// UserIdFromContext returns a logger from context. If none found, instantiate a new logger
+// UserIdFromContext returns a user ID from context
 func UserIdFromContext(ctx context.Context) string {
 	if userId, ok := ctx.Value(UserIdKey).(string); ok {
 		return userId
@@ -49,6 +55,8 @@ func UserIdFromContext(ctx context.Context) string {
 	return ""
 }
 
+// verifyToken parses and validates a jwt token. It returns the userId on a
+// valid token.
 func verifyToken(tokenString string, jwtSecret string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -56,6 +64,7 @@ func verifyToken(tokenString string, jwtSecret string) (string, error) {
 		}
 		return []byte(jwtSecret), nil
 	})
+
 	if err != nil {
 		return "", fmt.Errorf("Issue parsing token: %w", err)
 	}
@@ -76,6 +85,7 @@ func verifyToken(tokenString string, jwtSecret string) (string, error) {
 	}
 }
 
+// withUser adds the userId to a context object and returns that context
 func withUser(ctx context.Context, userId string) context.Context {
 	return context.WithValue(ctx, UserIdKey, userId)
 }

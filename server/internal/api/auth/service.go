@@ -19,9 +19,9 @@ type Service interface {
 }
 
 type service struct {
-	userRepo      u.Repository
-	jwtSigningKey string
-	expiration    int
+	userRepo   u.Repository
+	jwtSecret  string
+	expiration int
 }
 
 func (s *service) Login(ctx context.Context, email, password string) (token string, err error) {
@@ -35,11 +35,11 @@ func (s *service) Login(ctx context.Context, email, password string) (token stri
 	return s.generateToken(user.Id.String())
 }
 
-func NewService(userRepo u.Repository, jwtSigningKey string, expiration int) Service {
+func NewService(userRepo u.Repository, jwtSecret string, expiration int) Service {
 	return &service{
-		userRepo:      userRepo,
-		jwtSigningKey: jwtSigningKey,
-		expiration:    expiration,
+		userRepo:   userRepo,
+		jwtSecret:  jwtSecret,
+		expiration: expiration,
 	}
 }
 
@@ -48,5 +48,5 @@ func (s *service) generateToken(userId string) (string, error) {
 		"userId": userId,
 		"exp":    time.Now().Add(time.Duration(s.expiration) * time.Hour).Unix(),
 	})
-	return token.SignedString([]byte(s.jwtSigningKey))
+	return token.SignedString([]byte(s.jwtSecret))
 }
