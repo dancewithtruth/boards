@@ -3,8 +3,9 @@ import { API_BASE_URL } from '../../constants';
 
 export type CreateUserParams = {
   name: string;
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
+  isGuest: boolean;
 };
 
 export type User = {
@@ -16,7 +17,12 @@ export type User = {
   updated_at: string;
 };
 
-export async function createUser(params: CreateUserParams): Promise<User> {
+export type CreateUserResponse = {
+  user: User;
+  jwt_token: string;
+};
+
+export async function createUser(params: CreateUserParams): Promise<CreateUserResponse> {
   const url = `${API_BASE_URL}/users`;
-  return sendPostRequest<User>(url, params);
+  return sendPostRequest<CreateUserResponse>(url, params);
 }

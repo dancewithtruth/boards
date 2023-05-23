@@ -3,36 +3,31 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { toast } from 'react-toastify';
 import { createUser } from '../../helpers/api/users';
-import { login } from '../../helpers/api/auth';
 import ConfiguredToastContainer from './toastcontainer';
 import { useUser } from '@/providers/user';
 import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import Link from 'next/link';
 
-const SignUpPanel = (): JSX.Element => {
+type SignUpPanelParams = {
+  isGuest?: boolean;
+};
+const SignUpPanel = ({ isGuest = false }: SignUpPanelParams): JSX.Element => {
   const { dispatch } = useUser();
   const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [isFormValid, setIsFormValid] = useState(false);
+  const [email, setEmail] = useState<string | undefined>();
+  const [password, setPassword] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
-    checkFormValidity();
   };
 
   const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
-    checkFormValidity();
   };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
-    checkFormValidity();
-  };
-
-  const checkFormValidity = () => {
-    setIsFormValid(name !== '' && email !== '' && password !== '');
   };
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
@@ -40,14 +35,13 @@ const SignUpPanel = (): JSX.Element => {
     setIsLoading(true);
 
     try {
-      await createUser({ name, email, password });
+      const response = await createUser({ name, email, password, isGuest });
       toast.success('Account created!');
-      const { token } = await login({ email, password });
-      localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN, token);
+      localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN, response.jwt_token);
+      dispatch({ type: 'set_user', payload: response.user });
       dispatch({ type: 'set_is_authenticated', payload: true });
-      toast.success('Automatically logged in.');
-      console.log(token);
     } catch (error) {
+      toast.error(String(error));
     } finally {
       setIsLoading(false);
     }
@@ -61,6 +55,7 @@ const SignUpPanel = (): JSX.Element => {
           <div className="form-control">
             <label className="label">
               <span className="label-text">Name</span>
+              <span className="label-text-alt text-xs text-gray-300">min. 3 char</span>
             </label>
             <input
               type="text"
@@ -72,43 +67,56 @@ const SignUpPanel = (): JSX.Element => {
               required
             />
           </div>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Email</span>
-            </label>
-            <input
-              type="email"
-              id="email"
-              className="input input-bordered w-full max-w-xs"
-              placeholder="Email"
-              value={email}
-              onChange={handleEmailChange}
-              required
-            />
-          </div>
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text">Password</span>
-            </label>
-            <input
-              type="password"
-              id="password"
-              className="input input-bordered w-full max-w-xs"
-              placeholder="Password"
-              value={password}
-              onChange={handlePasswordChange}
-              required
-            />
-          </div>
+          {isGuest ? null : (
+            <>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Email</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  className="input input-bordered w-full max-w-xs"
+                  placeholder="Email"
+                  value={email}
+                  onChange={handleEmailChange}
+                  required
+                />
+              </div>
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text">Password</span>
+                  <span className="label-text-alt text-xs text-gray-300">min. 8 char</span>
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  className="input input-bordered w-full max-w-xs"
+                  placeholder="Password"
+                  value={password}
+                  onChange={handlePasswordChange}
+                  required
+                />
+              </div>
+            </>
+          )}
           <div className="form-control mt-6">
             <div className="flex flex-col w-full border-opacity-50">
-              <button type="submit" className="btn btn-secondary btn-outline" disabled={!isFormValid || isLoading}>
-                {isLoading ? 'Loading...' : 'Sign Up'}
-              </button>
-              <div className="divider">OR</div>
-              <button type="submit" className="btn btn-primary">
-                Continue as guest
-              </button>
+              {isGuest ? (
+                <button type="submit" className="btn btn-secondary">
+                  {isLoading ? 'Loading...' : 'Create guest account'}
+                </button>
+              ) : (
+                <>
+                  <button type="submit" className="btn btn-secondary btn-outline">
+                    {isLoading ? 'Loading...' : 'Sign Up'}
+                  </button>
+                  <div className="divider">OR</div>
+                  <Link href="/signup/guest" className="btn btn-primary">
+                    Continue as guest
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
