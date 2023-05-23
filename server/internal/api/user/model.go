@@ -27,6 +27,21 @@ func (u *User) ToDto() *CreateUserResponse {
 	}
 }
 
+func (u *User) ToDtoWithToken(jwtToken string) *CreateUserResponseWithToken {
+	user := CreateUserResponse{
+		Id:        u.Id,
+		Name:      u.Name,
+		Email:     u.Email,
+		IsGuest:   u.IsGuest,
+		CreatedAt: u.CreatedAt,
+		UpdatedAt: u.UpdatedAt,
+	}
+	return &CreateUserResponseWithToken{
+		User:     user,
+		JwtToken: jwtToken,
+	}
+}
+
 type CreateUserRequest struct {
 	Name     string  `json:"name" validate:"required,min=3"`
 	Email    *string `json:"email" validate:"omitempty,email,required"`
@@ -58,4 +73,8 @@ type CreateUserResponse struct {
 	IsGuest   bool      `json:"is_guest"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+type CreateUserResponseWithToken struct {
+	User     CreateUserResponse `json:"user"`
+	JwtToken string             `json:"jwt_token"`
 }

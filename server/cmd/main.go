@@ -73,7 +73,7 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	userService := user.NewService(userRepo, v)
 
 	// set up APIs
-	userAPI := user.NewAPI(userService, v)
+	userAPI := user.NewAPI(userService, jwtService, v)
 	authAPI := auth.NewAPI(authService, v)
 
 	// register handlers

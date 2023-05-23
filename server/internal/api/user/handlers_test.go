@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -14,8 +15,9 @@ import (
 func TestHandleCreateUser(t *testing.T) {
 	validator := validator.New()
 	mockRepo := &mockRepository{make(map[uuid.UUID]*User)}
-	service := NewService(mockRepo, validator)
-	api := NewAPI(service, validator)
+	userService := NewService(mockRepo, validator)
+	jwtService := jwt.New("secret", 1)
+	api := NewAPI(userService, jwtService, validator)
 
 	payload := strings.NewReader(`{"name":"john doe", "email": "john@gmail.com", "password":"password123", "is_guest":false}`)
 	res := httptest.NewRecorder()

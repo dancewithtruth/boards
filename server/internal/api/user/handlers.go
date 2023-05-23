@@ -31,7 +31,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// create user and handle errors
-	user, err := api.service.CreateUser(ctx, request.ToInput())
+	user, err := api.userService.CreateUser(ctx, request.ToInput())
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrEmailAlreadyExists):
@@ -42,8 +42,13 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	jwtToken, err := api.jwtService.GenerateToken(user.Id.String())
+	if err != nil {
+		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+	}
+
 	// write response
-	endpoint.WriteWithStatus(w, http.StatusCreated, user.ToDto())
+	endpoint.WriteWithStatus(w, http.StatusCreated, user.ToDtoWithToken(jwtToken))
 }
 
 // HandleGetUserMe is protected with an authHandler and expects the userID to be present
@@ -52,7 +57,7 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	userId := middleware.UserIdFromContext(ctx)
-	user, err := api.service.GetUser(ctx, userId)
+	user, err := api.userService.GetUser(ctx, userId)
 	if err != nil {
 		switch {
 		default:

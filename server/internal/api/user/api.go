@@ -3,6 +3,7 @@ package user
 import (
 	"net/http"
 
+	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/go-chi/chi/v5"
 )
@@ -12,14 +13,16 @@ const (
 )
 
 type API struct {
-	service   Service
-	validator validator.Validate
+	userService Service
+	jwtService  jwt.JWTService
+	validator   validator.Validate
 }
 
-func NewAPI(service Service, validator validator.Validate) API {
+func NewAPI(userService Service, jwtService jwt.JWTService, validator validator.Validate) API {
 	return API{
-		service:   service,
-		validator: validator,
+		userService: userService,
+		jwtService:  jwtService,
+		validator:   validator,
 	}
 }
 
