@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:8080';
+import { sendPostRequest } from './base';
+import { API_BASE_URL } from '../../constants';
 
 export type CreateUserParams = {
   name: string;
@@ -6,34 +7,16 @@ export type CreateUserParams = {
   password: string;
 };
 
-type CreateUserResponse = {
+export type User = {
   id: string;
+  name: string;
+  email: string;
+  is_guest: boolean;
+  created_at: string;
+  updated_at: string;
 };
 
-export const createUser = async (params: CreateUserParams): Promise<string> => {
+export async function createUser(params: CreateUserParams): Promise<User> {
   const url = `${API_BASE_URL}/users`;
-
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(params),
-    });
-
-    if (!response.ok) {
-      throw new Error('Sign up failed');
-    }
-
-    const data: CreateUserResponse = await response.json();
-    const { id } = data;
-
-    return id;
-  } catch (error) {
-    console.error('Error signing up:', error);
-    // Handle error
-    // ...
-    throw error;
-  }
-};
+  return sendPostRequest<User>(url, params);
+}

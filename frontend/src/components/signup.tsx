@@ -1,7 +1,15 @@
-import { createUser } from '../../helpers/api/users';
+'use client';
+
 import { useState, ChangeEvent, FormEvent } from 'react';
+import { toast } from 'react-toastify';
+import { createUser } from '../../helpers/api/users';
+import { login } from '../../helpers/api/auth';
+import ConfiguredToastContainer from './toastcontainer';
+import { useUser } from '@/providers/user';
+import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
 
 const SignUpPanel = (): JSX.Element => {
+  const { dispatch } = useUser();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,8 +40,13 @@ const SignUpPanel = (): JSX.Element => {
     setIsLoading(true);
 
     try {
-      const userId = await createUser({ name, email, password });
-      console.log(userId);
+      await createUser({ name, email, password });
+      toast.success('Account created!');
+      const { token } = await login({ email, password });
+      localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN, token);
+      dispatch({ type: 'set_is_authenticated', payload: true });
+      toast.success('Automatically logged in.');
+      console.log(token);
     } catch (error) {
     } finally {
       setIsLoading(false);
@@ -42,6 +55,7 @@ const SignUpPanel = (): JSX.Element => {
 
   return (
     <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100 border border-base-300">
+      <ConfiguredToastContainer />
       <form onSubmit={handleSubmit}>
         <div className="card-body">
           <div className="form-control">
