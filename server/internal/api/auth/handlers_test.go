@@ -10,6 +10,7 @@ import (
 
 	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/endpoint"
+	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,8 @@ func TestHandleLogin(t *testing.T) {
 	validator := validator.New()
 	mockRepo := user.NewMockRepository(make(map[uuid.UUID]*user.User))
 	mockRepo.CreateUser(context.Background(), newTestUser())
-	service := NewService(mockRepo, jwtSecret, jwtExpiration)
+	jwtService := jwt.New(jwtSecret, jwtExpiration)
+	service := NewService(mockRepo, jwtService)
 	api := NewAPI(service, validator)
 
 	t.Run("handler returns token on valid login", func(t *testing.T) {

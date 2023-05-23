@@ -4,10 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	u "github.com/Wave-95/boards/server/internal/api/user"
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/Wave-95/boards/server/internal/jwt"
 )
 
 var (
@@ -20,8 +19,7 @@ type Service interface {
 
 type service struct {
 	userRepo   u.Repository
-	jwtSecret  string
-	expiration int
+	jwtService jwt.JWTService
 }
 
 func (s *service) Login(ctx context.Context, email, password string) (token string, err error) {
@@ -32,21 +30,12 @@ func (s *service) Login(ctx context.Context, email, password string) (token stri
 		}
 		return "", fmt.Errorf("service: failed to login: %w", err)
 	}
-	return s.generateToken(user.Id.String())
+	return s.jwtService.GenerateToken(user.Id.String())
 }
 
-func NewService(userRepo u.Repository, jwtSecret string, expiration int) Service {
+func NewService(userRepo u.Repository, jwtService jwt.JWTService) Service {
 	return &service{
 		userRepo:   userRepo,
-		jwtSecret:  jwtSecret,
-		expiration: expiration,
+		jwtService: jwtService,
 	}
-}
-
-func (s *service) generateToken(userId string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userId": userId,
-		"exp":    time.Now().Add(time.Duration(s.expiration) * time.Hour).Unix(),
-	})
-	return token.SignedString([]byte(s.jwtSecret))
 }

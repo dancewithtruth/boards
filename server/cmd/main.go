@@ -13,6 +13,7 @@ import (
 	"github.com/Wave-95/boards/server/internal/api/auth"
 	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/config"
+	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/internal/middleware"
 	"github.com/Wave-95/boards/server/pkg/logger"
 	"github.com/Wave-95/boards/server/pkg/validator"
@@ -60,16 +61,23 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.Cors())
 
+	// set up auth handler
 	authHandler := middleware.Auth(cfg.JwtSecret)
-	// register user handlers
-	userRepo := user.NewRepository(db)
-	userService := user.NewService(userRepo, v)
-	userAPI := user.NewAPI(userService, v, authHandler)
-	userAPI.RegisterHandlers(r)
 
-	// register auth handlers
-	authService := auth.NewService(userRepo, cfg.JwtSecret, cfg.JwtExpiration)
+	// set up repositories
+	userRepo := user.NewRepository(db)
+
+	// set up services
+	jwtService := jwt.New(cfg.JwtSecret, cfg.JwtExpiration)
+	authService := auth.NewService(userRepo, jwtService)
+	userService := user.NewService(userRepo, v)
+
+	// set up APIs
+	userAPI := user.NewAPI(userService, v)
 	authAPI := auth.NewAPI(authService, v)
+
+	// register handlers
+	userAPI.RegisterHandlers(r, authHandler)
 	authAPI.RegisterHandlers(r)
 
 	return r

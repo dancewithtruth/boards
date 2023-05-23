@@ -12,24 +12,22 @@ const (
 )
 
 type API struct {
-	service     Service
-	validator   validator.Validate
-	authHandler func(http.Handler) http.Handler
+	service   Service
+	validator validator.Validate
 }
 
-func NewAPI(service Service, validator validator.Validate, authHandler func(http.Handler) http.Handler) API {
+func NewAPI(service Service, validator validator.Validate) API {
 	return API{
-		service:     service,
-		validator:   validator,
-		authHandler: authHandler,
+		service:   service,
+		validator: validator,
 	}
 }
 
-func (api *API) RegisterHandlers(r chi.Router) {
+func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) http.Handler) {
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", api.HandleCreateUser)
 		r.Group(func(r chi.Router) {
-			r.Use(api.authHandler)
+			r.Use(authHandler)
 			r.Get("/me", api.HandleGetUserMe)
 		})
 	})
