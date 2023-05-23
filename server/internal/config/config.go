@@ -15,8 +15,8 @@ const (
 	DBUserKey     = "DB_USER"
 	DBPasswordKey = "DB_PASSWORD"
 
-	JWTSigningKey = "JWT_SIGNING_KEY"
-	JWTExpiration = "JWT_EXPIRATION"
+	JWTSecretKey     = "JWT_SIGNING_KEY"
+	JWTExpirationKey = "JWT_EXPIRATION"
 )
 
 type DatabaseConfig struct {
@@ -37,7 +37,7 @@ func (dbConfig *DatabaseConfig) Validate() error {
 
 type Config struct {
 	DatabaseConfig DatabaseConfig
-	JwtSigningKey  string
+	JwtSecret      string
 	JwtExpiration  int
 }
 
@@ -47,8 +47,8 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
-	jwtSigningKey := os.Getenv(JWTSigningKey)
-	jwtExpirationStr := os.Getenv(JWTExpiration)
+	jwtSecret := os.Getenv(JWTSecretKey)
+	jwtExpirationStr := os.Getenv(JWTExpirationKey)
 	jwtExpiration, err := strconv.Atoi(jwtExpirationStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT expiration value: %w", err)
@@ -56,7 +56,7 @@ func Load() (*Config, error) {
 
 	return &Config{
 		DatabaseConfig: databaseConfig,
-		JwtSigningKey:  jwtSigningKey,
+		JwtSecret:      jwtSecret,
 		JwtExpiration:  jwtExpiration,
 	}, nil
 }

@@ -59,14 +59,16 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	// set up middleware
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.Cors())
+
+	authHandler := middleware.Auth(cfg.JwtSecret)
 	// register user handlers
 	userRepo := user.NewRepository(db)
 	userService := user.NewService(userRepo, v)
-	userAPI := user.NewAPI(userService, v)
+	userAPI := user.NewAPI(userService, v, authHandler)
 	userAPI.RegisterHandlers(r)
 
 	// register auth handlers
-	authService := auth.NewService(userRepo, cfg.JwtSigningKey, cfg.JwtExpiration)
+	authService := auth.NewService(userRepo, cfg.JwtSecret, cfg.JwtExpiration)
 	authAPI := auth.NewAPI(authService, v)
 	authAPI.RegisterHandlers(r)
 

@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
+	"github.com/Wave-95/boards/server/internal/middleware"
 	"github.com/Wave-95/boards/server/pkg/logger"
 )
 
@@ -35,6 +36,25 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, ErrEmailAlreadyExists):
 			endpoint.WriteWithError(w, http.StatusConflict, ErrEmailAlreadyExists.Error())
+		default:
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+
+	// write response
+	endpoint.WriteWithStatus(w, http.StatusCreated, user.ToDto())
+}
+
+// HandleGetUserMe is protected with an authHandler and expects the userID to be present
+// on the request context
+func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	userId := middleware.UserIdFromContext(ctx)
+	user, err := api.service.GetUser(ctx, userId)
+	if err != nil {
+		switch {
 		default:
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}

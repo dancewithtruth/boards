@@ -11,6 +11,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx context.Context, input *CreateUserInput) (*User, error)
+	GetUser(ctx context.Context, userId string) (*User, error)
 }
 
 type service struct {
@@ -33,6 +34,18 @@ func (s *service) CreateUser(ctx context.Context, input *CreateUserInput) (*User
 	err := s.repo.CreateUser(ctx, user)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to create user: %w", err)
+	}
+	return user, nil
+}
+
+func (s *service) GetUser(ctx context.Context, userId string) (*User, error) {
+	userIdUUID, err := uuid.Parse(userId)
+	if err != nil {
+		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
+	}
+	user, err := s.repo.GetUser(ctx, userIdUUID)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to get user: %w", err)
 	}
 	return user, nil
 }

@@ -19,6 +19,7 @@ var (
 
 type Repository interface {
 	CreateUser(ctx context.Context, user *User) error
+	GetUser(ctx context.Context, userId uuid.UUID) (*User, error)
 	GetUserByLogin(ctx context.Context, email, password string) (*User, error)
 	DeleteUser(userId uuid.UUID) error
 }
@@ -38,6 +39,28 @@ func (r *repository) CreateUser(ctx context.Context, user *User) error {
 		return fmt.Errorf("repository: failed to create user: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) GetUser(ctx context.Context, userId uuid.UUID) (*User, error) {
+	sql := "SELECT * FROM users WHERE id = $1"
+	user := &User{}
+	// TODO: make scanning more robust
+	err := r.db.QueryRow(ctx, sql, userId).Scan(
+		&user.Id,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.IsGuest,
+		&user.CreatedAt,
+		&user.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, ErrUserDoesNotExist
+		}
+		return nil, fmt.Errorf("repository: failed to get user by id: %w", err)
+	}
+	return user, nil
 }
 
 func (r *repository) GetUserByLogin(ctx context.Context, email, password string) (*User, error) {
