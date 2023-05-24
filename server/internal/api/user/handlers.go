@@ -55,7 +55,6 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 // on the request context
 func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-
 	userId := middleware.UserIdFromContext(ctx)
 	user, err := api.userService.GetUser(ctx, userId)
 	if err != nil {
@@ -65,7 +64,6 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-
 	// write response
 	endpoint.WriteWithStatus(w, http.StatusCreated, user.ToDto())
 }
