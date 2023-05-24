@@ -16,7 +16,7 @@ var (
 type Service interface {
 	CreateBoard(ctx context.Context, input *CreateBoardInput) (*Board, error)
 	GetBoard(ctx context.Context, boardId string) (*Board, error)
-	GetBoardsByUserId(ctx context.Context, userId string) ([]*Board, error)
+	GetBoardsByUserId(ctx context.Context, userId string) (Boards, error)
 }
 
 type service struct {
@@ -71,7 +71,7 @@ func (s *service) GetBoard(ctx context.Context, boardId string) (*Board, error) 
 	return board, nil
 }
 
-func (s *service) GetBoardsByUserId(ctx context.Context, userId string) ([]*Board, error) {
+func (s *service) GetBoardsByUserId(ctx context.Context, userId string) (Boards, error) {
 	userIdUUID, err := uuid.Parse(userId)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)

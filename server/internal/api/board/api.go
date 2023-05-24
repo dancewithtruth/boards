@@ -23,6 +23,7 @@ func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) ht
 	r.Route("/boards", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
+			r.Get("/", api.HandleGetBoards)
 			r.Post("/", api.HandleCreateBoard)
 		})
 	})

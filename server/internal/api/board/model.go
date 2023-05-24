@@ -15,14 +15,33 @@ type Board struct {
 	UpdatedAt   time.Time
 }
 
-func (b *Board) ToDto() *CreateBoardResponse {
-	return &CreateBoardResponse{
+func (b *Board) ToDto() BoardResponse {
+	return BoardResponse{
 		Id:          b.Id,
 		Name:        b.Name,
 		Description: b.Description,
 		UserId:      b.UserId,
 		CreatedAt:   b.CreatedAt,
 		UpdatedAt:   b.UpdatedAt,
+	}
+}
+
+type Boards []*Board
+
+func (b Boards) ToDto() GetBoardsResponse {
+	boardResponses := make([]BoardResponse, len(b))
+	for i, board := range b {
+		boardResponses[i] = BoardResponse{
+			Id:          board.Id,
+			Name:        board.Name,
+			Description: board.Description,
+			UserId:      board.UserId,
+			CreatedAt:   board.CreatedAt,
+			UpdatedAt:   board.UpdatedAt,
+		}
+	}
+	return GetBoardsResponse{
+		Boards: boardResponses,
 	}
 }
 
@@ -49,11 +68,16 @@ type CreateBoardInput struct {
 	UserId      uuid.UUID
 }
 
-type CreateBoardResponse struct {
+// Responses
+type BoardResponse struct {
 	Id          uuid.UUID `json:"id"`
 	Name        *string   `json:"name"`
 	Description *string   `json:"description"`
 	UserId      uuid.UUID `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type GetBoardsResponse struct {
+	Boards []BoardResponse `json:"boards"`
 }

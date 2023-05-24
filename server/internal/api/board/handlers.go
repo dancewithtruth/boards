@@ -49,3 +49,21 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	}
 	endpoint.WriteWithStatus(w, http.StatusCreated, board.ToDto())
 }
+
+func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	// get userId from context
+	userId := middleware.UserIdFromContext(ctx)
+
+	defer r.Body.Close()
+
+	boards, err := api.boardService.GetBoardsByUserId(ctx, userId)
+	if err != nil {
+		logger.Errorf("handler: failed to get boards by user ID: %v", err)
+		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusCreated, boards.ToDto())
+}
