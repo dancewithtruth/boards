@@ -33,6 +33,7 @@ func Auth(jwtSecret string) func(next http.Handler) http.Handler {
 
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer") {
 				endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgMissingToken)
+				return
 			}
 
 			token := strings.TrimPrefix(authHeader, "Bearer ")
@@ -40,6 +41,7 @@ func Auth(jwtSecret string) func(next http.Handler) http.Handler {
 			if err != nil {
 				logger.Errorf("handler: issue verifying jwt token: %w", err)
 				endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
+				return
 			}
 			r = r.WithContext(withUser(ctx, userId))
 			next.ServeHTTP(w, r)
