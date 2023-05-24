@@ -2,6 +2,7 @@
 
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { toast } from 'react-toastify';
+import { useRouter } from 'next/navigation';
 import { createUser } from '../../helpers/api/users';
 import ConfiguredToastContainer from './toastcontainer';
 import { useUser } from '@/providers/user';
@@ -17,6 +18,8 @@ const SignUpPanel = ({ isGuest = false }: SignUpPanelParams): JSX.Element => {
   const [email, setEmail] = useState<string | undefined>();
   const [password, setPassword] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
+
+  const router = useRouter();
 
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
     setName(e.target.value);
@@ -40,6 +43,7 @@ const SignUpPanel = ({ isGuest = false }: SignUpPanelParams): JSX.Element => {
       localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN, response.jwt_token);
       dispatch({ type: 'set_user', payload: response.user });
       dispatch({ type: 'set_is_authenticated', payload: true });
+      router.push('/welcome');
     } catch (error) {
       toast.error(String(error));
     } finally {
@@ -55,7 +59,7 @@ const SignUpPanel = ({ isGuest = false }: SignUpPanelParams): JSX.Element => {
           <div className="form-control">
             <label className="label">
               <span className="label-text">Name</span>
-              <span className="label-text-alt text-xs text-gray-300">min. 3 char</span>
+              <span className="label-text-alt text-xs text-gray-300">2 to 12 char</span>
             </label>
             <input
               type="text"

@@ -43,7 +43,7 @@ func (u *User) ToDtoWithToken(jwtToken string) *CreateUserResponseWithToken {
 }
 
 type CreateUserRequest struct {
-	Name     string  `json:"name" validate:"required,min=3"`
+	Name     string  `json:"name" validate:"required,min=2,max=12"`
 	Email    *string `json:"email" validate:"omitempty,email,required"`
 	Password *string `json:"password" validate:"omitempty,min=8"`
 	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`

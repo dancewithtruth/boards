@@ -1,11 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
-import { User } from '../../helpers/api/users';
+import { UserResponse, getUserByJwt } from '../../helpers/api/users';
 import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
 
 type State = {
-  user: User | null;
+  user: UserResponse | null;
   isAuthenticated: boolean;
 };
 
@@ -45,13 +45,17 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
   const authenticate = async () => {
     const authToken = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN);
-    console.log(authToken);
     if (authToken) {
-      dispatch({ type: 'set_is_authenticated', payload: true });
+      try {
+        const user = await getUserByJwt(authToken);
+        dispatch({ type: 'set_user', payload: user });
+        dispatch({ type: 'set_is_authenticated', payload: true });
+      } catch (e) {
+        localStorage.removeItem(LOCAL_STORAGE_AUTH_TOKEN);
+      }
     }
   };
 
-  //Builds wallet SDK on mount and checks for existing wallet connection
   useEffect(() => {
     authenticate();
   }, []);
