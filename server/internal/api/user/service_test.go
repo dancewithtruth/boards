@@ -29,15 +29,5 @@ func TestService(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, input.Name, user.Name)
 		})
-
-		// t.Run("with an invalid email", func(t *testing.T) {
-		// 	invalidInput := input
-		// 	invalidEmail := "blah.com"
-
-		// 	invalidInput.Email = &invalidEmail
-		// 	_, err := service.CreateUser(invalidInput)
-		// 	assert.ErrorIs(t, err, ErrInvalidEmail)
-		// })
-
 	})
 }
