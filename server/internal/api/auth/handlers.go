@@ -23,7 +23,7 @@ type LoginResponse struct {
 }
 
 func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	req := LoginRequest{}
+	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		endpoint.HandleDecodeErr(w, err)
 		return

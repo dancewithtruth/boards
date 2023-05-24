@@ -11,6 +11,7 @@ import (
 
 	"github.com/Wave-95/boards/server/db"
 	"github.com/Wave-95/boards/server/internal/api/auth"
+	"github.com/Wave-95/boards/server/internal/api/board"
 	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/config"
 	"github.com/Wave-95/boards/server/internal/jwt"
@@ -66,19 +67,23 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 
 	// set up repositories
 	userRepo := user.NewRepository(db)
+	boardRepo := board.NewRepository(db)
 
 	// set up services
 	jwtService := jwt.New(cfg.JwtSecret, cfg.JwtExpiration)
 	authService := auth.NewService(userRepo, jwtService)
 	userService := user.NewService(userRepo, v)
+	boardService := board.NewService(boardRepo, v)
 
 	// set up APIs
 	userAPI := user.NewAPI(userService, jwtService, v)
 	authAPI := auth.NewAPI(authService, v)
+	boardAPI := board.NewAPI(boardService, v)
 
 	// register handlers
 	userAPI.RegisterHandlers(r, authHandler)
 	authAPI.RegisterHandlers(r)
+	boardAPI.RegisterHandlers(r, authHandler)
 
 	return r
 }
