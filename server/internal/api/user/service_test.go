@@ -17,7 +17,7 @@ func TestService(t *testing.T) {
 
 	email := "testemail@gmail.com"
 	password := "password123!"
-	input := &CreateUserInput{
+	input := CreateUserInput{
 		Name:     "Name",
 		Email:    &email,
 		Password: &password,

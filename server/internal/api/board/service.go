@@ -14,8 +14,8 @@ var (
 )
 
 type Service interface {
-	CreateBoard(ctx context.Context, input *CreateBoardInput) (*Board, error)
-	GetBoard(ctx context.Context, boardId string) (*Board, error)
+	CreateBoard(ctx context.Context, input CreateBoardInput) (Board, error)
+	GetBoard(ctx context.Context, boardId string) (Board, error)
 	GetBoardsByUserId(ctx context.Context, userId string) (Boards, error)
 }
 
@@ -24,12 +24,12 @@ type service struct {
 	validator validator.Validate
 }
 
-func (s *service) CreateBoard(ctx context.Context, input *CreateBoardInput) (*Board, error) {
+func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (Board, error) {
 	// create board name if none provided
 	if input.Name == nil {
 		boards, err := s.repo.GetBoardsByUserId(ctx, input.UserId)
 		if err != nil {
-			return nil, fmt.Errorf("service: failed to get existing boards when creating board: %w", err)
+			return Board{}, fmt.Errorf("service: failed to get existing boards when creating board: %w", err)
 		}
 		numBoards := len(boards)
 		boardName := fmt.Sprintf("Board #%d", numBoards+1)
@@ -44,7 +44,7 @@ func (s *service) CreateBoard(ctx context.Context, input *CreateBoardInput) (*Bo
 	// create new board
 	id := uuid.New()
 	now := time.Now()
-	board := &Board{
+	board := Board{
 		Id:          id,
 		Name:        input.Name,
 		Description: input.Description,
@@ -54,19 +54,19 @@ func (s *service) CreateBoard(ctx context.Context, input *CreateBoardInput) (*Bo
 	}
 	err := s.repo.CreateBoard(ctx, board)
 	if err != nil {
-		return nil, fmt.Errorf("service: failed to create board: %w", err)
+		return Board{}, fmt.Errorf("service: failed to create board: %w", err)
 	}
 	return board, nil
 }
 
-func (s *service) GetBoard(ctx context.Context, boardId string) (*Board, error) {
+func (s *service) GetBoard(ctx context.Context, boardId string) (Board, error) {
 	boardIdUUID, err := uuid.Parse(boardId)
 	if err != nil {
-		return nil, fmt.Errorf("service: issue parsing boardId into UUID: %w", err)
+		return Board{}, fmt.Errorf("service: issue parsing boardId into UUID: %w", err)
 	}
 	board, err := s.repo.GetBoard(ctx, boardIdUUID)
 	if err != nil {
-		return nil, fmt.Errorf("service: failed to get board: %w", err)
+		return Board{}, fmt.Errorf("service: failed to get board: %w", err)
 	}
 	return board, nil
 }

@@ -11,13 +11,13 @@ import (
 
 func TestService(t *testing.T) {
 	validator := validator.New()
-	mockBoardRepo := &mockRepository{make(map[uuid.UUID]*Board)}
+	mockBoardRepo := &mockRepository{make(map[uuid.UUID]Board)}
 	boardService := NewService(mockBoardRepo, validator)
 	assert.NotNil(t, boardService)
 	userId := uuid.New()
 	t.Run("Create board", func(t *testing.T) {
 		t.Run("with a board without name or description", func(t *testing.T) {
-			input := &CreateBoardInput{
+			input := CreateBoardInput{
 				UserId: userId,
 			}
 			board, err := boardService.CreateBoard(context.Background(), input)
@@ -29,7 +29,7 @@ func TestService(t *testing.T) {
 		t.Run("with a board including name or description", func(t *testing.T) {
 			customBoardName := "Custom Board Name"
 			customBoardDescription := "Custom board description"
-			input := &CreateBoardInput{
+			input := CreateBoardInput{
 				UserId:      userId,
 				Name:        &customBoardName,
 				Description: &customBoardDescription,
@@ -58,9 +58,9 @@ func TestService(t *testing.T) {
 	})
 }
 
-func getFirstBoard(m map[uuid.UUID]*Board) (*Board, bool) {
+func getFirstBoard(m map[uuid.UUID]Board) (Board, bool) {
 	for _, board := range m {
 		return board, true
 	}
-	return nil, false
+	return Board{}, false
 }

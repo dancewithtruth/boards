@@ -6,10 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewTestBoard(userId uuid.UUID) *Board {
+func NewTestBoard(userId uuid.UUID) Board {
 	name := "test board name"
 	description := "test board description"
-	board := &Board{
+	board := Board{
 		Id:          uuid.New(),
 		Name:        &name,
 		Description: &description,

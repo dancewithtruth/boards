@@ -26,7 +26,7 @@ func (b *Board) ToDto() BoardResponse {
 	}
 }
 
-type Boards []*Board
+type Boards []Board
 
 func (b Boards) ToDto() GetBoardsResponse {
 	boardResponses := make([]BoardResponse, len(b))
@@ -50,11 +50,11 @@ type CreateBoardRequest struct {
 	Description *string `json:"description" validate:"omitempty,required,min=3,max=100"`
 }
 
-func (req *CreateBoardRequest) ToInput(userId string) (*CreateBoardInput, error) {
+func (req CreateBoardRequest) ToInput(userId string) (CreateBoardInput, error) {
 	if userIdUUID, err := uuid.Parse(userId); err != nil {
-		return nil, err
+		return CreateBoardInput{}, err
 	} else {
-		return &CreateBoardInput{
+		return CreateBoardInput{
 			Name:        req.Name,
 			Description: req.Description,
 			UserId:      userIdUUID,

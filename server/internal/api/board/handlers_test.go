@@ -15,7 +15,7 @@ import (
 
 func TestHandleCreateBoard(t *testing.T) {
 	validator := validator.New()
-	mockBoardRepo := &mockRepository{make(map[uuid.UUID]*Board)}
+	mockBoardRepo := &mockRepository{make(map[uuid.UUID]Board)}
 	boardService := NewService(mockBoardRepo, validator)
 	boardAPI := NewAPI(boardService, validator)
 

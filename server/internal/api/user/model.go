@@ -16,8 +16,8 @@ type User struct {
 	UpdatedAt time.Time
 }
 
-func (u *User) ToDto() *CreateUserResponse {
-	return &CreateUserResponse{
+func (u *User) ToDto() UserResponse {
+	return UserResponse{
 		Id:        u.Id,
 		Name:      u.Name,
 		Email:     u.Email,
@@ -27,8 +27,8 @@ func (u *User) ToDto() *CreateUserResponse {
 	}
 }
 
-func (u *User) ToDtoWithToken(jwtToken string) *CreateUserResponseWithToken {
-	user := CreateUserResponse{
+func (u User) ToDtoWithToken(jwtToken string) UserResponseWithToken {
+	user := UserResponse{
 		Id:        u.Id,
 		Name:      u.Name,
 		Email:     u.Email,
@@ -36,7 +36,7 @@ func (u *User) ToDtoWithToken(jwtToken string) *CreateUserResponseWithToken {
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 	}
-	return &CreateUserResponseWithToken{
+	return UserResponseWithToken{
 		User:     user,
 		JwtToken: jwtToken,
 	}
@@ -49,8 +49,8 @@ type CreateUserRequest struct {
 	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
 }
 
-func (r *CreateUserRequest) ToInput() *CreateUserInput {
-	return &CreateUserInput{
+func (r CreateUserRequest) ToInput() CreateUserInput {
+	return CreateUserInput{
 		Name:     r.Name,
 		Email:    r.Email,
 		Password: r.Password,
@@ -66,7 +66,7 @@ type CreateUserInput struct {
 	IsGuest  bool
 }
 
-type CreateUserResponse struct {
+type UserResponse struct {
 	Id        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`
 	Email     *string   `json:"email"`
@@ -74,7 +74,7 @@ type CreateUserResponse struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
-type CreateUserResponseWithToken struct {
-	User     CreateUserResponse `json:"user"`
-	JwtToken string             `json:"jwt_token"`
+type UserResponseWithToken struct {
+	User     UserResponse `json:"user"`
+	JwtToken string       `json:"jwt_token"`
 }

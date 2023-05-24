@@ -10,7 +10,7 @@ import (
 )
 
 type Service interface {
-	CreateUser(ctx context.Context, input *CreateUserInput) (*User, error)
+	CreateUser(ctx context.Context, input CreateUserInput) (*User, error)
 	GetUser(ctx context.Context, userId string) (*User, error)
 }
 
@@ -19,7 +19,7 @@ type service struct {
 	validator validator.Validate
 }
 
-func (s *service) CreateUser(ctx context.Context, input *CreateUserInput) (*User, error) {
+func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (*User, error) {
 	id := uuid.New()
 	now := time.Now()
 	user := &User{
