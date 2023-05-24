@@ -4,6 +4,7 @@ import { useUser } from '@/providers/user';
 import avatar from 'gradient-avatar';
 import Link from 'next/link';
 import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import { useRouter } from 'next/navigation';
 
 const Navbar = () => {
   const {
@@ -12,11 +13,13 @@ const Navbar = () => {
   } = useUser();
   const avatarSVG = avatar(user?.id || 'default');
   const dataUri = `data:image/svg+xml,${encodeURIComponent(avatarSVG)}`;
+  const router = useRouter();
 
   const handleLogout = () => {
     dispatch({ type: 'set_is_authenticated', payload: false });
     dispatch({ type: 'set_user', payload: null });
     localStorage.removeItem(LOCAL_STORAGE_AUTH_TOKEN);
+    router.push('/');
   };
   return (
     <nav className="bg-base-100 shadow-md">
@@ -27,32 +30,37 @@ const Navbar = () => {
               Boards
             </Link>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-4">
             {isAuthenticated ? (
-              <div className="dropdown dropdown-end">
-                <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
-                  <div className="w-10 rounded-full">
-                    <img src={dataUri} alt="SVG Image" />
-                  </div>
-                </label>
-                <ul
-                  tabIndex={0}
-                  className="mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52"
-                >
-                  <li>
-                    <a className="justify-between">
-                      Profile
-                      <span className="badge">New</span>
-                    </a>
-                  </li>
-                  <li>
-                    <a>Settings</a>
-                  </li>
-                  <li>
-                    <a onClick={handleLogout}>Logout</a>
-                  </li>
-                </ul>
-              </div>
+              <>
+                <Link href="/dashboard" className="btn btn-primary btn-sm">
+                  Dashboard
+                </Link>
+                <div className="dropdown dropdown-end">
+                  <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
+                    <div className="w-10 rounded-full">
+                      <img src={dataUri} alt="SVG Image" />
+                    </div>
+                  </label>
+                  <ul
+                    tabIndex={0}
+                    className="mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52"
+                  >
+                    <li>
+                      <a className="justify-between">
+                        Profile
+                        <span className="badge">New</span>
+                      </a>
+                    </li>
+                    <li>
+                      <a>Settings</a>
+                    </li>
+                    <li>
+                      <a onClick={handleLogout}>Logout</a>
+                    </li>
+                  </ul>
+                </div>
+              </>
             ) : (
               <>
                 <button className="btn btn-secondary btn-outline">Sign in</button>
