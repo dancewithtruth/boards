@@ -7,13 +7,13 @@ import (
 )
 
 type Board struct {
-	Id          uuid.UUID
-	Name        *string
-	Description *string
-	UserId      uuid.UUID
-	Users       []User
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Id          uuid.UUID `json:"id"`
+	Name        *string   `json:"name"`
+	Description *string   `json:"description"`
+	UserId      uuid.UUID `json:"user_id"`
+	Users       []User    `json:"users"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
 func (b *Board) ToDto() BoardResponse {
@@ -24,25 +24,6 @@ func (b *Board) ToDto() BoardResponse {
 		UserId:      b.UserId,
 		CreatedAt:   b.CreatedAt,
 		UpdatedAt:   b.UpdatedAt,
-	}
-}
-
-type Boards []Board
-
-func (b Boards) ToDto() GetBoardsResponse {
-	boardResponses := make([]BoardResponse, len(b))
-	for i, board := range b {
-		boardResponses[i] = BoardResponse{
-			Id:          board.Id,
-			Name:        board.Name,
-			Description: board.Description,
-			UserId:      board.UserId,
-			CreatedAt:   board.CreatedAt,
-			UpdatedAt:   board.UpdatedAt,
-		}
-	}
-	return GetBoardsResponse{
-		Boards: boardResponses,
 	}
 }
 

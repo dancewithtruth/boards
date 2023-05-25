@@ -24,11 +24,21 @@ func TestRepository(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
+	t.Run("Add user to board", func(t *testing.T) {
+		err := boardRepo.AddUsers(context.Background(), testBoard.Id, []uuid.UUID{testUser.Id})
+		assert.NoError(t, err)
+	})
+
 	t.Run("Get board", func(t *testing.T) {
 		t.Run("board exists", func(t *testing.T) {
+			t.Log(testBoard.Id)
 			board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
 			assert.NoError(t, err)
 			assert.Equal(t, testBoard.Name, board.Name)
+			if !assert.NotEmpty(t, board.Users) {
+				t.FailNow()
+			}
+			assert.Equal(t, board.Users[0].Id, testUser.Id)
 		})
 
 		t.Run("board does not exist", func(t *testing.T) {
@@ -40,7 +50,7 @@ func TestRepository(t *testing.T) {
 	})
 
 	t.Run("Delete board", func(t *testing.T) {
-		err := boardRepo.DeleteBoard(testBoard.Id)
+		err := boardRepo.DeleteBoard(context.Background(), testBoard.Id)
 		assert.NoError(t, err)
 	})
 
@@ -61,7 +71,7 @@ func TestRepository(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, boardsToCreate, len(boards))
 			for _, board := range boards {
-				boardRepo.DeleteBoard(board.Id)
+				boardRepo.DeleteBoard(context.Background(), board.Id)
 			}
 		})
 	})

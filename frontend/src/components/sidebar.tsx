@@ -43,8 +43,8 @@ const Sidebar = () => {
                 const avatarSVG = avatar(id);
                 const dataUri = `data:image/svg+xml,${encodeURIComponent(avatarSVG)}`;
                 return (
-                  <div className="flex space-x-2 items-center">
-                    <div key={id} className="w-8 h-8">
+                  <div key={id} className="flex space-x-2 items-center">
+                    <div className="w-8 h-8">
                       <img className="w-full h-full rounded-full" src={dataUri} alt="Avatar" />
                     </div>
                     <span className="text-sm text-gray-700">{name}</span>
