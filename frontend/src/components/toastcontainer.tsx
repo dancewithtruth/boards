@@ -1,3 +1,4 @@
+'use client';
 import { ToastContainer } from 'react-toastify';
 
 const ConfiguredToastContainer = () => {

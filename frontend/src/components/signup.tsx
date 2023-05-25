@@ -43,7 +43,7 @@ const SignUpPanel = ({ isGuest = false }: SignUpPanelParams): JSX.Element => {
       localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN, response.jwt_token);
       dispatch({ type: 'set_user', payload: response.user });
       dispatch({ type: 'set_is_authenticated', payload: true });
-      router.push('/welcome');
+      router.replace('/welcome');
     } catch (error) {
       toast.error(String(error));
     } finally {
