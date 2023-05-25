@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -11,7 +12,7 @@ import (
 
 func TestService(t *testing.T) {
 	validator := validator.New()
-	mockRepo := &mockRepository{make(map[uuid.UUID]*User)}
+	mockRepo := &mockRepository{make(map[uuid.UUID]models.User)}
 	service := NewService(mockRepo, validator)
 	assert.NotNil(t, service)
 

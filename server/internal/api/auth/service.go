@@ -14,7 +14,7 @@ var (
 )
 
 type Service interface {
-	Login(ctx context.Context, email, password string) (token string, err error)
+	Login(ctx context.Context, input LoginInput) (token string, err error)
 }
 
 type service struct {
@@ -22,8 +22,8 @@ type service struct {
 	jwtService jwt.JWTService
 }
 
-func (s *service) Login(ctx context.Context, email, password string) (token string, err error) {
-	user, err := s.userRepo.GetUserByLogin(ctx, email, password)
+func (s *service) Login(ctx context.Context, input LoginInput) (token string, err error) {
+	user, err := s.userRepo.GetUserByLogin(ctx, input.Email, input.Password)
 	if err != nil {
 		if errors.Is(err, u.ErrUserDoesNotExist) {
 			return "", ErrBadLogin

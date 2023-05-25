@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/Wave-95/boards/server/db"
+	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/google/uuid"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
@@ -18,9 +19,9 @@ var (
 )
 
 type Repository interface {
-	CreateUser(ctx context.Context, user *User) error
-	GetUser(ctx context.Context, userId uuid.UUID) (*User, error)
-	GetUserByLogin(ctx context.Context, email, password string) (*User, error)
+	CreateUser(ctx context.Context, user models.User) error
+	GetUser(ctx context.Context, userId uuid.UUID) (models.User, error)
+	GetUserByLogin(ctx context.Context, email, password string) (models.User, error)
 	DeleteUser(userId uuid.UUID) error
 }
 
@@ -28,7 +29,7 @@ type repository struct {
 	db *db.DB
 }
 
-func (r *repository) CreateUser(ctx context.Context, user *User) error {
+func (r *repository) CreateUser(ctx context.Context, user models.User) error {
 	sql := "INSERT INTO users (id, name, email, password, is_guest, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 	_, err := r.db.Exec(ctx, sql, user.Id, user.Name, user.Email, user.Password, user.IsGuest, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
@@ -41,9 +42,9 @@ func (r *repository) CreateUser(ctx context.Context, user *User) error {
 	return nil
 }
 
-func (r *repository) GetUser(ctx context.Context, userId uuid.UUID) (*User, error) {
+func (r *repository) GetUser(ctx context.Context, userId uuid.UUID) (models.User, error) {
 	sql := "SELECT * FROM users WHERE id = $1"
-	user := &User{}
+	user := models.User{}
 	// TODO: make scanning more robust
 	err := r.db.QueryRow(ctx, sql, userId).Scan(
 		&user.Id,
@@ -56,16 +57,16 @@ func (r *repository) GetUser(ctx context.Context, userId uuid.UUID) (*User, erro
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrUserDoesNotExist
+			return models.User{}, ErrUserDoesNotExist
 		}
-		return nil, fmt.Errorf("repository: failed to get user by id: %w", err)
+		return models.User{}, fmt.Errorf("repository: failed to get user by id: %w", err)
 	}
 	return user, nil
 }
 
-func (r *repository) GetUserByLogin(ctx context.Context, email, password string) (*User, error) {
+func (r *repository) GetUserByLogin(ctx context.Context, email, password string) (models.User, error) {
 	sql := "SELECT * FROM users WHERE email = $1 and password = $2"
-	user := &User{}
+	user := models.User{}
 	// TODO: make scanning more robust
 	err := r.db.QueryRow(ctx, sql, email, password).Scan(
 		&user.Id,
@@ -78,9 +79,9 @@ func (r *repository) GetUserByLogin(ctx context.Context, email, password string)
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, ErrUserDoesNotExist
+			return models.User{}, ErrUserDoesNotExist
 		}
-		return nil, fmt.Errorf("repository: failed to get user by login credentials: %w", err)
+		return models.User{}, fmt.Errorf("repository: failed to get user by login credentials: %w", err)
 	}
 	return user, nil
 }

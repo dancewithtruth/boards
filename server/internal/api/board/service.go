@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 )
@@ -14,9 +15,9 @@ var (
 )
 
 type Service interface {
-	CreateBoard(ctx context.Context, input CreateBoardInput) (Board, error)
-	GetBoard(ctx context.Context, boardId string) (Board, error)
-	GetBoardsByUserId(ctx context.Context, userId string) (Boards, error)
+	CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error)
+	GetBoard(ctx context.Context, boardId string) (models.Board, error)
+	GetBoardsByUserId(ctx context.Context, userId string) ([]models.Board, error)
 }
 
 type service struct {
@@ -24,12 +25,16 @@ type service struct {
 	validator validator.Validate
 }
 
-func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (Board, error) {
+func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error) {
+	userId, err := uuid.Parse(input.UserId)
+	if err != nil {
+		return models.Board{}, fmt.Errorf("service: failed to parse user ID input into UUID: %w", err)
+	}
 	// create board name if none provided
 	if input.Name == nil {
-		boards, err := s.repo.GetBoardsByUserId(ctx, input.UserId)
+		boards, err := s.repo.GetBoardsByUserId(ctx, userId)
 		if err != nil {
-			return Board{}, fmt.Errorf("service: failed to get existing boards when creating board: %w", err)
+			return models.Board{}, fmt.Errorf("service: failed to get existing boards when creating board: %w", err)
 		}
 		numBoards := len(boards)
 		boardName := fmt.Sprintf("Board #%d", numBoards+1)
@@ -44,34 +49,34 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (Boar
 	// create new board
 	id := uuid.New()
 	now := time.Now()
-	board := Board{
+	board := models.Board{
 		Id:          id,
 		Name:        input.Name,
 		Description: input.Description,
-		UserId:      input.UserId,
+		UserId:      userId,
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	err := s.repo.CreateBoard(ctx, board)
+	err = s.repo.CreateBoard(ctx, board)
 	if err != nil {
-		return Board{}, fmt.Errorf("service: failed to create board: %w", err)
+		return models.Board{}, fmt.Errorf("service: failed to create board: %w", err)
 	}
 	return board, nil
 }
 
-func (s *service) GetBoard(ctx context.Context, boardId string) (Board, error) {
+func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, error) {
 	boardIdUUID, err := uuid.Parse(boardId)
 	if err != nil {
-		return Board{}, fmt.Errorf("service: issue parsing boardId into UUID: %w", err)
+		return models.Board{}, fmt.Errorf("service: issue parsing boardId into UUID: %w", err)
 	}
 	board, err := s.repo.GetBoard(ctx, boardIdUUID)
 	if err != nil {
-		return Board{}, fmt.Errorf("service: failed to get board: %w", err)
+		return models.Board{}, fmt.Errorf("service: failed to get board: %w", err)
 	}
 	return board, nil
 }
 
-func (s *service) GetBoardsByUserId(ctx context.Context, userId string) (Boards, error) {
+func (s *service) GetBoardsByUserId(ctx context.Context, userId string) ([]models.Board, error) {
 	userIdUUID, err := uuid.Parse(userId)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)

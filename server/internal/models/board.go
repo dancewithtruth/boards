@@ -1,4 +1,4 @@
-package board
+package models
 
 import (
 	"time"
@@ -11,6 +11,7 @@ type Board struct {
 	Name        *string
 	Description *string
 	UserId      uuid.UUID
+	Users       []User
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

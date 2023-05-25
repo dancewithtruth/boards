@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Wave-95/boards/server/internal/api/user"
+	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/internal/test"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +34,7 @@ func TestRepository(t *testing.T) {
 		t.Run("board does not exist", func(t *testing.T) {
 			randUUID := uuid.New()
 			board, err := boardRepo.GetBoard(context.Background(), randUUID)
-			assert.Nil(t, board)
+			assert.Empty(t, board)
 			assert.ErrorIs(t, err, ErrBoardDoesNotExist)
 		})
 	})
@@ -68,7 +69,7 @@ func TestRepository(t *testing.T) {
 	cleanUpTestUser(t, userRepo, testUser.Id)
 }
 
-func setUpTestUser(t *testing.T, userRepo user.Repository) *user.User {
+func setUpTestUser(t *testing.T, userRepo user.Repository) models.User {
 	testUser := user.NewTestUser()
 	err := userRepo.CreateUser(context.Background(), testUser)
 	if err != nil {

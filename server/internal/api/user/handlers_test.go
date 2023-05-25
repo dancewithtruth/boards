@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/Wave-95/boards/server/internal/jwt"
+	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ import (
 
 func TestHandleCreateUser(t *testing.T) {
 	validator := validator.New()
-	mockRepo := &mockRepository{make(map[uuid.UUID]*User)}
+	mockRepo := &mockRepository{make(map[uuid.UUID]models.User)}
 	userService := NewService(mockRepo, validator)
 	jwtService := jwt.New("secret", 1)
 	api := NewAPI(userService, jwtService, validator)

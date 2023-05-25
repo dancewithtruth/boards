@@ -3,27 +3,28 @@ package board
 import (
 	"context"
 
+	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/google/uuid"
 )
 
 type mockRepository struct {
-	boards map[uuid.UUID]Board
+	boards map[uuid.UUID]models.Board
 }
 
-func (r *mockRepository) CreateBoard(ctx context.Context, board Board) error {
+func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) error {
 	r.boards[board.Id] = board
 	return nil
 }
 
-func (r *mockRepository) GetBoard(ctx context.Context, boardId uuid.UUID) (Board, error) {
+func (r *mockRepository) GetBoard(ctx context.Context, boardId uuid.UUID) (models.Board, error) {
 	if board, ok := r.boards[boardId]; ok {
 		return board, nil
 	}
-	return Board{}, ErrBoardDoesNotExist
+	return models.Board{}, ErrBoardDoesNotExist
 }
 
-func (r *mockRepository) GetBoardsByUserId(ctx context.Context, userId uuid.UUID) ([]Board, error) {
-	boards := []Board{}
+func (r *mockRepository) GetBoardsByUserId(ctx context.Context, userId uuid.UUID) ([]models.Board, error) {
+	boards := []models.Board{}
 	for _, board := range r.boards {
 		if userId == board.UserId {
 			boards = append(boards, board)
@@ -37,6 +38,6 @@ func (r *mockRepository) DeleteBoard(boardId uuid.UUID) error {
 	return nil
 }
 
-func NewMockRepository(boards map[uuid.UUID]Board) Repository {
+func NewMockRepository(boards map[uuid.UUID]models.Board) Repository {
 	return &mockRepository{boards}
 }

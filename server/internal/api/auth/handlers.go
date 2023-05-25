@@ -13,7 +13,7 @@ const (
 	ErrMsgInternalServer = "Issue logging in"
 )
 
-type LoginRequest struct {
+type LoginInput struct {
 	Email    string `json:"email" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
@@ -23,19 +23,19 @@ type LoginResponse struct {
 }
 
 func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	var input LoginInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		endpoint.HandleDecodeErr(w, err)
 		return
 	}
 	defer r.Body.Close()
 
-	if err := api.validator.Struct(req); err != nil {
+	if err := api.validator.Struct(input); err != nil {
 		endpoint.HandleValidationErr(w, err)
 		return
 	}
 
-	token, err := api.authService.Login(r.Context(), req.Email, req.Password)
+	token, err := api.authService.Login(r.Context(), input)
 	if err != nil {
 		if errors.Is(err, ErrBadLogin) {
 			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgBadLogin)
