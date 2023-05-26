@@ -2,6 +2,7 @@ package board
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/Wave-95/boards/server/internal/api/user"
@@ -15,68 +16,63 @@ func TestRepository(t *testing.T) {
 	db := test.DB(t)
 	userRepo := user.NewRepository(db)
 	testUser := setUpTestUser(t, userRepo)
-
 	boardRepo := NewRepository(db)
-	testBoard := NewTestBoard(testUser.Id)
 
-	t.Run("Create board", func(t *testing.T) {
-		err := boardRepo.CreateBoard(context.Background(), testBoard)
+	t.Cleanup(func() {
+		cleanUpTestUser(t, userRepo, testUser.Id)
+		db.Close()
+	})
+
+	t.Run("Create, get, and delete a board", func(t *testing.T) {
+		testBoard := NewTestBoard(testUser.Id)
+		assert.NoError(t, boardRepo.CreateBoard(context.Background(), testBoard))
+		board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
+		assert.NoError(t, err)
+		assert.Equal(t, testBoard.UserId, board.UserId)
+		assert.NoError(t, boardRepo.DeleteBoard(context.Background(), testBoard.Id))
+	})
+
+	t.Run("Get board that does not exist", func(t *testing.T) {
+		randUUID := uuid.New()
+		board, err := boardRepo.GetBoard(context.Background(), randUUID)
+		assert.Empty(t, board)
+		assert.ErrorIs(t, err, ErrBoardDoesNotExist)
+	})
+
+	t.Run("Add a user to a board", func(t *testing.T) {
+		testBoard := NewTestBoard(testUser.Id)
+		userToInsert := []uuid.UUID{testUser.Id}
+		assert.NoError(t, boardRepo.CreateBoard(context.Background(), testBoard))
+		assert.NoError(t, boardRepo.InsertUsers(context.Background(), testBoard.Id, userToInsert))
+		board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
+		assert.NoError(t, err)
+		assert.Equal(t, testBoard.UserId, board.Users[0].Id)
+		err = boardRepo.DeleteBoard(context.Background(), testBoard.Id)
 		assert.NoError(t, err)
 	})
 
-	t.Run("Add user to board", func(t *testing.T) {
-		err := boardRepo.AddUsers(context.Background(), testBoard.Id, []uuid.UUID{testUser.Id})
-		assert.NoError(t, err)
-	})
-
-	t.Run("Get board", func(t *testing.T) {
-		t.Run("board exists", func(t *testing.T) {
-			t.Log(testBoard.Id)
-			board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
-			assert.NoError(t, err)
-			assert.Equal(t, testBoard.Name, board.Name)
-			if !assert.NotEmpty(t, board.Users) {
-				t.FailNow()
-			}
-			assert.Equal(t, board.Users[0].Id, testUser.Id)
-		})
-
-		t.Run("board does not exist", func(t *testing.T) {
-			randUUID := uuid.New()
-			board, err := boardRepo.GetBoard(context.Background(), randUUID)
-			assert.Empty(t, board)
-			assert.ErrorIs(t, err, ErrBoardDoesNotExist)
-		})
-	})
-
-	t.Run("Delete board", func(t *testing.T) {
-		err := boardRepo.DeleteBoard(context.Background(), testBoard.Id)
-		assert.NoError(t, err)
-	})
-
-	t.Run("Get boards", func(t *testing.T) {
-		t.Run("no boards belong to user", func(t *testing.T) {
-			boards, err := boardRepo.GetBoardsByUserId(context.Background(), testUser.Id)
+	t.Run("List boards by user", func(t *testing.T) {
+		t.Run("user does not have any boards", func(t *testing.T) {
+			boards, err := boardRepo.ListBoardsByUser(context.Background(), testUser.Id)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(boards))
 		})
 
-		t.Run("5 boards belong to user", func(t *testing.T) {
+		t.Run("user has 5 boards", func(t *testing.T) {
 			boardsToCreate := 5
 			for i := 0; i < boardsToCreate; i++ {
 				err := boardRepo.CreateBoard(context.Background(), NewTestBoard(testUser.Id))
 				assert.NoError(t, err, "expected to create 5 test boards")
 			}
-			boards, err := boardRepo.GetBoardsByUserId(context.Background(), testUser.Id)
+			boards, err := boardRepo.ListBoardsByUser(context.Background(), testUser.Id)
 			assert.NoError(t, err)
 			assert.Equal(t, boardsToCreate, len(boards))
 			for _, board := range boards {
-				boardRepo.DeleteBoard(context.Background(), board.Id)
+				fmt.Println(board.Id)
+				assert.NoError(t, boardRepo.DeleteBoard(context.Background(), board.Id))
 			}
 		})
 	})
-
-	cleanUpTestUser(t, userRepo, testUser.Id)
 }
 
 func setUpTestUser(t *testing.T, userRepo user.Repository) models.User {

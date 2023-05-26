@@ -53,7 +53,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("Get boards", func(t *testing.T) {
-		boards, err := boardService.GetBoardsByUserId(context.Background(), userId)
+		boards, err := boardService.ListBoardsByUser(context.Background(), userId)
 		assert.NoError(t, err)
 		assert.Greater(t, len(boards), 0)
 	})

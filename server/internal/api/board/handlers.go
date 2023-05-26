@@ -78,7 +78,7 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	boards, err := api.boardService.GetBoardsByUserId(ctx, userId)
+	boards, err := api.boardService.ListBoardsByUser(ctx, userId)
 	if err != nil {
 		logger.Errorf("handler: failed to get boards by user ID: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)

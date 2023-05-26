@@ -17,7 +17,7 @@ var (
 type Service interface {
 	CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error)
 	GetBoard(ctx context.Context, boardId string) (models.Board, error)
-	GetBoardsByUserId(ctx context.Context, userId string) ([]models.Board, error)
+	ListBoardsByUser(ctx context.Context, userId string) ([]models.Board, error)
 }
 
 type service struct {
@@ -32,7 +32,7 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 	}
 	// create board name if none provided
 	if input.Name == nil {
-		boards, err := s.repo.GetBoardsByUserId(ctx, userId)
+		boards, err := s.repo.ListBoardsByUser(ctx, userId)
 		if err != nil {
 			return models.Board{}, fmt.Errorf("service: failed to get existing boards when creating board: %w", err)
 		}
@@ -76,12 +76,12 @@ func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, e
 	return board, nil
 }
 
-func (s *service) GetBoardsByUserId(ctx context.Context, userId string) ([]models.Board, error) {
+func (s *service) ListBoardsByUser(ctx context.Context, userId string) ([]models.Board, error) {
 	userIdUUID, err := uuid.Parse(userId)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
 	}
-	boards, err := s.repo.GetBoardsByUserId(ctx, userIdUUID)
+	boards, err := s.repo.ListBoardsByUser(ctx, userIdUUID)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
 	}

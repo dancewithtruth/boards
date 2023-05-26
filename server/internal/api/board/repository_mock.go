@@ -29,7 +29,7 @@ func (r *mockRepository) GetBoard(ctx context.Context, boardId uuid.UUID) (model
 	return models.Board{}, ErrBoardDoesNotExist
 }
 
-func (r *mockRepository) GetBoardsByUserId(ctx context.Context, userId uuid.UUID) ([]models.Board, error) {
+func (r *mockRepository) ListBoardsByUser(ctx context.Context, userId uuid.UUID) ([]models.Board, error) {
 	boards := []models.Board{}
 	for _, board := range r.boards {
 		if userId == board.UserId {
@@ -44,7 +44,7 @@ func (r *mockRepository) DeleteBoard(ctx context.Context, boardId uuid.UUID) err
 	return nil
 }
 
-func (r *mockRepository) AddUsers(ctx context.Context, boardId uuid.UUID, userIds []uuid.UUID) error {
+func (r *mockRepository) InsertUsers(ctx context.Context, boardId uuid.UUID, userIds []uuid.UUID) error {
 	for _, userId := range userIds {
 		id := uuid.New()
 		boardUser := BoardUser{
