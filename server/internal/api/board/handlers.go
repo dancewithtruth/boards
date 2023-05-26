@@ -24,13 +24,13 @@ type CreateBoardInput struct {
 }
 
 type BoardResponse struct {
-	Id          uuid.UUID      `json:"id"`
-	Name        *string        `json:"name"`
-	Description *string        `json:"description"`
-	UserId      uuid.UUID      `json:"user_id"`
-	Users       []UserResponse `json:"users"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+	Id          uuid.UUID           `json:"id"`
+	Name        *string             `json:"name"`
+	Description *string             `json:"description"`
+	UserId      uuid.UUID           `json:"user_id"`
+	Members     []BoardUserResponse `json:"members"`
+	CreatedAt   time.Time           `json:"created_at"`
+	UpdatedAt   time.Time           `json:"updated_at"`
 }
 
 func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
@@ -84,7 +84,9 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
-	endpoint.WriteWithStatus(w, http.StatusCreated, boards)
+	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
+		Boards []BoardResponse `json:"boards"`
+	}{toBoardsResponse(boards)})
 }
 
 func toBoardResponse(board models.Board) BoardResponse {
@@ -98,22 +100,26 @@ func toBoardResponse(board models.Board) BoardResponse {
 	}
 }
 
-type UserResponse struct {
-	Id    uuid.UUID `json:"id"`
-	Name  string    `json:"name"`
-	Email *string   `json:"email"`
+type BoardUserResponse struct {
+	Id        uuid.UUID   `json:"id"`
+	Role      string      `json:"name"`
+	User      models.User `json:"user"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
 }
 
-func toBoardsResponse(boards []models.Board) BoardsResponse {
+func toBoardsResponse(boards []models.Board) []BoardResponse {
 	boardResponses := make([]BoardResponse, len(boards))
 	fmt.Println("boards", boards)
 	for i, board := range boards {
-		var users []UserResponse
+		var users []BoardUserResponse
 		for _, user := range board.Users {
-			user := UserResponse{
-				Id:    user.Id,
-				Name:  user.Name,
-				Email: user.Email,
+			user := BoardUserResponse{
+				Id:        user.Id,
+				Role:      string(user.Role),
+				User:      user.User,
+				CreatedAt: user.CreatedAt,
+				UpdatedAt: user.UpdatedAt,
 			}
 			users = append(users, user)
 		}
@@ -122,12 +128,10 @@ func toBoardsResponse(boards []models.Board) BoardsResponse {
 			Name:        board.Name,
 			Description: board.Description,
 			UserId:      board.UserId,
-			Users:       users,
+			Members:     users,
 			CreatedAt:   board.CreatedAt,
 			UpdatedAt:   board.UpdatedAt,
 		}
 	}
-	return BoardsResponse{
-		Boards: boardResponses,
-	}
+	return boardResponses
 }

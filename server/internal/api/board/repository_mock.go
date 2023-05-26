@@ -7,14 +7,9 @@ import (
 	"github.com/google/uuid"
 )
 
-type BoardUser struct {
-	BoardId uuid.UUID
-	UserId  uuid.UUID
-}
-
 type mockRepository struct {
 	boards        map[uuid.UUID]models.Board
-	boardsToUsers map[uuid.UUID]BoardUser
+	boardsToUsers map[uuid.UUID]models.BoardUser
 }
 
 func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) error {
@@ -44,20 +39,13 @@ func (r *mockRepository) DeleteBoard(ctx context.Context, boardId uuid.UUID) err
 	return nil
 }
 
-func (r *mockRepository) InsertUsers(ctx context.Context, boardId uuid.UUID, userIds []uuid.UUID) error {
-	for _, userId := range userIds {
-		id := uuid.New()
-		boardUser := BoardUser{
-			BoardId: boardId,
-			UserId:  userId,
-		}
-		r.boardsToUsers[id] = boardUser
-	}
+func (r *mockRepository) InsertUser(ctx context.Context, user models.BoardUser) error {
+	r.boardsToUsers[user.Id] = user
 	return nil
 }
 
 func NewMockRepository() *mockRepository {
 	boards := make(map[uuid.UUID]models.Board)
-	boardsToUsers := make(map[uuid.UUID]BoardUser)
+	boardsToUsers := make(map[uuid.UUID]models.BoardUser)
 	return &mockRepository{boards, boardsToUsers}
 }

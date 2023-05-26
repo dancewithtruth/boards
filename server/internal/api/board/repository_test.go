@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/models"
@@ -25,10 +26,17 @@ func TestRepository(t *testing.T) {
 
 	t.Run("Create, get, and delete a board", func(t *testing.T) {
 		testBoard := NewTestBoard(testUser.Id)
+		// create board
 		assert.NoError(t, boardRepo.CreateBoard(context.Background(), testBoard))
+
+		// get board
 		board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
+		fmt.Println(board)
 		assert.NoError(t, err)
 		assert.Equal(t, testBoard.UserId, board.UserId)
+		assert.Nil(t, board.Users, "expected board to not have any associated users")
+
+		// delete board
 		assert.NoError(t, boardRepo.DeleteBoard(context.Background(), testBoard.Id))
 	})
 
@@ -41,12 +49,24 @@ func TestRepository(t *testing.T) {
 
 	t.Run("Add a user to a board", func(t *testing.T) {
 		testBoard := NewTestBoard(testUser.Id)
-		userToInsert := []uuid.UUID{testUser.Id}
+		// insert user into new board
+		userToInsert := models.BoardUser{
+			Id:        uuid.New(),
+			BoardId:   testBoard.Id,
+			UserId:    testUser.Id,
+			Role:      models.BoardUserRoleMember,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		}
 		assert.NoError(t, boardRepo.CreateBoard(context.Background(), testBoard))
-		assert.NoError(t, boardRepo.InsertUsers(context.Background(), testBoard.Id, userToInsert))
+		assert.NoError(t, boardRepo.InsertUser(context.Background(), userToInsert))
+
+		// check for inserted user in board's Users field
 		board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
 		assert.NoError(t, err)
 		assert.Equal(t, testBoard.UserId, board.Users[0].Id)
+		//TODO: Check for role
+		// delete board
 		err = boardRepo.DeleteBoard(context.Background(), testBoard.Id)
 		assert.NoError(t, err)
 	})
