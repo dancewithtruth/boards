@@ -33,7 +33,7 @@ const Sidebar = () => {
     <div className="fixed top-h-16 left-0 bg-base-100 shadow-md w-48 z-40" style={{ height: `calc(100vh - 4rem)` }}>
       <div className="flex flex-col items-center justify-between h-full py-8">
         <div className="flex flex-col items-center w-full">
-          <p className="text-gray-500 text-sm">Collaborators</p>
+          <p className="text-gray-700 text-md font-bold">Collaborators</p>
           <div
             className="overflow-y-auto max-h-[500px] w-full p-6"
             style={{ background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1))' }}

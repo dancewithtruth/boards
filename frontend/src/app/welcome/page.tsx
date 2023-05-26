@@ -13,7 +13,7 @@ const Welcome = () => {
         <div className="max-w-md">
           <h1 className="text-5xl font-bold">{`Hi ${user?.name || 'there'}!`}</h1>
           <p className="py-6">
-            {`Boards is a live collaboration tool focused on delivering smooth and efficient team retrospectives.`}
+            {`Boards is a live collaboration tool focused on making team retrospectives fast and simple.`}
           </p>
           <div className="flex justify-center space-x-4">
             <a href="https://github.com/Wave-95/boards" target="_blank" className="btn btn-secondary btn-outline">

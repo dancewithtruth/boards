@@ -10,7 +10,7 @@ interface BoardroomCardProps {
 
 const BoardroomCard: React.FC<BoardroomCardProps> = ({ title, description, createdAt }) => {
   return (
-    <div className="bg-base-200 shadow-sm rounded-md p-4 h-[200px] w-[300px] flex flex-col justify-evenly">
+    <div className="bg-base-200 shadow-sm rounded-md p-4 h-[200px] w-[300px] flex flex-col justify-evenly transition-all duration-200 hover:-translate-y-1 hover:outline cursor-pointer">
       <div className="mb-2 flex justify-between">
         <div>
           <p className="text-xs text-gray-400">Board Name</p>

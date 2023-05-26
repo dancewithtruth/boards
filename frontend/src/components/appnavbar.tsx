@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers/user';
 import avatar from 'gradient-avatar';
 import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import { FaChevronDown } from 'react-icons/fa';
 
 const AppNavbar = () => {
   const {
@@ -37,26 +38,32 @@ const AppNavbar = () => {
                 <Link href="/dashboard" className="btn btn-primary btn-sm">
                   Dashboard
                 </Link>
-                <div className="relative dropdown dropdown-end">
-                  <button className="btn btn-ghost btn-circle avatar">
-                    <div className="w-10 rounded-full">
-                      <img src={dataUri} alt="SVG Image" />
-                    </div>
-                  </button>
-                  <ul className="absolute right-0 mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
-                    <li>
-                      <a className="flex items-center justify-between">
-                        Profile
-                        <span className="badge ml-2">New</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a>Settings</a>
-                    </li>
-                    <li>
-                      <a onClick={handleLogout}>Logout</a>
-                    </li>
-                  </ul>
+                <div className="dropdown dropdown-end z-51">
+                  <div tabIndex={0} className="btn btn-ghost normal-case space-x-2">
+                    <button className="rounded-full avatar">
+                      <div className="w-10 rounded-full">
+                        <img src={dataUri} alt="SVG Image" />
+                      </div>
+                    </button>
+                    <span>Victor</span>
+                    <FaChevronDown />
+                  </div>
+                  <div className="right-0 mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
+                    <ul className="menu menu-compact gap-1 p-3">
+                      <li>
+                        <button className="flex items-center justify-between">
+                          Profile
+                          <span className="badge ml-2">New</span>
+                        </button>
+                      </li>
+                      <li>
+                        <button>Settings</button>
+                      </li>
+                      <li>
+                        <button onClick={handleLogout}>Logout</button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </>
             ) : (
