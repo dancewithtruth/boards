@@ -1,7 +1,13 @@
 import Board from '@/components/board';
 import NewBoardForm from '@/components/forms/newboard';
 import ConfiguredToastContainer from '@/components/toastcontainer';
+import { Metadata } from 'next';
 import { FaPlus } from 'react-icons/fa';
+
+export const metadata: Metadata = {
+  title: 'Dashboard',
+  description: 'Boards is a live collaboration tool aimed to increase your productivity.',
+};
 
 const Dashboard = () => {
   return (
