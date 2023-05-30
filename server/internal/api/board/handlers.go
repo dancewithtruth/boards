@@ -60,7 +60,6 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleGetBoard returns a single board along with a list of associated members
-
 func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)

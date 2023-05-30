@@ -162,6 +162,8 @@ func ToBoardWithMembersDTO(rows []BoardAndUser) []BoardWithMembersDTO {
 					CreatedAt: row.BoardMembership.CreatedAt,
 					UpdatedAt: row.BoardMembership.UpdatedAt,
 				},
+				CreatedAt: row.User.CreatedAt,
+				UpdatedAt: row.User.UpdatedAt,
 			}
 			sliceIndex := boardIdToListIndex[row.Board.Id]
 			itemWithNewMember := list[sliceIndex]
