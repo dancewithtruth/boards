@@ -2,6 +2,7 @@ package board
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -11,6 +12,8 @@ import (
 )
 
 var (
+	ErrInvalidBoardId = errors.New("Board ID not in UUID format")
+
 	defaultBoardDescription = "This is a default description for the board. Feel free to customize it and add relevant information about your board."
 )
 
@@ -89,7 +92,7 @@ func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, e
 func (s *service) GetBoardWithMembers(ctx context.Context, boardId string) (BoardWithMembersDTO, error) {
 	boardIdUUID, err := uuid.Parse(boardId)
 	if err != nil {
-		return BoardWithMembersDTO{}, fmt.Errorf("service: issue parsing boardId into UUID: %w", err)
+		return BoardWithMembersDTO{}, ErrInvalidBoardId
 	}
 	rows, err := s.repo.GetBoardAndUsers(ctx, boardIdUUID)
 	if err != nil {

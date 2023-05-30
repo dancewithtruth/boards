@@ -2,6 +2,7 @@ package board
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
@@ -16,6 +17,7 @@ const (
 	ErrMsgInternalServer = "Internal server error"
 	ErrMsgInvalidToken   = "Invalid authentication token"
 	ErrMsgBoardNotFound  = "Board not found"
+	ErrMsgInvalidBoardId = "Provided invalid board ID. Please ensure board ID is in UUID format"
 )
 
 // HandleCreateBoard is the handler for creating a single board. It requires a user ID
@@ -66,6 +68,10 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 	boardId := chi.URLParam(r, "boardId")
 	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardId)
 	if err != nil {
+		if errors.Is(err, ErrInvalidBoardId) {
+			endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardId)
+			return
+		}
 		logger.Errorf("handler: failed to get board by board ID: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
