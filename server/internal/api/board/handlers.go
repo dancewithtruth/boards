@@ -97,15 +97,24 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 	// get userId from context
 	userId := middleware.UserIdFromContext(ctx)
 
-	boards, err := api.boardService.ListOwnedBoardsWithMembers(ctx, userId)
+	// TODO: Make concurrent
+	ownedBoards, err := api.boardService.ListOwnedBoardsWithMembers(ctx, userId)
 	if err != nil {
-		logger.Errorf("handler: failed to get boards by user ID: %v", err)
+		logger.Errorf("handler: failed to get owned boards by user ID: %v", err)
+		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		return
+	}
+
+	sharedBoards, err := api.boardService.ListSharedBoardsWithMembers(ctx, userId)
+	if err != nil {
+		logger.Errorf("handler: failed to get shared boards by user ID: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
 	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
-		Boards []BoardWithMembersDTO `json:"boards"`
-	}{Boards: boards})
+		Owned  []BoardWithMembersDTO `json:"owned"`
+		Shared []BoardWithMembersDTO `json:"shared"`
+	}{Owned: ownedBoards, Shared: sharedBoards})
 }
 
 // Inputs

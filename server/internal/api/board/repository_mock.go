@@ -43,6 +43,11 @@ func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid
 	return nil, nil
 }
 
+func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error) {
+	// TODO: mock this out
+	return nil, nil
+}
+
 func (r *mockRepository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
 	// TODO: mock this out
 	return nil

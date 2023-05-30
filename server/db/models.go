@@ -21,7 +21,7 @@ type BoardInvite struct {
 	ID        pgtype.UUID
 	UserID    pgtype.UUID
 	BoardID   pgtype.UUID
-	Status    string
+	Status    pgtype.Text
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }

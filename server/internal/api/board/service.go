@@ -22,6 +22,7 @@ type Service interface {
 	GetBoard(ctx context.Context, boardId string) (models.Board, error)
 	GetBoardWithMembers(ctx context.Context, boardId string) (BoardWithMembersDTO, error)
 	ListOwnedBoardsWithMembers(ctx context.Context, userId string) ([]BoardWithMembersDTO, error)
+	ListSharedBoardsWithMembers(ctx context.Context, userId string) ([]BoardWithMembersDTO, error)
 }
 
 type service struct {
@@ -122,6 +123,21 @@ func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userId string)
 		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
 	}
 	rows, err := s.repo.ListOwnedBoardAndUsers(ctx, userIdUUID)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
+	}
+	// transform rows into DTO
+	list := ToBoardWithMembersDTO(rows)
+	return list, nil
+}
+
+// ListSharedBoardsWithMembers returns a list of boards that belong to a user along with a list of board members
+func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userId string) ([]BoardWithMembersDTO, error) {
+	userIdUUID, err := uuid.Parse(userId)
+	if err != nil {
+		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
+	}
+	rows, err := s.repo.ListSharedBoardAndUsers(ctx, userIdUUID)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
 	}

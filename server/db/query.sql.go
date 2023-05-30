@@ -48,7 +48,7 @@ type CreateBoardInviteParams struct {
 	ID        pgtype.UUID
 	UserID    pgtype.UUID
 	BoardID   pgtype.UUID
-	Status    string
+	Status    pgtype.Text
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
 }
@@ -125,6 +125,7 @@ SELECT boards.id, boards.name, boards.description, boards.user_id, boards.create
 LEFT JOIN board_memberships on board_memberships.board_id = boards.id
 LEFT JOIN users on board_memberships.user_id = users.id
 WHERE boards.id = $1
+ORDER BY boards.created_at DESC
 `
 
 type GetBoardAndUsersRow struct {
@@ -178,6 +179,7 @@ SELECT boards.id, boards.name, boards.description, boards.user_id, boards.create
 LEFT JOIN board_memberships on board_memberships.board_id = boards.id
 LEFT JOIN users on board_memberships.user_id = users.id
 WHERE boards.user_id = $1
+ORDER BY boards.created_at DESC
 `
 
 type ListOwnedBoardAndUsersRow struct {
@@ -229,6 +231,7 @@ func (q *Queries) ListOwnedBoardAndUsers(ctx context.Context, userID pgtype.UUID
 const listOwnedBoards = `-- name: ListOwnedBoards :many
 SELECT id, name, description, user_id, created_at, updated_at FROM boards
 WHERE boards.user_id = $1
+ORDER BY boards.created_at DESC
 `
 
 func (q *Queries) ListOwnedBoards(ctx context.Context, userID pgtype.UUID) ([]Board, error) {
@@ -247,6 +250,60 @@ func (q *Queries) ListOwnedBoards(ctx context.Context, userID pgtype.UUID) ([]Bo
 			&i.UserID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listSharedBoardAndUsers = `-- name: ListSharedBoardAndUsers :many
+SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
+LEFT JOIN board_memberships on board_memberships.board_id = boards.id
+LEFT JOIN users on board_memberships.user_id = users.id
+WHERE board_memberships.user_id = $1
+ORDER BY board_memberships.created_at DESC
+`
+
+type ListSharedBoardAndUsersRow struct {
+	Board           Board
+	User            User
+	BoardMembership BoardMembership
+}
+
+func (q *Queries) ListSharedBoardAndUsers(ctx context.Context, userID pgtype.UUID) ([]ListSharedBoardAndUsersRow, error) {
+	rows, err := q.db.Query(ctx, listSharedBoardAndUsers, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListSharedBoardAndUsersRow
+	for rows.Next() {
+		var i ListSharedBoardAndUsersRow
+		if err := rows.Scan(
+			&i.Board.ID,
+			&i.Board.Name,
+			&i.Board.Description,
+			&i.Board.UserID,
+			&i.Board.CreatedAt,
+			&i.Board.UpdatedAt,
+			&i.User.ID,
+			&i.User.Name,
+			&i.User.Email,
+			&i.User.Password,
+			&i.User.IsGuest,
+			&i.User.CreatedAt,
+			&i.User.UpdatedAt,
+			&i.BoardMembership.ID,
+			&i.BoardMembership.UserID,
+			&i.BoardMembership.BoardID,
+			&i.BoardMembership.Role,
+			&i.BoardMembership.CreatedAt,
+			&i.BoardMembership.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

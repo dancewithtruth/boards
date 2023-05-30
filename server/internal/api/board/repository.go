@@ -23,6 +23,7 @@ type Repository interface {
 	GetBoardAndUsers(ctx context.Context, boardId uuid.UUID) ([]BoardAndUser, error)
 	ListOwnedBoards(ctx context.Context, userId uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error)
+	ListSharedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error)
 	CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error
 	CreateMembership(ctx context.Context, membership models.BoardMembership) error
 	DeleteBoard(ctx context.Context, boardId uuid.UUID) error
@@ -125,10 +126,34 @@ func (r *repository) ListOwnedBoards(ctx context.Context, boardId uuid.UUID) ([]
 	return list, nil
 }
 
-// ListOwnedBoardAndUsers returns a list of boards that a user owns along with each board's associated users
+// ListOwnedBoardAndUsers returns a list of boards that a user owns along with each board's associated members
 // The SQL query uses a left join so it is possible that a board can have nullable board users
 func (r *repository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error) {
 	rows, err := r.q.ListOwnedBoardAndUsers(ctx, pgtype.UUID{Bytes: userId, Valid: true})
+	if err != nil {
+		return nil, fmt.Errorf("repository: failed to list boards by user ID: %w", err)
+	}
+
+	// Convert db types into domain types
+	list := []BoardAndUser{}
+	for _, row := range rows {
+		item := BoardAndUser{
+			Board:           ToBoard(row.Board),
+			User:            ToUser(row.User),
+			BoardMembership: ToBoardMembership(row.BoardMembership),
+		}
+		if err != nil {
+			return nil, fmt.Errorf("repository: failed to transform db row to domain model: %w", err)
+		}
+		list = append(list, item)
+	}
+	return list, nil
+}
+
+// ListSharedBoardAndUsers returns a list of boards that a user belongs to along with a list of its associated members
+// The SQL query uses a left join so it is possible that a board can have nullable board users
+func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error) {
+	rows, err := r.q.ListSharedBoardAndUsers(ctx, pgtype.UUID{Bytes: userId, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("repository: failed to list boards by user ID: %w", err)
 	}
@@ -177,7 +202,7 @@ func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.Bo
 			ID:        pgtype.UUID{Bytes: invite.Id, Valid: true},
 			UserID:    pgtype.UUID{Bytes: invite.UserId, Valid: true},
 			BoardID:   pgtype.UUID{Bytes: invite.BoardId, Valid: true},
-			Status:    string(invite.Status),
+			Status:    pgtype.Text{String: string(invite.Status), Valid: true},
 			CreatedAt: pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
 			UpdatedAt: pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
 		}
