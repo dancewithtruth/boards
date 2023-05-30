@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import { useUser } from '@/providers/user';
 import avatar from 'gradient-avatar';
+import Avatar from './avatar';
 
 const Sidebar = () => {
   const { state } = useUser();
@@ -40,13 +41,9 @@ const Sidebar = () => {
           >
             <div className="flex flex-col items-start space-y-3">
               {boardMembers.map(({ id, name }) => {
-                const avatarSVG = avatar(id);
-                const dataUri = `data:image/svg+xml,${encodeURIComponent(avatarSVG)}`;
                 return (
                   <div key={id} className="flex space-x-2 items-center">
-                    <div className="w-8 h-8">
-                      <img className="w-full h-full rounded-full" src={dataUri} alt="Avatar" />
-                    </div>
+                    <Avatar id={id} />
                     <span className="text-sm text-gray-700">{name}</span>
                   </div>
                 );

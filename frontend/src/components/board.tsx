@@ -2,15 +2,18 @@ import React from 'react';
 import { FaEllipsisV } from 'react-icons/fa';
 import TimeAgo from './timeago';
 import { useRouter } from 'next/navigation';
+import MemberList from './memberlist';
+import { Member } from '../../helpers/api/boards';
 
 interface BoardroomCardProps {
   id: string;
   name: string;
   description: string;
+  members: Member[];
   createdAt: string;
 }
 
-const BoardroomCard: React.FC<BoardroomCardProps> = ({ id, name, description, createdAt }) => {
+const BoardroomCard: React.FC<BoardroomCardProps> = ({ id, name, description, members, createdAt }) => {
   const router = useRouter();
 
   const handleClick = () => {
@@ -18,10 +21,7 @@ const BoardroomCard: React.FC<BoardroomCardProps> = ({ id, name, description, cr
   };
 
   return (
-    <div
-      onClick={handleClick}
-      className="bg-base-200 shadow-sm rounded-md p-4 h-[200px] w-[300px] flex flex-col justify-evenly transition-all duration-200 hover:-translate-y-1 hover:outline cursor-pointer"
-    >
+    <div className="bg-base-100 shadow-sm rounded-md p-4 h-[225px] w-[300px] flex flex-col justify-evenly border-black border">
       <div className="mb-2 flex justify-between">
         <div>
           <p className="text-xs text-gray-400">Board Name</p>
@@ -51,7 +51,12 @@ const BoardroomCard: React.FC<BoardroomCardProps> = ({ id, name, description, cr
             Created <TimeAgo timestamp={createdAt} />
           </span>
         </div>
-        <button className="btn btn-secondary btn-sm btn-outline">View</button>
+        <button onClick={handleClick} className="btn btn-secondary btn-sm btn-outline">
+          Open
+        </button>
+      </div>
+      <div className="mt-2 overflow-x-auto">
+        <MemberList members={members} />
       </div>
     </div>
   );

@@ -47,7 +47,16 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 place-items-center">
             {ownedBoards.map(({ id, name, description, created_at, members }) => {
-              return <Board key={id} id={id} name={name} description={description} createdAt={created_at} />;
+              return (
+                <Board
+                  key={id}
+                  id={id}
+                  name={name}
+                  description={description}
+                  members={members}
+                  createdAt={created_at}
+                />
+              );
             })}
           </div>
         </div>
@@ -58,7 +67,16 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 place-items-center">
             {sharedBoards.map(({ id, name, description, created_at, members }) => {
-              return <Board key={id} id={id} name={name} description={description} createdAt={created_at} />;
+              return (
+                <Board
+                  key={id}
+                  id={id}
+                  name={name}
+                  description={description}
+                  members={members}
+                  createdAt={created_at}
+                />
+              );
             })}
           </div>
         </div>
