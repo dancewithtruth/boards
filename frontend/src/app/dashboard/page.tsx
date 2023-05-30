@@ -1,17 +1,32 @@
+'use client';
+
 import Board from '@/components/board';
 import NewBoardForm from '@/components/forms/newboard';
 import ConfiguredToastContainer from '@/components/toastcontainer';
-import { Metadata } from 'next';
 import { FaPlus } from 'react-icons/fa';
-
-export const metadata: Metadata = {
-  title: 'Dashboard',
-  description: 'Boards is a live collaboration tool aimed to increase your productivity.',
-};
+import { BoardWithMembers, getBoards } from '../../../helpers/api/boards';
+import Head from 'next/head';
+import { useEffect, useState } from 'react';
 
 const Dashboard = () => {
+  const [ownedBoards, setOwnedBoards] = useState<BoardWithMembers[]>([]);
+  const [sharedBoards, setSharedBoards] = useState<BoardWithMembers[]>([]);
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    const response = await getBoards();
+    setOwnedBoards(response.owned);
+    setSharedBoards(response.shared);
+    console.log(response);
+    //set response
+  };
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      <Head>
+        <title>Dashboard</title>
+      </Head>
       <ConfiguredToastContainer />
       <h1 className="text-4xl font-bold mt-10 mb-10">Dashboard</h1>
       <div>
@@ -31,12 +46,9 @@ const Dashboard = () => {
         <div className="divider"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 place-items-center">
-            <Board title={'First Board'} description={'My very first board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
+            {ownedBoards.map(({ id, name, description, created_at, members }) => {
+              return <Board key={id} id={id} name={name} description={description} createdAt={created_at} />;
+            })}
           </div>
         </div>
       </div>
@@ -45,14 +57,9 @@ const Dashboard = () => {
         <div className="divider"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 place-items-center">
-            <Board title={'First Board'} description={'My very first board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
-            <Board title={'Second Board'} description={'My second board'} createdAt={'2023-05-19 18:22:03.515'} />
+            {sharedBoards.map(({ id, name, description, created_at, members }) => {
+              return <Board key={id} id={id} name={name} description={description} createdAt={created_at} />;
+            })}
           </div>
         </div>
       </div>

@@ -35,7 +35,7 @@ const NewBoardForm = () => {
       const board = await createBoard({ name, description });
       toast.success('Board created!');
       //TODO: Reload get boards and redirect to new board
-      router.replace(`/boards/${board.id}`);
+      router.push(`/boards/${board.id}`);
       toast.info('Redirecting to new board...');
     } catch (error) {
       toast.error(String(error));

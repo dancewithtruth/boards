@@ -1,6 +1,6 @@
 'use client';
 
-import SignUpPanel from '../../components/signup';
+import SignUpPanel from '../../components/forms/signup';
 
 const Signup = () => {
   return (

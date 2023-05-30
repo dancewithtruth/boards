@@ -20,7 +20,7 @@ const AppNavbar = () => {
     dispatch({ type: 'set_is_authenticated', payload: false });
     dispatch({ type: 'set_user', payload: null });
     localStorage.removeItem(LOCAL_STORAGE_AUTH_TOKEN);
-    router.replace('/');
+    router.push('/');
   };
 
   return (
@@ -68,7 +68,9 @@ const AppNavbar = () => {
               </>
             ) : (
               <>
-                <button className="btn btn-secondary btn-outline">Sign in</button>
+                <Link href="/signin" className="btn btn-secondary btn-outline">
+                  Sign in
+                </Link>
                 <Link href="/signup" className="btn btn-primary">
                   Sign up
                 </Link>

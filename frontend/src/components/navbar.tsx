@@ -5,6 +5,7 @@ import avatar from 'gradient-avatar';
 import Link from 'next/link';
 import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
 import { useRouter } from 'next/navigation';
+import { FaChevronDown } from 'react-icons/fa';
 
 const Navbar = () => {
   const {
@@ -19,7 +20,7 @@ const Navbar = () => {
     dispatch({ type: 'set_is_authenticated', payload: false });
     dispatch({ type: 'set_user', payload: null });
     localStorage.removeItem(LOCAL_STORAGE_AUTH_TOKEN);
-    router.replace('/');
+    router.push('/');
   };
   return (
     <nav className="bg-base-100 shadow-md">
@@ -36,34 +37,39 @@ const Navbar = () => {
                 <Link href="/dashboard" className="btn btn-primary btn-sm">
                   Dashboard
                 </Link>
-                <div className="dropdown dropdown-end">
-                  <label tabIndex={0} className="btn btn-ghost btn-circle avatar">
-                    <div className="w-10 rounded-full">
-                      <img src={dataUri} alt="SVG Image" />
-                    </div>
-                  </label>
-                  <ul
-                    tabIndex={0}
-                    className="mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52"
-                  >
-                    <li>
-                      <a className="justify-between">
-                        Profile
-                        <span className="badge">New</span>
-                      </a>
-                    </li>
-                    <li>
-                      <a>Settings</a>
-                    </li>
-                    <li>
-                      <a onClick={handleLogout}>Logout</a>
-                    </li>
-                  </ul>
+                <div className="dropdown dropdown-end z-51">
+                  <div tabIndex={0} className="btn btn-ghost normal-case space-x-2">
+                    <button className="rounded-full avatar">
+                      <div className="w-10 rounded-full">
+                        <img src={dataUri} alt="SVG Image" />
+                      </div>
+                    </button>
+                    <span>{user?.name}</span>
+                    <FaChevronDown />
+                  </div>
+                  <div className="right-0 mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
+                    <ul className="menu menu-compact gap-1 p-3">
+                      <li>
+                        <button className="flex items-center justify-between">
+                          Profile
+                          <span className="badge ml-2">New</span>
+                        </button>
+                      </li>
+                      <li>
+                        <button>Settings</button>
+                      </li>
+                      <li>
+                        <button onClick={handleLogout}>Logout</button>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </>
             ) : (
               <>
-                <button className="btn btn-secondary btn-outline">Sign in</button>
+                <Link href="/signin" className="btn btn-secondary btn-outline">
+                  Sign in
+                </Link>
                 <Link href="/signup" className="btn btn-primary">
                   Sign up
                 </Link>

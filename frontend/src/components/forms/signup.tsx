@@ -3,10 +3,10 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
-import { createUser } from '../../helpers/api/users';
-import ConfiguredToastContainer from './toastcontainer';
+import { createUser } from '../../../helpers/api/users';
+import ConfiguredToastContainer from '../toastcontainer';
 import { useUser } from '@/providers/user';
-import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import { LOCAL_STORAGE_AUTH_TOKEN } from '../../../constants';
 import Link from 'next/link';
 
 type SignUpPanelParams = {
@@ -43,7 +43,7 @@ const SignUpPanel = ({ isGuest = false }: SignUpPanelParams): JSX.Element => {
       localStorage.setItem(LOCAL_STORAGE_AUTH_TOKEN, response.jwt_token);
       dispatch({ type: 'set_user', payload: response.user });
       dispatch({ type: 'set_is_authenticated', payload: true });
-      router.replace('/welcome');
+      router.push('/welcome');
     } catch (error) {
       toast.error(String(error));
     } finally {

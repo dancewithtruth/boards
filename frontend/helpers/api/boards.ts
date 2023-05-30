@@ -15,9 +15,46 @@ export type BoardResponse = {
   updated_at: string;
 };
 
+export type GetBoardsResponse = {
+  owned: BoardWithMembers[];
+  shared: BoardWithMembers[];
+};
+
+export type BoardWithMembers = {
+  id: string;
+  name: string;
+  description: string;
+  user_id: boolean;
+  members: Member[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type Member = {
+  id: string;
+  name: string;
+  email: string;
+  membership: Membership;
+  created_at: string;
+  updated_at: string;
+};
+
+export type Membership = {
+  role: string;
+  added_at: string;
+  updated_at: string;
+};
+
+export type BoardsResponse = Array<BoardResponse>;
+
 export async function createBoard(params: CreateBoardParams): Promise<BoardResponse> {
-  const jwtToken = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
-  console.log(jwtToken)
+  const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
   const url = `${API_BASE_URL}/boards`;
-  return sendPostRequest<BoardResponse>(url, params, jwtToken);
+  return sendPostRequest<BoardResponse>(url, params, token);
+}
+
+export async function getBoards(): Promise<GetBoardsResponse> {
+  const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
+  const url = `${API_BASE_URL}/boards`;
+  return sendGetRequest<GetBoardsResponse>(url, token);
 }
