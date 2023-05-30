@@ -76,5 +76,5 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// write response
-	endpoint.WriteWithStatus(w, http.StatusCreated, user)
+	endpoint.WriteWithStatus(w, http.StatusOK, user)
 }

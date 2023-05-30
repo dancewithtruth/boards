@@ -111,7 +111,7 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
-	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
+	endpoint.WriteWithStatus(w, http.StatusOK, struct {
 		Owned  []BoardWithMembersDTO `json:"owned"`
 		Shared []BoardWithMembersDTO `json:"shared"`
 	}{Owned: ownedBoards, Shared: sharedBoards})
