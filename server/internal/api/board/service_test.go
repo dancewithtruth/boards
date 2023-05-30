@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/Wave-95/boards/server/internal/models"
+	"github.com/Wave-95/boards/server/internal/test"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -12,14 +13,16 @@ import (
 
 func TestService(t *testing.T) {
 	validator := validator.New()
-	mockBoardRepo := NewMockRepository()
+	testUser := test.NewUser()
+	mockUsers := make(map[uuid.UUID]models.User)
+	mockUsers[testUser.Id] = testUser
+	mockBoardRepo := NewMockRepository(mockUsers)
 	boardService := NewService(mockBoardRepo, validator)
 	assert.NotNil(t, boardService)
-	userId := uuid.New().String()
 	t.Run("Create board", func(t *testing.T) {
-		t.Run("with a board without name or description", func(t *testing.T) {
+		t.Run("without name or description", func(t *testing.T) {
 			input := CreateBoardInput{
-				UserId: userId,
+				UserId: testUser.Id.String(),
 			}
 			board, err := boardService.CreateBoard(context.Background(), input)
 			assert.NoError(t, err)
@@ -27,11 +30,11 @@ func TestService(t *testing.T) {
 			assert.Equal(t, defaultBoardDescription, *board.Description)
 		})
 
-		t.Run("with a board including name or description", func(t *testing.T) {
+		t.Run("with name or description", func(t *testing.T) {
 			customBoardName := "Custom Board Name"
 			customBoardDescription := "Custom board description"
 			input := CreateBoardInput{
-				UserId:      userId,
+				UserId:      testUser.Id.String(),
 				Name:        &customBoardName,
 				Description: &customBoardDescription,
 			}
@@ -52,8 +55,8 @@ func TestService(t *testing.T) {
 		assert.NotNil(t, board)
 	})
 
-	t.Run("Get boards", func(t *testing.T) {
-		boards, err := boardService.ListBoardsByUser(context.Background(), userId)
+	t.Run("List owned boards", func(t *testing.T) {
+		boards, err := boardService.ListOwnedBoards(context.Background(), testUser.Id.String())
 		assert.NoError(t, err)
 		assert.Greater(t, len(boards), 0)
 	})

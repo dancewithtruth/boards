@@ -2,13 +2,11 @@ package board
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
 	"github.com/Wave-95/boards/server/internal/middleware"
-	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/pkg/logger"
 	"github.com/google/uuid"
 )
@@ -21,16 +19,6 @@ type CreateBoardInput struct {
 	Name        *string `json:"name" validate:"omitempty,required,min=3,max=20"`
 	Description *string `json:"description" validate:"omitempty,required,min=3,max=100"`
 	UserId      string
-}
-
-type BoardResponse struct {
-	Id          uuid.UUID           `json:"id"`
-	Name        *string             `json:"name"`
-	Description *string             `json:"description"`
-	UserId      uuid.UUID           `json:"user_id"`
-	Members     []BoardUserResponse `json:"members"`
-	CreatedAt   time.Time           `json:"created_at"`
-	UpdatedAt   time.Time           `json:"updated_at"`
 }
 
 func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
@@ -62,11 +50,32 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
-	endpoint.WriteWithStatus(w, http.StatusCreated, toBoardResponse(board))
+	endpoint.WriteWithStatus(w, http.StatusCreated, board)
 }
 
-type BoardsResponse struct {
-	Boards []BoardResponse `json:"boards"`
+type OwnedBoardWithMembersDTO struct {
+	Id          uuid.UUID        `json:"id"`
+	Name        *string          `json:"name"`
+	Description *string          `json:"description"`
+	UserId      uuid.UUID        `json:"user_id"`
+	Members     []BoardMemberDTO `json:"members"`
+	CreatedAt   time.Time        `json:"created_at"`
+	UpdatedAt   time.Time        `json:"updated_at"`
+}
+
+type BoardMemberDTO struct {
+	Id         uuid.UUID     `json:"id"`
+	Name       string        `json:"name"`
+	Email      *string       `json:"email"`
+	Membership MembershipDTO `json:"membership"`
+	CreatedAt  time.Time     `json:"created_at"`
+	UpdatedAt  time.Time     `json:"updated_at"`
+}
+
+type MembershipDTO struct {
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"added_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
@@ -78,60 +87,13 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 
 	defer r.Body.Close()
 
-	boards, err := api.boardService.ListBoardsByUser(ctx, userId)
+	boards, err := api.boardService.ListOwnedBoardsWithMembers(ctx, userId)
 	if err != nil {
 		logger.Errorf("handler: failed to get boards by user ID: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
 	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
-		Boards []BoardResponse `json:"boards"`
-	}{toBoardsResponse(boards)})
-}
-
-func toBoardResponse(board models.Board) BoardResponse {
-	return BoardResponse{
-		Id:          board.Id,
-		Name:        board.Name,
-		Description: board.Description,
-		UserId:      board.UserId,
-		CreatedAt:   board.CreatedAt,
-		UpdatedAt:   board.UpdatedAt,
-	}
-}
-
-type BoardUserResponse struct {
-	Id        uuid.UUID   `json:"id"`
-	Role      string      `json:"name"`
-	User      models.User `json:"user"`
-	CreatedAt time.Time   `json:"created_at"`
-	UpdatedAt time.Time   `json:"updated_at"`
-}
-
-func toBoardsResponse(boards []models.Board) []BoardResponse {
-	boardResponses := make([]BoardResponse, len(boards))
-	fmt.Println("boards", boards)
-	for i, board := range boards {
-		var users []BoardUserResponse
-		for _, user := range board.Users {
-			user := BoardUserResponse{
-				Id:        user.Id,
-				Role:      string(user.Role),
-				User:      user.User,
-				CreatedAt: user.CreatedAt,
-				UpdatedAt: user.UpdatedAt,
-			}
-			users = append(users, user)
-		}
-		boardResponses[i] = BoardResponse{
-			Id:          board.Id,
-			Name:        board.Name,
-			Description: board.Description,
-			UserId:      board.UserId,
-			Members:     users,
-			CreatedAt:   board.CreatedAt,
-			UpdatedAt:   board.UpdatedAt,
-		}
-	}
-	return boardResponses
+		Boards []OwnedBoardWithMembersDTO `json:"boards"`
+	}{Boards: boards})
 }

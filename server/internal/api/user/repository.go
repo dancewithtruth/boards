@@ -27,6 +27,7 @@ type Repository interface {
 
 type repository struct {
 	db *db.DB
+	q  *db.Queries
 }
 
 func (r *repository) CreateUser(ctx context.Context, user models.User) error {
@@ -96,6 +97,7 @@ func (r *repository) DeleteUser(userId uuid.UUID) error {
 	return nil
 }
 
-func NewRepository(db *db.DB) Repository {
-	return &repository{db}
+func NewRepository(conn *db.DB) Repository {
+	q := db.New(conn)
+	return &repository{conn, q}
 }

@@ -17,7 +17,7 @@ var (
 type Service interface {
 	CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error)
 	GetBoard(ctx context.Context, boardId string) (models.Board, error)
-	ListBoardsByUser(ctx context.Context, userId string) ([]models.Board, error)
+	ListOwnedBoardsWithMembers(ctx context.Context, userId string) ([]OwnedBoardWithMembersDTO, error)
 }
 
 type service struct {
@@ -32,7 +32,7 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 	}
 	// create board name if none provided
 	if input.Name == nil {
-		boards, err := s.repo.ListBoardsByUser(ctx, userId)
+		boards, err := s.repo.ListOwnedBoardAndUsers(ctx, userId)
 		if err != nil {
 			return models.Board{}, fmt.Errorf("service: failed to get existing boards when creating board: %w", err)
 		}
@@ -76,18 +76,71 @@ func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, e
 	return board, nil
 }
 
-func (s *service) ListBoardsByUser(ctx context.Context, userId string) ([]models.Board, error) {
+// ListOwnedBoardsWithMembers returns a list of boards that belong to a user along with a list of board members
+func (s *service) ListOwnedBoards(ctx context.Context, userId string) ([]models.Board, error) {
 	userIdUUID, err := uuid.Parse(userId)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
 	}
-	boards, err := s.repo.ListBoardsByUser(ctx, userIdUUID)
+	boards, err := s.repo.ListOwnedBoards(ctx, userIdUUID)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
 	}
 	return boards, nil
 }
 
-func NewService(repo Repository, validator validator.Validate) Service {
+// ListOwnedBoardsWithMembers returns a list of boards that belong to a user along with a list of board members
+func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userId string) ([]OwnedBoardWithMembersDTO, error) {
+	userIdUUID, err := uuid.Parse(userId)
+	if err != nil {
+		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
+	}
+	rows, err := s.repo.ListOwnedBoardAndUsers(ctx, userIdUUID)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
+	}
+	// reformat rows into nested structure
+	list := []OwnedBoardWithMembersDTO{}
+	boardMap := make(map[uuid.UUID]int)
+	for _, row := range rows {
+		_, ok := boardMap[row.Board.Id]
+		if !ok {
+			// If board does not exist in slice, then append board into slice. Before append,
+			// must convert sqlc storage type into domain type
+			boardMap[row.Board.Id] = len(list)
+			newItem := OwnedBoardWithMembersDTO{
+				Id:          row.Board.Id,
+				Name:        row.Board.Name,
+				Description: row.Board.Description,
+				UserId:      row.Board.UserId,
+				Members:     []BoardMemberDTO{},
+				CreatedAt:   row.Board.CreatedAt,
+				UpdatedAt:   row.Board.UpdatedAt,
+			}
+			list = append(list, newItem)
+		}
+		// If user and board membership record exists, append to board members field
+		if row.BoardMembership != nil && row.User != nil {
+			newBoardMember := BoardMemberDTO{
+				Id:    row.User.Id,
+				Name:  row.User.Name,
+				Email: row.User.Email,
+				Membership: MembershipDTO{
+					Role:      string(row.BoardMembership.Role),
+					CreatedAt: row.BoardMembership.CreatedAt,
+					UpdatedAt: row.BoardMembership.UpdatedAt,
+				},
+			}
+			sliceIndex := boardMap[row.Board.Id]
+			itemWithNewMember := list[sliceIndex]
+			itemWithNewMember.Members = append(itemWithNewMember.Members, newBoardMember)
+			list[sliceIndex] = itemWithNewMember
+		}
+	}
+	return list, nil
+
+}
+
+func NewService(repo Repository, validator validator.Validate) *service {
 	return &service{repo: repo, validator: validator}
 }

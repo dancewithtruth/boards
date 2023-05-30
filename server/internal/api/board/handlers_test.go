@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/Wave-95/boards/server/internal/middleware"
+	"github.com/Wave-95/boards/server/internal/models"
+	"github.com/Wave-95/boards/server/internal/test"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -15,7 +17,10 @@ import (
 
 func TestHandleCreateBoard(t *testing.T) {
 	validator := validator.New()
-	mockBoardRepo := NewMockRepository()
+	testUser := test.NewUser()
+	mockUsers := make(map[uuid.UUID]models.User)
+	mockUsers[testUser.Id] = testUser
+	mockBoardRepo := NewMockRepository(mockUsers)
 	boardService := NewService(mockBoardRepo, validator)
 	boardAPI := NewAPI(boardService, validator)
 

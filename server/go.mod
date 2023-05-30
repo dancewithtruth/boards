@@ -2,6 +2,8 @@ module github.com/Wave-95/boards/server
 
 go 1.20
 
+require github.com/jackc/pgx v3.6.2+incompatible
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/georgysavva/scany/v2 v2.0.0 // indirect
@@ -23,6 +25,7 @@ require (
 	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/leodido/go-urn v1.2.3 // indirect
 	github.com/lib/pq v1.10.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
 	go.uber.org/atomic v1.7.0 // indirect

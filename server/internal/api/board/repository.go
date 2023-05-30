@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/Wave-95/boards/server/db"
 	"github.com/Wave-95/boards/server/internal/models"
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var (
@@ -19,180 +19,161 @@ var (
 type Repository interface {
 	CreateBoard(ctx context.Context, board models.Board) error
 	GetBoard(ctx context.Context, boardId uuid.UUID) (models.Board, error)
-	ListBoardsByUser(ctx context.Context, userId uuid.UUID) ([]models.Board, error)
+	ListOwnedBoards(ctx context.Context, userId uuid.UUID) ([]models.Board, error)
+	ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]OwnedBoardAndUser, error)
+	CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error
+	CreateMembership(ctx context.Context, membership models.BoardMembership) error
 	DeleteBoard(ctx context.Context, boardId uuid.UUID) error
-	InsertUser(ctx context.Context, user models.BoardUser) error
 }
 
 type repository struct {
 	db *db.DB
+	q  *db.Queries
 }
 
-func NewRepository(db *db.DB) Repository {
-	return &repository{db}
+func NewRepository(conn *db.DB) *repository {
+	q := db.New(conn)
+	return &repository{conn, q}
 }
 
 // CreateBoard creates a single board
 func (r *repository) CreateBoard(ctx context.Context, board models.Board) error {
-	sql := `
-	INSERT INTO boards 
-	(id, name, description, user_id, created_at, updated_at) 
-	VALUES ($1, $2, $3, $4, $5, $6)
-	`
-	_, err := r.db.Exec(
-		ctx,
-		sql,
-		board.Id,
-		board.Name,
-		board.Description,
-		board.UserId,
-		board.CreatedAt,
-		board.UpdatedAt,
-	)
+	// prepare board for insert
+	arg := db.CreateBoardParams{
+		ID:          pgtype.UUID{Bytes: board.Id, Valid: true},
+		Name:        pgtype.Text{String: *board.Name, Valid: true},
+		Description: pgtype.Text{String: *board.Description, Valid: true},
+		UserID:      pgtype.UUID{Bytes: board.UserId, Valid: true},
+		CreatedAt:   pgtype.Timestamp{Time: board.CreatedAt, Valid: true},
+		UpdatedAt:   pgtype.Timestamp{Time: board.UpdatedAt, Valid: true},
+	}
+	err := r.q.CreateBoard(ctx, arg)
 	if err != nil {
 		return fmt.Errorf("repository: failed to create board: %w", err)
 	}
 	return nil
 }
 
-// GetBoard returns a single board which contains a (possibly nil) list of associated users
+// GetBoard returns a single board
 func (r *repository) GetBoard(ctx context.Context, boardId uuid.UUID) (models.Board, error) {
-	// // First get the board from db and scan into board struct
-	// sql := `SELECT * FROM boards WHERE id = $1`
-	// var board models.Board
-	// err := pgxscan.Get(ctx, r.db, &board, sql, boardId)
-	// if err != nil {
-	// 	if errors.Is(err, pgx.ErrNoRows) {
-	// 		return models.Board{}, ErrBoardDoesNotExist
-	// 	}
-	// 	return models.Board{}, fmt.Errorf("repository: failed to get board by id: %w", err)
-	// }
-
-	// // Next get users associated with the board
-	// var users []models.User
-	// sql = `
-	// SELECT u.*
-	// FROM users u
-	// JOIN board_members ub ON u.id = ub.user_id
-	// WHERE ub.board_id = $1
-	// `
-	// err = pgxscan.Select(ctx, r.db, &users, sql, boardId)
-	// if err != nil {
-	// 	return models.Board{}, fmt.Errorf("repository: failed to get users belonging to board ID: %w", err)
-	// }
-
-	// // Finally attach users to board struct and return board
-	// board.Users = users
-	return models.Board{}, nil
+	row, err := r.q.GetBoard(ctx, pgtype.UUID{Bytes: boardId, Valid: true})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Board{}, ErrBoardDoesNotExist
+		}
+		return models.Board{}, fmt.Errorf("repository: failed to get board by id: %w", err)
+	}
+	// convert storage type to domain type
+	board := models.Board{
+		Id:          row.ID.Bytes,
+		Name:        &row.Name.String,
+		Description: &row.Description.String,
+		UserId:      row.UserID.Bytes,
+		CreatedAt:   row.CreatedAt.Time,
+		UpdatedAt:   row.UpdatedAt.Time,
+	}
+	return board, nil
 }
 
-// ListBoardsByUser returns a list of boards for a given user along with each board's associated users
-func (r *repository) ListBoardsByUser(ctx context.Context, userId uuid.UUID) ([]models.Board, error) {
-	// SQL statement joins many-to-many relation between users and boards. It returns a list of boards
-	// which each can have a list of associated users
-	sql := `
-	SELECT 
-	b.id AS "b.id", 
-	b.name AS "b.name", 
-	b.description AS "b.description", 
-	b.user_id AS "b.user_id", 
-	b.created_at AS "b.created_at", 
-	b.updated_at AS "b.updated_at", 
-
-	u.id AS "u.id",
-	u.name AS "u.name",
-	u.email AS "u.email",
-	u.is_guest AS "u.is_guest",
-	u.created_at AS "u.created_at",
-	u.updated_at AS "u.updated_at",
-
-	bu.id AS "bu.id",
-	bu.role AS "bu.role",
-	bu.created_at AS "bu.created_at",
-	bu.updated_at AS "bu.updated_at"
-
-	FROM boards b
-	LEFT JOIN board_members bu ON b.id = bu.board_id
-	LEFT JOIN users u ON bu.user_id = u.id
-	WHERE b.user_id = $1
-	`
-	// Not every board will have associated users, so a left join could result in null user values.
-	// Use a NullableUser type to guard against null values
-	type NullableUser struct {
-		Id        *uuid.UUID
-		Name      *string
-		Email     *string
-		IsGuest   *bool
-		CreatedAt *time.Time
-		UpdatedAt *time.Time
+// ListOwnedBoards returns a list of boards that belong to a user
+func (r *repository) ListOwnedBoards(ctx context.Context, boardId uuid.UUID) ([]models.Board, error) {
+	rows, err := r.q.ListOwnedBoards(ctx, pgtype.UUID{Bytes: boardId, Valid: true})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return []models.Board{}, ErrBoardDoesNotExist
+		}
+		return []models.Board{}, fmt.Errorf("repository: failed to list boards belonging to user ID: %w", err)
 	}
-	type NullableBoardUser struct {
-		Id        *uuid.UUID
-		Role      *string
-		CreatedAt *time.Time
-		UpdatedAt *time.Time
+
+	// convert storage type to domain type
+	list := []models.Board{}
+	for _, row := range rows {
+		board := models.Board{
+			Id:          row.ID.Bytes,
+			Name:        &row.Name.String,
+			Description: &row.Description.String,
+			UserId:      row.UserID.Bytes,
+			CreatedAt:   row.CreatedAt.Time,
+			UpdatedAt:   row.UpdatedAt.Time,
+		}
+		list = append(list, board)
 	}
-	type Row struct {
-		Board     models.Board      `db:"b"`
-		User      NullableUser      `db:"u"`
-		BoardUser NullableBoardUser `db:"bu"`
-	}
-	var rows []Row
-	err := pgxscan.Select(ctx, r.db, &rows, sql, userId)
+	return list, nil
+}
+
+type OwnedBoardAndUser struct {
+	Board           models.Board
+	BoardMembership *models.BoardMembership
+	User            *models.User
+}
+
+// ListOwnedBoardAndUsers returns a list of boards that a user owns along with each board's associated users
+// The SQL query uses a left join so it is possible that a board can have nullable board users
+func (r *repository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]OwnedBoardAndUser, error) {
+	rows, err := r.q.ListOwnedBoardAndUsers(ctx, pgtype.UUID{Bytes: userId, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("repository: failed to list boards by user ID: %w", err)
 	}
 
-	// There can be many rows for a single board depending on the number of associated users
-	// collapse the row results into a boards slice
-	var boards []models.Board
-	boardIdToIndex := make(map[uuid.UUID]int) // holds index of boards slice
+	// Convert storage types into domain types
+	list := []OwnedBoardAndUser{}
 	for _, row := range rows {
-		board := row.Board
-		user := row.User
-		boardUser := row.BoardUser
-		boardIndex, exists := boardIdToIndex[board.Id]
-		// grow the boards slice for every new board
-		if !exists {
-			boardIdToIndex[board.Id] = len(boards)
-			boards = append(boards, board)
+		// Board will always return
+		board := models.Board{
+			Id:          row.Board.ID.Bytes,
+			Name:        &row.Board.Name.String,
+			Description: &row.Board.Description.String,
+			UserId:      row.Board.UserID.Bytes,
+			CreatedAt:   row.Board.CreatedAt.Time,
+			UpdatedAt:   row.Board.UpdatedAt.Time,
 		}
-		// If user exists, convert NullableUser into User and append to the right board
-		// in the boards slice. The right board is located using the boardIdToIndex map
-		if user.Id != nil {
+		// Initialize item with default nil placeholders for BoardMembership and User
+		item := OwnedBoardAndUser{
+			Board:           board,
+			BoardMembership: nil,
+			User:            nil,
+		}
+		// Check if board membership or user exists, if so then attach to item
+		if row.BoardMembership.ID.Valid {
+			boardMembership := models.BoardMembership{
+				Id:        row.BoardMembership.ID.Bytes,
+				BoardId:   row.BoardMembership.UserID.Bytes,
+				UserId:    row.BoardMembership.UserID.Bytes,
+				Role:      models.BoardMembershipRole(row.BoardMembership.Role.String),
+				CreatedAt: row.BoardMembership.CreatedAt.Time,
+				UpdatedAt: row.BoardMembership.UpdatedAt.Time,
+			}
+			item.BoardMembership = &boardMembership
+		}
+		if row.User.ID.Valid {
 			user := models.User{
-				Id:        *row.User.Id,
-				Name:      *row.User.Name,
-				Email:     row.User.Email,
-				IsGuest:   *row.User.IsGuest,
-				CreatedAt: *row.User.CreatedAt,
-				UpdatedAt: *row.User.UpdatedAt,
+				Id:        row.User.ID.Bytes,
+				Name:      row.User.Name.String,
+				Email:     &row.User.Name.String,
+				Password:  &row.User.Name.String,
+				IsGuest:   row.User.IsGuest.Bool,
+				CreatedAt: row.User.CreatedAt.Time,
+				UpdatedAt: row.User.UpdatedAt.Time,
 			}
-			boardUser := models.BoardUser{
-				Id:        *boardUser.Id,
-				Role:      models.BoardUserRole(*boardUser.Role),
-				User:      user,
-				CreatedAt: *boardUser.CreatedAt,
-				UpdatedAt: *boardUser.UpdatedAt,
-			}
-			newBoard := boards[boardIndex]
-			newBoard.Users = append(board.Users, boardUser)
-			boards[boardIndex] = newBoard
+			item.User = &user
 		}
+		list = append(list, item)
 	}
-	return boards, nil
+	return list, nil
 }
 
+// DeleteBoard delets a single board
 func (r *repository) DeleteBoard(ctx context.Context, boardId uuid.UUID) error {
-	sql := `DELETE from boards WHERE id = $1`
-	_, err := r.db.Exec(ctx, sql, boardId)
+	err := r.q.DeleteBoard(ctx, pgtype.UUID{Bytes: boardId, Valid: true})
 	if err != nil {
 		return fmt.Errorf("repository: failed to delete board: %w", err)
 	}
 	return nil
 }
 
-func (r *repository) InsertInvites(ctx context.Context, invites []models.BoardInvite) error {
+// CreateBoardInvites uses a db tx to insert a list of board invites. It will rollback the tx if
+// any of them fail
+func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -202,52 +183,39 @@ func (r *repository) InsertInvites(ctx context.Context, invites []models.BoardIn
 			tx.Rollback(ctx)
 		}
 	}()
-	sql := `
-	INSERT INTO board_invites
-	(id, user_id, board_id, status, created_at, updated_at) 
-	VALUES ($1, $2, $3, $4, $5, $6)
-	`
+	qtx := r.q.WithTx(tx)
 	for _, invite := range invites {
-		_, err = tx.Exec(ctx, sql, invite.Id, invite.UserId, invite.BoardId, invite.Status, invite.CreatedAt, invite.UpdatedAt)
+		// prepare invite for insert
+		arg := db.CreateBoardInviteParams{
+			ID:        pgtype.UUID{Bytes: invite.Id, Valid: true},
+			UserID:    pgtype.UUID{Bytes: invite.UserId, Valid: true},
+			BoardID:   pgtype.UUID{Bytes: invite.BoardId, Valid: true},
+			Status:    string(invite.Status),
+			CreatedAt: pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
+			UpdatedAt: pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
+		}
+		err = qtx.CreateBoardInvite(ctx, arg)
 		if err != nil {
 			return err
 		}
 	}
-	err = tx.Commit(ctx)
-	if err != nil {
-		return err
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
-type BoardUserRole int
-
-const (
-	UserMember BoardUserRole = iota
-	UserAdmin
-)
-
-func (r BoardUserRole) String() string {
-	switch r {
-	case UserMember:
-		return "MEMBER"
-	case UserAdmin:
-		return "ADMIN"
-	default:
-		return "MEMBER"
+// CreateMembership creates a board membership--this is effecitvely adding a user to a board
+func (r *repository) CreateMembership(ctx context.Context, membership models.BoardMembership) error {
+	// prepare membership for insert
+	arg := db.CreateMembershipParams{
+		ID:        pgtype.UUID{Bytes: membership.Id, Valid: true},
+		UserID:    pgtype.UUID{Bytes: membership.UserId, Valid: true},
+		BoardID:   pgtype.UUID{Bytes: membership.BoardId, Valid: true},
+		Role:      pgtype.Text{String: string(membership.Role), Valid: true},
+		CreatedAt: pgtype.Timestamp{Time: membership.CreatedAt, Valid: true},
+		UpdatedAt: pgtype.Timestamp{Time: membership.UpdatedAt, Valid: true},
 	}
-}
-
-func (r *repository) InsertUser(ctx context.Context, user models.BoardUser) error {
-	sql := `
-	INSERT INTO board_members 
-	(id, user_id, board_id, role, created_at, updated_at) 
-	VALUES ($1, $2, $3, $4, $5, $6)
-	`
-	_, err := r.db.Exec(ctx, sql, user.Id, user.UserId, user.BoardId, user.Role, user.CreatedAt, user.UpdatedAt)
+	err := r.q.CreateMembership(ctx, arg)
 	if err != nil {
 		return fmt.Errorf("repository: failed to insert user: %w", err)
 	}
-
 	return nil
 }

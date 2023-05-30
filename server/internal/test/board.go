@@ -1,4 +1,4 @@
-package board
+package test
 
 import (
 	"time"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewTestBoard(userId uuid.UUID) models.Board {
+func NewBoard(userId uuid.UUID) models.Board {
 	name := "test board name"
 	description := "test board description"
 	board := models.Board{

@@ -30,15 +30,15 @@ func main() {
 		logger.Fatalf("Error loading config: %v", err)
 	}
 	// connect to db
-	db, err := db.Connect(cfg.DatabaseConfig)
+	conn, err := db.Connect(cfg.DatabaseConfig)
 	if err != nil {
 		logger.Fatalf("Error connecting to db: %v", err)
 	}
-	defer db.Close()
+	defer conn.Close()
 
 	// setup server
 	r := chi.NewRouter()
-	server := http.Server{Addr: ":8080", Handler: buildHandler(r, db, logger, validator, cfg)}
+	server := http.Server{Addr: ":8080", Handler: buildHandler(r, conn, logger, validator, cfg)}
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)

@@ -7,30 +7,28 @@ import (
 )
 
 type Board struct {
-	Id          uuid.UUID   `json:"id"`
-	Name        *string     `json:"name"`
-	Description *string     `json:"description"`
-	UserId      uuid.UUID   `json:"user_id"`
-	Users       []BoardUser `json:"users"`
-	CreatedAt   time.Time   `json:"created_at"`
-	UpdatedAt   time.Time   `json:"updated_at"`
+	Id          uuid.UUID `json:"id"`
+	Name        *string   `json:"name"`
+	Description *string   `json:"description"`
+	UserId      uuid.UUID `json:"user_id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-type BoardUserRole string
+type BoardMembershipRole string
 
 const (
-	BoardUserRoleMember BoardUserRole = "MEMBER"
-	BoardUserRoleAdmin  BoardUserRole = "ADMIN"
+	RoleMember BoardMembershipRole = "MEMBER"
+	RoleAdmin  BoardMembershipRole = "ADMIN"
 )
 
-type BoardUser struct {
-	Id        uuid.UUID     `json:"id"`
-	BoardId   uuid.UUID     `json:"board_id"`
-	UserId    uuid.UUID     `json:"user_id"`
-	User      User          `json:"user"`
-	Role      BoardUserRole `json:"role"`
-	CreatedAt time.Time     `json:"created_at"`
-	UpdatedAt time.Time     `json:"updated_at"`
+type BoardMembership struct {
+	Id        uuid.UUID           `json:"id"`
+	BoardId   uuid.UUID           `json:"board_id"`
+	UserId    uuid.UUID           `json:"user_id"`
+	Role      BoardMembershipRole `json:"role"`
+	CreatedAt time.Time           `json:"created_at"`
+	UpdatedAt time.Time           `json:"updated_at"`
 }
 
 type BoardInviteStatus string
