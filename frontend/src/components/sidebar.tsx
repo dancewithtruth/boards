@@ -1,29 +1,16 @@
 'use client';
-import { useState } from 'react';
 import { useUser } from '@/providers/user';
-import avatar from 'gradient-avatar';
 import Avatar from './avatar';
+import { useBoard } from '@/providers/board';
 
 const Sidebar = () => {
-  const { state } = useUser();
-
-  const boardMembers = [
-    { id: 'member1', name: 'Victor Djokovich' },
-    { id: 'member2', name: 'Alice' },
-    { id: 'member3', name: 'Bob' },
-    { id: 'member4', name: 'Charlie' },
-    { id: 'member5', name: 'David' },
-    { id: 'member6', name: 'Eva' },
-    { id: 'member7', name: 'Frank' },
-    { id: 'member8', name: 'Grace' },
-    { id: 'member9', name: 'Henry' },
-    { id: 'member10', name: 'Isabel' },
-    { id: 'member11', name: 'Jack' },
-    { id: 'member12', name: 'Karen' },
-    { id: 'member13', name: 'Liam' },
-    { id: 'member14', name: 'Mia' },
-    { id: 'member15', name: 'Nora' },
-  ];
+  const {
+    state: { user },
+  } = useUser();
+  const {
+    state: { board },
+    dispatch,
+  } = useBoard();
 
   const onlineCount = 3;
   const totalAccessCount = 5;
@@ -34,13 +21,13 @@ const Sidebar = () => {
     <div className="fixed top-h-16 left-0 bg-base-100 shadow-md w-48 z-40" style={{ height: `calc(100vh - 4rem)` }}>
       <div className="flex flex-col items-center justify-between h-full py-8">
         <div className="flex flex-col items-center w-full">
-          <p className="text-gray-700 text-md font-bold">Collaborators</p>
+          <p className="text-gray-700 text-md font-bold">Members</p>
           <div
             className="overflow-y-auto max-h-[500px] w-full p-6"
             style={{ background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1))' }}
           >
             <div className="flex flex-col items-start space-y-3">
-              {boardMembers.map(({ id, name }) => {
+              {board?.members.map(({ id, name }) => {
                 return (
                   <div key={id} className="flex space-x-2 items-center">
                     <Avatar id={id} />

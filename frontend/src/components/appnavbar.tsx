@@ -45,7 +45,7 @@ const AppNavbar = () => {
                         <img src={dataUri} alt="SVG Image" />
                       </div>
                     </button>
-                    <span>Victor</span>
+                    <span>{user?.name}</span>
                     <FaChevronDown />
                   </div>
                   <div className="right-0 mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">

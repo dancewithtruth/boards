@@ -53,6 +53,12 @@ export async function createBoard(params: CreateBoardParams): Promise<BoardRespo
   return sendPostRequest<BoardResponse>(url, params, token);
 }
 
+export async function getBoard(boardId: string): Promise<GetBoardsResponse> {
+  const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
+  const url = `${API_BASE_URL}/boards/${boardId}`;
+  return sendGetRequest<GetBoardsResponse>(url, token);
+}
+
 export async function getBoards(): Promise<GetBoardsResponse> {
   const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
   const url = `${API_BASE_URL}/boards`;

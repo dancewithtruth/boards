@@ -19,8 +19,6 @@ const Dashboard = () => {
     const response = await getBoards();
     setOwnedBoards(response.owned);
     setSharedBoards(response.shared);
-    console.log(response);
-    //set response
   };
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

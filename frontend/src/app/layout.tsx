@@ -8,6 +8,7 @@ import './globals.css';
 import { UserProvider } from '@/providers/user';
 import ConfiguredToastContainer from '@/components/toastcontainer';
 import { Tooltip } from 'react-tooltip';
+import { BoardProvider } from '@/providers/board';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -19,8 +20,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ConfiguredToastContainer />
         <Tooltip id="my-tooltip" />
         <UserProvider>
-          {isOnBoardPage ? null : <Navbar />}
-          {children}
+          <BoardProvider>
+            {isOnBoardPage ? null : <Navbar />}
+            {children}
+          </BoardProvider>
         </UserProvider>
       </body>
     </html>
