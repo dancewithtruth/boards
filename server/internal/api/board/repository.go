@@ -14,13 +14,15 @@ import (
 
 var (
 	ErrBoardDoesNotExist = errors.New("Board does not exist")
+	ErrTypeNotFound      = errors.New("Type not found when transforming db to domain model")
 )
 
 type Repository interface {
 	CreateBoard(ctx context.Context, board models.Board) error
 	GetBoard(ctx context.Context, boardId uuid.UUID) (models.Board, error)
+	GetBoardAndUsers(ctx context.Context, boardId uuid.UUID) ([]BoardAndUser, error)
 	ListOwnedBoards(ctx context.Context, userId uuid.UUID) ([]models.Board, error)
-	ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]OwnedBoardAndUser, error)
+	ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error)
 	CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error
 	CreateMembership(ctx context.Context, membership models.BoardMembership) error
 	DeleteBoard(ctx context.Context, boardId uuid.UUID) error
@@ -75,6 +77,28 @@ func (r *repository) GetBoard(ctx context.Context, boardId uuid.UUID) (models.Bo
 	return board, nil
 }
 
+// GetBoardAndUsers returns a left join query result for a single board and its associated users
+func (r *repository) GetBoardAndUsers(ctx context.Context, boardId uuid.UUID) ([]BoardAndUser, error) {
+	rows, err := r.q.GetBoardAndUsers(ctx, pgtype.UUID{Bytes: boardId, Valid: true})
+	if err != nil {
+		return []BoardAndUser{}, fmt.Errorf("repository: failed to get board and associated users: %w", err)
+	}
+	// Convert storage types into domain types
+	list := []BoardAndUser{}
+	for _, row := range rows {
+		item := BoardAndUser{
+			Board:           ToBoard(row.Board),
+			User:            ToUser(row.User),
+			BoardMembership: ToBoardMembership(row.BoardMembership),
+		}
+		if err != nil {
+			return nil, fmt.Errorf("repository: failed to transform db row to domain model: %w", err)
+		}
+		list = append(list, item)
+	}
+	return list, nil
+}
+
 // ListOwnedBoards returns a list of boards that belong to a user
 func (r *repository) ListOwnedBoards(ctx context.Context, boardId uuid.UUID) ([]models.Board, error) {
 	rows, err := r.q.ListOwnedBoards(ctx, pgtype.UUID{Bytes: boardId, Valid: true})
@@ -101,61 +125,24 @@ func (r *repository) ListOwnedBoards(ctx context.Context, boardId uuid.UUID) ([]
 	return list, nil
 }
 
-type OwnedBoardAndUser struct {
-	Board           models.Board
-	BoardMembership *models.BoardMembership
-	User            *models.User
-}
-
 // ListOwnedBoardAndUsers returns a list of boards that a user owns along with each board's associated users
 // The SQL query uses a left join so it is possible that a board can have nullable board users
-func (r *repository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]OwnedBoardAndUser, error) {
+func (r *repository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error) {
 	rows, err := r.q.ListOwnedBoardAndUsers(ctx, pgtype.UUID{Bytes: userId, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("repository: failed to list boards by user ID: %w", err)
 	}
 
-	// Convert storage types into domain types
-	list := []OwnedBoardAndUser{}
+	// Convert db types into domain types
+	list := []BoardAndUser{}
 	for _, row := range rows {
-		// Board will always return
-		board := models.Board{
-			Id:          row.Board.ID.Bytes,
-			Name:        &row.Board.Name.String,
-			Description: &row.Board.Description.String,
-			UserId:      row.Board.UserID.Bytes,
-			CreatedAt:   row.Board.CreatedAt.Time,
-			UpdatedAt:   row.Board.UpdatedAt.Time,
+		item := BoardAndUser{
+			Board:           ToBoard(row.Board),
+			User:            ToUser(row.User),
+			BoardMembership: ToBoardMembership(row.BoardMembership),
 		}
-		// Initialize item with default nil placeholders for BoardMembership and User
-		item := OwnedBoardAndUser{
-			Board:           board,
-			BoardMembership: nil,
-			User:            nil,
-		}
-		// Check if board membership or user exists, if so then attach to item
-		if row.BoardMembership.ID.Valid {
-			boardMembership := models.BoardMembership{
-				Id:        row.BoardMembership.ID.Bytes,
-				BoardId:   row.BoardMembership.UserID.Bytes,
-				UserId:    row.BoardMembership.UserID.Bytes,
-				Role:      models.BoardMembershipRole(row.BoardMembership.Role.String),
-				CreatedAt: row.BoardMembership.CreatedAt.Time,
-				UpdatedAt: row.BoardMembership.UpdatedAt.Time,
-			}
-			item.BoardMembership = &boardMembership
-		}
-		if row.User.ID.Valid {
-			user := models.User{
-				Id:        row.User.ID.Bytes,
-				Name:      row.User.Name.String,
-				Email:     &row.User.Name.String,
-				Password:  &row.User.Name.String,
-				IsGuest:   row.User.IsGuest.Bool,
-				CreatedAt: row.User.CreatedAt.Time,
-				UpdatedAt: row.User.UpdatedAt.Time,
-			}
-			item.User = &user
+		if err != nil {
+			return nil, fmt.Errorf("repository: failed to transform db row to domain model: %w", err)
 		}
 		list = append(list, item)
 	}
@@ -216,6 +203,61 @@ func (r *repository) CreateMembership(ctx context.Context, membership models.Boa
 	err := r.q.CreateMembership(ctx, arg)
 	if err != nil {
 		return fmt.Errorf("repository: failed to insert user: %w", err)
+	}
+	return nil
+}
+
+// Custom repository domain types
+
+// BoardAndUser is a custom domain type to guard against nullable BoardMembership and
+// User values in the case of left joins
+type BoardAndUser struct {
+	Board           *models.Board
+	BoardMembership *models.BoardMembership
+	User            *models.User
+}
+
+// Mappers from db model to domain model
+
+func ToBoard(dbBoard db.Board) *models.Board {
+	if dbBoard.ID.Valid {
+		return &models.Board{
+			Id:          dbBoard.ID.Bytes,
+			Name:        &dbBoard.Name.String,
+			Description: &dbBoard.Description.String,
+			UserId:      dbBoard.UserID.Bytes,
+			CreatedAt:   dbBoard.CreatedAt.Time,
+			UpdatedAt:   dbBoard.UpdatedAt.Time,
+		}
+	}
+	return nil
+}
+
+func ToUser(dbUser db.User) *models.User {
+	if dbUser.ID.Valid {
+		return &models.User{
+			Id:        dbUser.ID.Bytes,
+			Name:      dbUser.Name.String,
+			Email:     &dbUser.Name.String,
+			Password:  &dbUser.Name.String,
+			IsGuest:   dbUser.IsGuest.Bool,
+			CreatedAt: dbUser.CreatedAt.Time,
+			UpdatedAt: dbUser.UpdatedAt.Time,
+		}
+	}
+	return nil
+}
+
+func ToBoardMembership(dbBoardMembership db.BoardMembership) *models.BoardMembership {
+	if dbBoardMembership.ID.Valid {
+		return &models.BoardMembership{
+			Id:        dbBoardMembership.ID.Bytes,
+			BoardId:   dbBoardMembership.UserID.Bytes,
+			UserId:    dbBoardMembership.UserID.Bytes,
+			Role:      models.BoardMembershipRole(dbBoardMembership.Role.String),
+			CreatedAt: dbBoardMembership.CreatedAt.Time,
+			UpdatedAt: dbBoardMembership.UpdatedAt.Time,
+		}
 	}
 	return nil
 }

@@ -25,6 +25,11 @@ func (r *mockRepository) GetBoard(ctx context.Context, boardId uuid.UUID) (model
 	return models.Board{}, ErrBoardDoesNotExist
 }
 
+func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardId uuid.UUID) ([]BoardAndUser, error) {
+	// TODO: mock this out
+	return nil, nil
+}
+
 func (r *mockRepository) ListOwnedBoards(ctx context.Context, userId uuid.UUID) ([]models.Board, error) {
 	list := []models.Board{}
 	for _, board := range r.boards {
@@ -33,7 +38,7 @@ func (r *mockRepository) ListOwnedBoards(ctx context.Context, userId uuid.UUID) 
 	return list, nil
 }
 
-func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]OwnedBoardAndUser, error) {
+func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error) {
 	// TODO: mock this out
 	return nil, nil
 }

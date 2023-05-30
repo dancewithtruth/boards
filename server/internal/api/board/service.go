@@ -11,18 +11,26 @@ import (
 )
 
 var (
-	defaultBoardDescription = "This is a default description for the board. Feel free to customize it and add relevant information about the purpose, goals, or any specific details related to the board."
+	defaultBoardDescription = "This is a default description for the board. Feel free to customize it and add relevant information about your board."
 )
 
 type Service interface {
 	CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error)
 	GetBoard(ctx context.Context, boardId string) (models.Board, error)
-	ListOwnedBoardsWithMembers(ctx context.Context, userId string) ([]OwnedBoardWithMembersDTO, error)
+	GetBoardWithMembers(ctx context.Context, boardId string) (BoardWithMembersDTO, error)
+	ListOwnedBoardsWithMembers(ctx context.Context, userId string) ([]BoardWithMembersDTO, error)
 }
 
 type service struct {
 	repo      Repository
 	validator validator.Validate
+}
+
+func NewService(repo Repository, validator validator.Validate) *service {
+	return &service{
+		repo:      repo,
+		validator: validator,
+	}
 }
 
 func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error) {
@@ -32,7 +40,7 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 	}
 	// create board name if none provided
 	if input.Name == nil {
-		boards, err := s.repo.ListOwnedBoardAndUsers(ctx, userId)
+		boards, err := s.repo.ListOwnedBoards(ctx, userId)
 		if err != nil {
 			return models.Board{}, fmt.Errorf("service: failed to get existing boards when creating board: %w", err)
 		}
@@ -64,6 +72,7 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 	return board, nil
 }
 
+// GetBoard returns a single board for a given board ID
 func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, error) {
 	boardIdUUID, err := uuid.Parse(boardId)
 	if err != nil {
@@ -76,7 +85,21 @@ func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, e
 	return board, nil
 }
 
-// ListOwnedBoardsWithMembers returns a list of boards that belong to a user along with a list of board members
+// GetBoardWithMembers returns a single board with a list of associated members
+func (s *service) GetBoardWithMembers(ctx context.Context, boardId string) (BoardWithMembersDTO, error) {
+	boardIdUUID, err := uuid.Parse(boardId)
+	if err != nil {
+		return BoardWithMembersDTO{}, fmt.Errorf("service: issue parsing boardId into UUID: %w", err)
+	}
+	rows, err := s.repo.GetBoardAndUsers(ctx, boardIdUUID)
+	if err != nil {
+		return BoardWithMembersDTO{}, fmt.Errorf("service: failed to get board with members: %w", err)
+	}
+	list := ToBoardWithMembersDTO(rows)
+	return list[0], nil
+}
+
+// ListOwnedBoardsWithMembers returns a list of boards that belong to a user
 func (s *service) ListOwnedBoards(ctx context.Context, userId string) ([]models.Board, error) {
 	userIdUUID, err := uuid.Parse(userId)
 	if err != nil {
@@ -90,7 +113,7 @@ func (s *service) ListOwnedBoards(ctx context.Context, userId string) ([]models.
 }
 
 // ListOwnedBoardsWithMembers returns a list of boards that belong to a user along with a list of board members
-func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userId string) ([]OwnedBoardWithMembersDTO, error) {
+func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userId string) ([]BoardWithMembersDTO, error) {
 	userIdUUID, err := uuid.Parse(userId)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
@@ -99,16 +122,22 @@ func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userId string)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
 	}
-	// reformat rows into nested structure
-	list := []OwnedBoardWithMembersDTO{}
-	boardMap := make(map[uuid.UUID]int)
+	// transform rows into DTO
+	list := ToBoardWithMembersDTO(rows)
+	return list, nil
+}
+
+// ToBoardWithMembersDTO transforms the BoardAndUser rows into a nested DTO struct
+func ToBoardWithMembersDTO(rows []BoardAndUser) []BoardWithMembersDTO {
+	list := []BoardWithMembersDTO{}
+	boardIdToListIndex := make(map[uuid.UUID]int)
 	for _, row := range rows {
-		_, ok := boardMap[row.Board.Id]
-		if !ok {
+		_, exists := boardIdToListIndex[row.Board.Id]
+		if !exists {
 			// If board does not exist in slice, then append board into slice. Before append,
 			// must convert sqlc storage type into domain type
-			boardMap[row.Board.Id] = len(list)
-			newItem := OwnedBoardWithMembersDTO{
+			boardIdToListIndex[row.Board.Id] = len(list)
+			newItem := BoardWithMembersDTO{
 				Id:          row.Board.Id,
 				Name:        row.Board.Name,
 				Description: row.Board.Description,
@@ -131,16 +160,11 @@ func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userId string)
 					UpdatedAt: row.BoardMembership.UpdatedAt,
 				},
 			}
-			sliceIndex := boardMap[row.Board.Id]
+			sliceIndex := boardIdToListIndex[row.Board.Id]
 			itemWithNewMember := list[sliceIndex]
 			itemWithNewMember.Members = append(itemWithNewMember.Members, newBoardMember)
 			list[sliceIndex] = itemWithNewMember
 		}
 	}
-	return list, nil
-
-}
-
-func NewService(repo Repository, validator validator.Validate) *service {
-	return &service{repo: repo, validator: validator}
+	return list
 }

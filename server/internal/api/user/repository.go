@@ -30,6 +30,14 @@ type repository struct {
 	q  *db.Queries
 }
 
+func NewRepository(conn *db.DB) *repository {
+	q := db.New(conn)
+	return &repository{
+		db: conn,
+		q:  q,
+	}
+}
+
 func (r *repository) CreateUser(ctx context.Context, user models.User) error {
 	sql := "INSERT INTO users (id, name, email, password, is_guest, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 	_, err := r.db.Exec(ctx, sql, user.Id, user.Name, user.Email, user.Password, user.IsGuest, user.CreatedAt, user.UpdatedAt)
@@ -95,9 +103,4 @@ func (r *repository) DeleteUser(userId uuid.UUID) error {
 		return fmt.Errorf("repository: failed to delete user: %w", err)
 	}
 	return nil
-}
-
-func NewRepository(conn *db.DB) Repository {
-	q := db.New(conn)
-	return &repository{conn, q}
 }

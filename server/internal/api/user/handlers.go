@@ -4,13 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
 	"github.com/Wave-95/boards/server/internal/middleware"
 	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/pkg/logger"
-	"github.com/google/uuid"
 )
 
 type CreateUserInput struct {
@@ -18,15 +16,6 @@ type CreateUserInput struct {
 	Email    *string `json:"email" validate:"omitempty,email,required"`
 	Password *string `json:"password" validate:"omitempty,min=8"`
 	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
-}
-
-type UserResponse struct {
-	Id        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	Email     *string   `json:"email"`
-	IsGuest   bool      `json:"is_guest"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
 }
 
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -68,20 +57,9 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	// write response
 	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
-		User     UserResponse `json:"user"`
-		JwtToken string       `json:"jwt_token"`
-	}{toUserResponse(user), jwtToken})
-}
-
-func toUserResponse(user models.User) UserResponse {
-	return UserResponse{
-		Id:        user.Id,
-		Name:      user.Name,
-		Email:     user.Email,
-		IsGuest:   user.IsGuest,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
+		User     models.User `json:"user"`
+		JwtToken string      `json:"jwt_token"`
+	}{user, jwtToken})
 }
 
 // HandleGetUserMe is protected with an authHandler and expects the userID to be present
@@ -98,5 +76,5 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// write response
-	endpoint.WriteWithStatus(w, http.StatusCreated, toUserResponse(user))
+	endpoint.WriteWithStatus(w, http.StatusCreated, user)
 }

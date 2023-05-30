@@ -8,19 +8,18 @@ import (
 	"github.com/Wave-95/boards/server/internal/endpoint"
 	"github.com/Wave-95/boards/server/internal/middleware"
 	"github.com/Wave-95/boards/server/pkg/logger"
+	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 )
 
 const (
 	ErrMsgInternalServer = "Internal server error"
+	ErrMsgInvalidToken   = "Invalid authentication token"
+	ErrMsgBoardNotFound  = "Board not found"
 )
 
-type CreateBoardInput struct {
-	Name        *string `json:"name" validate:"omitempty,required,min=3,max=20"`
-	Description *string `json:"description" validate:"omitempty,required,min=3,max=100"`
-	UserId      string
-}
-
+// HandleCreateBoard is the handler for creating a single board. It requires a user ID
+// from the request context to assign which user owns the board
 func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
@@ -41,6 +40,11 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 
 	// get userId from context
 	userId := middleware.UserIdFromContext(ctx)
+	if userId == "" {
+		logger.Error("handler: failed to parse user ID from request context")
+		endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
+		return
+	}
 	input.UserId = userId
 
 	// create board
@@ -53,7 +57,61 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	endpoint.WriteWithStatus(w, http.StatusCreated, board)
 }
 
-type OwnedBoardWithMembersDTO struct {
+// HandleGetBoard returns a single board along with a list of associated members
+
+func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	boardId := chi.URLParam(r, "boardId")
+	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardId)
+	if err != nil {
+		logger.Errorf("handler: failed to get board by board ID: %v", err)
+		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		return
+	}
+
+	// Check if requesting user has permission to view board
+	userId := middleware.UserIdFromContext(ctx)
+	if userId != boardWithMembers.UserId.String() && !hasUser(boardWithMembers.Members, userId) {
+		logger.Infof("handler: user requested for a board they do not have access to : %v", err)
+		endpoint.WriteWithError(w, http.StatusNotFound, ErrMsgBoardNotFound)
+		return
+	}
+
+	endpoint.WriteWithStatus(w, http.StatusOK, boardWithMembers)
+}
+
+// HandleGetBoards returns a list of owned and shared boards for a given user.
+// The userId from the auth jwt will be used to query the boards. Each board will
+// be hydrated with associated users and invites
+func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	// get userId from context
+	userId := middleware.UserIdFromContext(ctx)
+
+	boards, err := api.boardService.ListOwnedBoardsWithMembers(ctx, userId)
+	if err != nil {
+		logger.Errorf("handler: failed to get boards by user ID: %v", err)
+		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
+		Boards []BoardWithMembersDTO `json:"boards"`
+	}{Boards: boards})
+}
+
+// Inputs
+type CreateBoardInput struct {
+	Name        *string `json:"name" validate:"omitempty,required,min=3,max=20"`
+	Description *string `json:"description" validate:"omitempty,required,min=3,max=100"`
+	UserId      string
+}
+
+// DTOs
+type BoardWithMembersDTO struct {
 	Id          uuid.UUID        `json:"id"`
 	Name        *string          `json:"name"`
 	Description *string          `json:"description"`
@@ -78,22 +136,13 @@ type MembershipDTO struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	logger := logger.FromContext(ctx)
+// Helper functions
 
-	// get userId from context
-	userId := middleware.UserIdFromContext(ctx)
-
-	defer r.Body.Close()
-
-	boards, err := api.boardService.ListOwnedBoardsWithMembers(ctx, userId)
-	if err != nil {
-		logger.Errorf("handler: failed to get boards by user ID: %v", err)
-		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
-		return
+func hasUser(members []BoardMemberDTO, userId string) bool {
+	for _, member := range members {
+		if member.Id.String() == userId {
+			return true
+		}
 	}
-	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
-		Boards []OwnedBoardWithMembersDTO `json:"boards"`
-	}{Boards: boards})
+	return false
 }

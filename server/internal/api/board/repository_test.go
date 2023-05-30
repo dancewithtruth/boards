@@ -26,15 +26,16 @@ func TestRepository(t *testing.T) {
 
 	t.Run("Create, get, and delete a board", func(t *testing.T) {
 		testBoard := test.NewBoard(testUser.Id)
-		// create board
+
+		// Create board
 		assert.NoError(t, boardRepo.CreateBoard(context.Background(), testBoard))
 
-		// get board
+		// Get board
 		board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
 		assert.NoError(t, err)
 		assert.Equal(t, testBoard.UserId, board.UserId)
 
-		// delete board
+		// Delete board
 		assert.NoError(t, boardRepo.DeleteBoard(context.Background(), testBoard.Id))
 	})
 
@@ -45,9 +46,9 @@ func TestRepository(t *testing.T) {
 		assert.ErrorIs(t, err, ErrBoardDoesNotExist)
 	})
 
-	t.Run("Add a user to a board", func(t *testing.T) {
+	t.Run("Create a board membership and check for membership", func(t *testing.T) {
 		testBoard := test.NewBoard(testUser.Id)
-		// insert user into new board
+		// Create a membership struct to be inserted
 		membership := models.BoardMembership{
 			Id:        uuid.New(),
 			BoardId:   testBoard.Id,
@@ -56,13 +57,17 @@ func TestRepository(t *testing.T) {
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
 		}
-		assert.NoError(t, boardRepo.CreateBoard(context.Background(), testBoard))
-		assert.NoError(t, boardRepo.CreateMembership(context.Background(), membership))
+		ctx := context.Background()
+		assert.NoError(t, boardRepo.CreateBoard(ctx, testBoard))
+		assert.NoError(t, boardRepo.CreateMembership(ctx, membership))
 
-		//TODO: check for insterted user
+		// Check that member was added to board
+		boardAndUsers, err := boardRepo.GetBoardAndUsers(ctx, testBoard.Id)
+		firstUser := boardAndUsers[0].User
+		assert.Equal(t, testUser.Id, firstUser.Id, "expected user to be added to board")
 
 		// delete board
-		err := boardRepo.DeleteBoard(context.Background(), testBoard.Id)
+		err = boardRepo.DeleteBoard(context.Background(), testBoard.Id)
 		assert.NoError(t, err)
 	})
 

@@ -20,6 +20,10 @@ type service struct {
 	validator validator.Validate
 }
 
+func NewService(repo Repository, validator validator.Validate) *service {
+	return &service{repo: repo, validator: validator}
+}
+
 func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models.User, error) {
 	id := uuid.New()
 	now := time.Now()
@@ -49,8 +53,4 @@ func (s *service) GetUser(ctx context.Context, userId string) (models.User, erro
 		return models.User{}, fmt.Errorf("service: failed to get user: %w", err)
 	}
 	return user, nil
-}
-
-func NewService(repo Repository, validator validator.Validate) Service {
-	return &service{repo: repo, validator: validator}
 }
