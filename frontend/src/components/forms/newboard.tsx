@@ -1,7 +1,7 @@
 'use client';
 import { useRouter } from 'next/navigation';
 import { ChangeEvent, FormEvent, useState } from 'react';
-import { createBoard } from '../../../helpers/api/boards';
+import { createBoard } from '../../../api/boards';
 import { toast } from 'react-toastify';
 
 const NewBoardForm = () => {

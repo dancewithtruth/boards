@@ -1,5 +1,5 @@
 import { sendGetRequest, sendPostRequest } from './base';
-import { API_BASE_URL } from '../../constants';
+import { API_BASE_URL } from '../constants';
 
 export type CreateUserParams = {
   name: string;

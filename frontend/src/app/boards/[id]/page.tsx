@@ -4,7 +4,7 @@ import Head from 'next/head';
 import { Metadata } from 'next';
 import { useEffect, useState, useCallback } from 'react';
 import { useBoard } from '@/providers/board';
-import { getBoard } from '../../../../helpers/api/boards';
+import { getBoard } from '../../../../api/boards';
 import Post from '@/components/post';
 import update from 'immutability-helper';
 import type { CSSProperties, FC } from 'react';

@@ -1,5 +1,5 @@
 import { sendGetRequest, sendPostRequest } from './base';
-import { API_BASE_URL, LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import { API_BASE_URL, LOCAL_STORAGE_AUTH_TOKEN } from '../constants';
 
 export type CreateBoardParams = {
   name?: string;

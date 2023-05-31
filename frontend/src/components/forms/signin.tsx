@@ -3,12 +3,12 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
-import { login } from '../../../helpers/api/auth';
+import { login } from '../../../api/auth';
 import ConfiguredToastContainer from '../toastcontainer';
 import { useUser } from '@/providers/user';
 import { LOCAL_STORAGE_AUTH_TOKEN } from '../../../constants';
 import Link from 'next/link';
-import { getUserByJwt } from '../../../helpers/api/users';
+import { getUserByJwt } from '../../../api/users';
 
 const SignInPanel = (): JSX.Element => {
   const { dispatch } = useUser();

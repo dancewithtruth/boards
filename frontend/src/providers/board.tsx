@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useMemo, useReducer } from 'react';
-import { BoardWithMembers } from '../../helpers/api/boards';
+import { BoardWithMembers } from '../../api/boards';
 
 type State = {
   board: BoardWithMembers | null;
