@@ -1,5 +1,5 @@
-import { sendPostRequest } from './base';
-import { API_BASE_URL } from '../constants';
+import { sendPostRequest } from '@/api/base';
+import { API_BASE_URL } from '@/constants';
 
 export type LoginParams = {
   email: string;

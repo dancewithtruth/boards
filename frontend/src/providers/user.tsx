@@ -1,8 +1,8 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
-import { User, getUserByJwt } from '../../api/users';
-import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import { User, getUserByJwt } from '@/api/users';
+import { LOCAL_STORAGE_AUTH_TOKEN } from '@/constants';
 
 type State = {
   user: User | null;

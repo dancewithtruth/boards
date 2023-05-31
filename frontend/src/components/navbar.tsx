@@ -3,7 +3,7 @@
 import { useUser } from '@/providers/user';
 import avatar from 'gradient-avatar';
 import Link from 'next/link';
-import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import { LOCAL_STORAGE_AUTH_TOKEN } from '@/constants';
 import { useRouter } from 'next/navigation';
 import { FaChevronDown } from 'react-icons/fa';
 

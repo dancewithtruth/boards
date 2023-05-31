@@ -1,5 +1,5 @@
 import React from 'react';
-import { Member } from '../../api/boards';
+import { Member } from '../api/boards';
 import Avatar from './avatar';
 
 interface MemberListProps {

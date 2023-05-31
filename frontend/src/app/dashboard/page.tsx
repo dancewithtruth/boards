@@ -4,7 +4,7 @@ import Board from '@/components/board';
 import NewBoardForm from '@/components/forms/newboard';
 import ConfiguredToastContainer from '@/components/toastcontainer';
 import { FaPlus } from 'react-icons/fa';
-import { BoardWithMembers, getBoards } from '../../../api/boards';
+import { BoardWithMembers, getBoards } from '../../api/boards';
 import Head from 'next/head';
 import { useEffect, useState } from 'react';
 

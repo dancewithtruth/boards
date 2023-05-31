@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/providers/user';
 import avatar from 'gradient-avatar';
-import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
+import { LOCAL_STORAGE_AUTH_TOKEN } from '@/constants';
 import { FaChevronDown } from 'react-icons/fa';
 
 const AppNavbar = () => {

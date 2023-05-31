@@ -6,6 +6,7 @@ import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
+  const SIDEBAR_WIDTH = 192;
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="sketchbook-bg">
@@ -13,8 +14,8 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <div className="flex flex-col">
           <div className="h-16 w-full" />
           <div className="flex">
-            <Sidebar />
-            <div className="w-48 h-full" />
+            <Sidebar width={SIDEBAR_WIDTH} />
+            <div className="h-full" style={{ width: SIDEBAR_WIDTH }} />
             {children}
           </div>
         </div>

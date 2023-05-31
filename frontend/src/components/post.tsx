@@ -1,8 +1,8 @@
-import React, { ChangeEvent, FC, ReactNode, useRef, useState } from 'react';
-import { ItemTypes, POST_COLORS } from '../../constants';
+import React, { ChangeEvent, FC, useRef, useState } from 'react';
+import { ItemTypes, POST_COLORS, POST_HEIGHT, POST_WIDTH } from '@/constants';
 import { useDrag } from 'react-dnd';
 import { FaRegTrashAlt, FaVoteYea } from 'react-icons/fa';
-import { User } from '../../api/users';
+import { User } from '@/api/users';
 import Avatar from './avatar';
 
 export interface PostData {
@@ -15,43 +15,42 @@ export interface PostData {
   customHeight?: number;
   user: User;
 }
-export interface PostProps {
+interface PostProps {
   data: PostData;
   updatePost: (data: PostData) => void;
-  setColor: (color: string) => void;
+  setColorSetting: (color: string) => void;
   deletePost: (id: string) => void;
-  hideSourceOnDrag?: boolean;
-  children?: ReactNode;
 }
 
-const Post: FC<PostProps> = ({ data, updatePost, setColor, deletePost, hideSourceOnDrag, children }) => {
-  const { id, left, top, content, color, zIndex, customHeight } = data;
+const Post: FC<PostProps> = ({ data, updatePost, setColorSetting, deletePost }) => {
+  const { id: postId, left, top, content, color, zIndex, customHeight, user } = data;
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const [textareaHeight, setTextareaHeight] = useState(customHeight);
   const [textareaValue, setTextareaValue] = useState(content);
+  const [textareaHeight, setTextareaHeight] = useState(customHeight);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // handleChange updates the textarea value and the textarea height
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const { value } = event.target;
     setTextareaValue(value);
-    const textarea = textareaRef.current;
-    if (textarea) {
-      const scrollHeight = textarea.scrollHeight;
+
+    if (textareaRef.current) {
+      const scrollHeight = textareaRef.current.scrollHeight;
       setTextareaHeight(scrollHeight);
     }
   };
 
+  // isFocused is used to prevent the Post from being dragged when the textarea is focused
   const handleFocus = () => {
     setIsFocused(true);
   };
 
   const handleBlur = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setIsFocused(false);
-    const payload = { content: textareaValue, customHeight: textareaHeight } as PostData;
-    // send payload and update value to backend
   };
 
+  // isHovered is used to customize styles if a Post is hovered
   const handleMouseEnter = () => {
     setIsHovered(true);
   };
@@ -63,7 +62,7 @@ const Post: FC<PostProps> = ({ data, updatePost, setColor, deletePost, hideSourc
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: ItemTypes.POST,
-      item: { id, left, top },
+      item: { postId, left, top },
       canDrag: (_) => !isFocused,
       collect: (monitor) => {
         return {
@@ -71,15 +70,19 @@ const Post: FC<PostProps> = ({ data, updatePost, setColor, deletePost, hideSourc
         };
       },
     }),
-    [id, left, top, isFocused]
+    [postId, left, top, isFocused]
   );
 
+  // If Post is being dragged, then hide the original Post from view
   if (isDragging) return null;
+
   return (
     <div
       ref={drag}
-      className={`card card-compact min-h-[100px] w-[275px] cursor-move shadow-md absolute`}
+      className="card card-compact cursor-move shadow-md absolute"
       style={{
+        minHeight: POST_HEIGHT,
+        width: POST_WIDTH,
         top: top,
         left: left,
         background: color,
@@ -95,44 +98,55 @@ const Post: FC<PostProps> = ({ data, updatePost, setColor, deletePost, hideSourc
     >
       <div className="card-body !py-1">
         <div className="card-actions justify-between">
-          <div className="flex space-x-1 items-center">
-            {Object.keys(POST_COLORS).map((key) => {
-              const colorName = displayColor(key);
-              const colorHex = POST_COLORS[key];
-              const data = { color: colorHex } as PostData;
-              return (
-                <div key={key} data-tooltip-id="my-tooltip" data-tooltip-content={colorName}>
-                  <button
-                    className=" w-3 h-3 btn-square border border-gray-300"
-                    style={{ backgroundColor: colorHex }}
-                    onClick={() => {
-                      updatePost(data);
-                      setColor(colorHex);
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
-          <button className="btn-xs text-gray-500 hover:text-gray-700" onClick={() => deletePost(data.id)}>
+          <ColorPicker updatePost={updatePost} setColorSetting={setColorSetting} />
+          <button className="btn-xs text-gray-500 hover:text-gray-700" onClick={() => deletePost(postId)}>
             <FaRegTrashAlt />
           </button>
         </div>
         <textarea
           ref={textareaRef}
-          className="textarea textarea-ghost textarea-sm textarea-bordered leading-4"
+          className="textarea textarea-ghost textarea-sm textarea-bordered leading-4 resize-none"
+          style={{ ...(textareaHeight && { height: textareaHeight }) }}
+          value={textareaValue}
+          onChange={handleChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          onChange={handleChange}
-          value={textareaValue}
-          style={{ ...(textareaHeight && { height: textareaHeight }), resize: 'none' }}
         />
         <div className="flex h-6 justify-between items-center">
-          <div key={`author-${data.user.id}`} data-tooltip-id="my-tooltip" data-tooltip-content={data.user.name}>
-            <Avatar id={data.user.id} size={4} />
+          <div key={`author-${data.user.id}`} data-tooltip-id="my-tooltip" data-tooltip-content={user.name}>
+            <Avatar id={user.id} size={4} />
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+interface ColorPickerProps {
+  updatePost: (data: PostData) => void;
+  setColorSetting: (color: string) => void;
+}
+
+const ColorPicker = ({ updatePost, setColorSetting }: ColorPickerProps) => {
+  return (
+    <div className="flex space-x-1 items-center">
+      {Object.keys(POST_COLORS).map((key) => {
+        const colorName = displayColor(key);
+        const colorValue = POST_COLORS[key];
+        const data = { color: colorValue } as PostData;
+        return (
+          <div key={`color-${key}`} data-tooltip-id="my-tooltip" data-tooltip-content={colorName}>
+            <button
+              className="w-3 h-3 btn-square border border-gray-300"
+              style={{ backgroundColor: colorValue }}
+              onClick={() => {
+                updatePost(data);
+                setColorSetting(colorValue);
+              }}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };

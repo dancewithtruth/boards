@@ -1,29 +1,21 @@
 'use client';
 
 import Head from 'next/head';
-import { Metadata } from 'next';
 import { useEffect, useState, useCallback } from 'react';
 import { useBoard } from '@/providers/board';
-import { getBoard } from '../../../../api/boards';
+import { getBoard } from '../../../api/boards';
 import Post, { PostData } from '@/components/post';
 import update from 'immutability-helper';
-import type { CSSProperties, FC } from 'react';
 import type { XYCoord } from 'react-dnd';
 import { useDrop } from 'react-dnd';
 
-import { API_BASE_URL, ItemTypes, LOCAL_STORAGE_AUTH_TOKEN, POST_COLORS, WS_BASE_URL } from '../../../../constants';
+import { ItemTypes, LOCAL_STORAGE_AUTH_TOKEN, POST_COLORS, WS_BASE_URL } from '@/constants';
 import WebSocketConnection from '../../../../websocket';
 import { useUser } from '@/providers/user';
-import { User } from '../../../../api/users';
-
-// export const metadata: Metadata = {
-//   title: 'Boards',
-//   description: 'Boards is a live collaboration tool aimed to increase your productivity.',
-// };
-
+import { User } from '../../../api/users';
 export interface DragItem {
   type: string;
-  id: string;
+  postId: string;
   top: number;
   left: number;
 }
@@ -38,26 +30,6 @@ export interface Post {
   user: User;
 }
 
-const getHighestZIndex = (posts: { [key: string]: Post }) => {
-  const zIndexValues = Object.values(posts).map(({ zIndex }) => zIndex);
-  if (zIndexValues.length == 0) {
-    return 0;
-  }
-  return Math.max(...zIndexValues);
-};
-
-const getColor = (posts: { [key: string]: Post }) => {
-  const chosenColors = Object.values(posts).map(({ color }) => color);
-  const availableColors = Object.values(POST_COLORS);
-  availableColors.forEach((color) => {
-    if (!chosenColors.includes(color)) {
-      return color;
-    }
-  });
-  const randIndex = Math.floor(Math.random() * availableColors.length);
-  return availableColors[randIndex];
-};
-
 const Board = ({ params: { id } }: { params: { id: string } }) => {
   const { dispatch } = useBoard();
   const {
@@ -67,7 +39,7 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
     [key: string]: Post;
   }>({});
   const [highestZ, setHighestZ] = useState(getHighestZIndex(posts));
-  const [colorSetting, setColorSetting] = useState(getColor(posts));
+  const [colorSetting, setColorSetting] = useState(pickColor(posts));
   var ws;
   useEffect(() => {
     fetchData();
@@ -82,16 +54,18 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
   }, []);
 
   const fetchData = async () => {
+    // TODO: Implement loading UI
     const response = await getBoard(id);
     dispatch({ type: 'set_board', payload: response });
   };
 
+  // handleDoubleClick creates a new post
   const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       const { offsetX, offsetY } = event.nativeEvent;
-      //send request
       const randId = Math.random() * 1000000;
       const data = { left: offsetX, top: offsetY, color: colorSetting, user } as PostData;
+      // TODO: Instead of add post, call ws.send with relevant data
       addPost(randId.toString(), data);
     }
   };
@@ -105,29 +79,11 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
   );
 
   const updatePost = useCallback(
-    (id: string, data: PostData) => {
-      const { left, top, zIndex, color } = data;
-      const mergeObject: Partial<PostData> = {};
-
-      if (left !== undefined) {
-        mergeObject['left'] = left;
-      }
-
-      if (top !== undefined) {
-        mergeObject['top'] = top;
-      }
-
-      if (zIndex !== undefined) {
-        mergeObject['zIndex'] = zIndex;
-      }
-
-      if (color !== undefined) {
-        mergeObject['color'] = color;
-      }
+    (id: string, data: Partial<PostData>) => {
       setPosts(
         update(posts, {
           [id]: {
-            $merge: mergeObject,
+            $merge: data,
           },
         })
       );
@@ -151,13 +107,13 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
       accept: ItemTypes.POST,
       drop(item: DragItem, monitor) {
         const delta = monitor.getDifferenceFromInitialOffset() as XYCoord;
-        const left = Math.round(item.left + delta.x);
-        const top = Math.round(item.top + delta.y);
+        const newLeft = Math.max(item.left + delta.x, 0);
+        const newTop = Math.max(item.top + delta.y, 0);
         const zIndex = highestZ + 1;
-        console.log('highest z index', zIndex);
+        const data = { left: newLeft, top: newTop, zIndex } as PostData;
+        // TODO: Instead of update post, call ws.send with relevant data
+        updatePost(item.postId, data);
         setHighestZ(zIndex);
-        const data = { left: Math.max(left, 0), top: Math.max(top, 0), zIndex } as PostData;
-        updatePost(item.id, data);
         return undefined;
       },
     }),
@@ -182,7 +138,7 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
               key={key}
               data={data}
               updatePost={(data: PostData) => updatePost(key, data)}
-              setColor={setColorSetting}
+              setColorSetting={setColorSetting}
               deletePost={deletePost}
             />
           );
@@ -190,6 +146,30 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
       </div>
     </>
   );
+};
+
+// getHighestZIndex returns the highest z index by scanning posts on a board. If a board has 0
+// posts, then return 0
+const getHighestZIndex = (posts: { [key: string]: Post }) => {
+  const zIndexValues = Object.values(posts).map(({ zIndex }) => zIndex);
+  if (zIndexValues.length == 0) {
+    return 0;
+  }
+  return Math.max(...zIndexValues);
+};
+
+// pickColor returns the first color that hasn't been picked yet among the board. If no
+// colors are available, return a random color
+const pickColor = (posts: { [key: string]: Post }) => {
+  const chosenColors = Object.values(posts).map(({ color }) => color);
+  const availableColors = Object.values(POST_COLORS);
+  availableColors.forEach((color) => {
+    if (!chosenColors.includes(color)) {
+      return color;
+    }
+  });
+  const randIndex = Math.floor(Math.random() * availableColors.length);
+  return availableColors[randIndex];
 };
 
 export default Board;

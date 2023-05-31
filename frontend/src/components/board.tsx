@@ -3,7 +3,7 @@ import { FaEllipsisV } from 'react-icons/fa';
 import TimeAgo from './timeago';
 import { useRouter } from 'next/navigation';
 import MemberList from './memberlist';
-import { Member } from '../../api/boards';
+import { Member } from '../api/boards';
 
 interface BoardroomCardProps {
   id: string;

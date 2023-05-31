@@ -3,10 +3,10 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { toast } from 'react-toastify';
 import { useRouter } from 'next/navigation';
-import { createUser } from '../../../api/users';
-import ConfiguredToastContainer from '../toastcontainer';
+import { createUser } from '@/api/users';
+import ConfiguredToastContainer from '@/components/toastcontainer';
 import { useUser } from '@/providers/user';
-import { LOCAL_STORAGE_AUTH_TOKEN } from '../../../constants';
+import { LOCAL_STORAGE_AUTH_TOKEN } from '@/constants';
 import Link from 'next/link';
 
 type SignUpPanelParams = {

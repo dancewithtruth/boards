@@ -10,3 +10,6 @@ export const POST_COLORS: { [key: string]: string } = {
   LIGHT_PEACH: '#FCE6C9',
   LIGHT_AQUA: '#D8E2DC',
 };
+export const SIDEBAR_WIDTH = 192
+export const POST_WIDTH = 275
+export const POST_HEIGHT = 125

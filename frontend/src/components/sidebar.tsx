@@ -3,7 +3,11 @@ import { useUser } from '@/providers/user';
 import Avatar from './avatar';
 import { useBoard } from '@/providers/board';
 
-const Sidebar = () => {
+interface SidebarProps {
+  width: number;
+}
+
+const Sidebar = ({ width }: SidebarProps) => {
   const {
     state: { user },
   } = useUser();
@@ -18,7 +22,10 @@ const Sidebar = () => {
   const onlineFraction = `${onlineCount}/${totalAccessCount}`;
 
   return (
-    <div className="fixed top-h-16 left-0 bg-base-100 shadow-md w-48 z-40" style={{ height: `calc(100vh - 4rem)` }}>
+    <div
+      className="fixed top-h-16 left-0 bg-base-100 shadow-md z-40"
+      style={{ height: `calc(100vh - 4rem)`, width: `${width}px` }}
+    >
       <div className="flex flex-col items-center justify-between h-full py-8">
         <div className="flex flex-col items-center w-full">
           <p className="text-gray-700 text-md font-bold">Members</p>
