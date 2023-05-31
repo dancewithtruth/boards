@@ -1,11 +1,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useMemo, useReducer } from 'react';
-import { UserResponse, getUserByJwt } from '../../api/users';
+import { User, getUserByJwt } from '../../api/users';
 import { LOCAL_STORAGE_AUTH_TOKEN } from '../../constants';
 
 type State = {
-  user: UserResponse | null;
+  user: User | null;
   isAuthenticated: boolean;
 };
 

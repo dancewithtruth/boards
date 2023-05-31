@@ -18,7 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" data-theme="lofi">
       <body>
         <ConfiguredToastContainer />
-        <Tooltip id="my-tooltip" />
+        <Tooltip id="my-tooltip" style={{ zIndex: 10001 }} />
         <UserProvider>
           <BoardProvider>
             {isOnBoardPage ? null : <Navbar />}

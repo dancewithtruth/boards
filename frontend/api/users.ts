@@ -8,7 +8,7 @@ export type CreateUserParams = {
   isGuest: boolean;
 };
 
-export type UserResponse = {
+export type User = {
   id: string;
   name: string;
   email: string;
@@ -18,7 +18,7 @@ export type UserResponse = {
 };
 
 export type CreateUserResponse = {
-  user: UserResponse;
+  user: User;
   jwt_token: string;
 };
 
@@ -27,7 +27,7 @@ export async function createUser(params: CreateUserParams): Promise<CreateUserRe
   return sendPostRequest<CreateUserResponse>(url, params);
 }
 
-export async function getUserByJwt(jwtToken: string): Promise<UserResponse> {
+export async function getUserByJwt(jwtToken: string): Promise<User> {
   const url = `${API_BASE_URL}/users/me`;
-  return sendGetRequest<UserResponse>(url, jwtToken);
+  return sendGetRequest<User>(url, jwtToken);
 }

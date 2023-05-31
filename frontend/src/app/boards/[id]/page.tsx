@@ -13,6 +13,8 @@ import { useDrop } from 'react-dnd';
 
 import { API_BASE_URL, ItemTypes, LOCAL_STORAGE_AUTH_TOKEN, POST_COLORS, WS_BASE_URL } from '../../../../constants';
 import WebSocketConnection from '../../../../websocket';
+import { useUser } from '@/providers/user';
+import { User } from '../../../../api/users';
 
 // export const metadata: Metadata = {
 //   title: 'Boards',
@@ -33,11 +35,15 @@ export interface Post {
   zIndex: number;
   color: string;
   customHeight?: number;
+  user: User;
 }
 
 const getHighestZIndex = (posts: { [key: string]: Post }) => {
-  const indexValues = Object.values(posts).map(({ zIndex }) => zIndex);
-  return Math.max(...indexValues);
+  const zIndexValues = Object.values(posts).map(({ zIndex }) => zIndex);
+  if (zIndexValues.length == 0) {
+    return 0;
+  }
+  return Math.max(...zIndexValues);
 };
 
 const getColor = (posts: { [key: string]: Post }) => {
@@ -54,6 +60,9 @@ const getColor = (posts: { [key: string]: Post }) => {
 
 const Board = ({ params: { id } }: { params: { id: string } }) => {
   const { dispatch } = useBoard();
+  const {
+    state: { user },
+  } = useUser();
   const [posts, setPosts] = useState<{
     [key: string]: Post;
   }>({});
@@ -82,15 +91,15 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
       const { offsetX, offsetY } = event.nativeEvent;
       //send request
       const randId = Math.random() * 1000000;
-      const data = { left: offsetX, top: offsetY, color: colorSetting } as PostData;
+      const data = { left: offsetX, top: offsetY, color: colorSetting, user } as PostData;
       addPost(randId.toString(), data);
     }
   };
 
   const addPost = useCallback(
     (id: string, data: PostData) => {
-      const { left, top, color } = data;
-      setPosts(update(posts, { $merge: { [id]: { left, top, color } } }));
+      const { left, top, color, user } = data;
+      setPosts(update(posts, { $merge: { [id]: { left, top, color, user } } }));
     },
     [posts, setPosts]
   );
@@ -145,6 +154,7 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
         const left = Math.round(item.left + delta.x);
         const top = Math.round(item.top + delta.y);
         const zIndex = highestZ + 1;
+        console.log('highest z index', zIndex);
         setHighestZ(zIndex);
         const data = { left: Math.max(left, 0), top: Math.max(top, 0), zIndex } as PostData;
         updatePost(item.id, data);
