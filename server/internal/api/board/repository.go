@@ -263,8 +263,8 @@ func ToUser(dbUser db.User) *models.User {
 		return &models.User{
 			Id:        dbUser.ID.Bytes,
 			Name:      dbUser.Name.String,
-			Email:     &dbUser.Name.String,
-			Password:  &dbUser.Name.String,
+			Email:     &dbUser.Email.String,
+			Password:  &dbUser.Password.String,
 			IsGuest:   dbUser.IsGuest.Bool,
 			CreatedAt: dbUser.CreatedAt.Time,
 			UpdatedAt: dbUser.UpdatedAt.Time,
