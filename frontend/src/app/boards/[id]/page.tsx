@@ -4,7 +4,7 @@ import Head from 'next/head';
 import { useEffect, useState, useCallback } from 'react';
 import { useBoard } from '@/providers/board';
 import { getBoard } from '../../../api/boards';
-import Post, { PostData } from '@/components/post';
+import PostUI, { Post } from '@/components/post';
 import update from 'immutability-helper';
 import type { XYCoord } from 'react-dnd';
 import { useDrop } from 'react-dnd';
@@ -15,29 +15,24 @@ import { useUser } from '@/providers/user';
 import { User } from '../../../api/users';
 export interface DragItem {
   type: string;
-  postId: string;
+  id: string;
   top: number;
   left: number;
+  thing: string;
 }
 
-export interface Post {
-  top: number;
-  left: number;
-  content: string;
-  zIndex: number;
-  color: string;
-  customHeight?: number;
-  user: User;
-}
+type PostsMap = {
+  [key: string]: Post;
+};
 
 const Board = ({ params: { id } }: { params: { id: string } }) => {
-  const { dispatch } = useBoard();
   const {
     state: { user },
   } = useUser();
-  const [posts, setPosts] = useState<{
-    [key: string]: Post;
-  }>({});
+  const { dispatch } = useBoard();
+
+  const [posts, setPosts] = useState<PostsMap>({});
+  console.log(posts);
   const [highestZ, setHighestZ] = useState(getHighestZIndex(posts));
   const [colorSetting, setColorSetting] = useState(pickColor(posts));
   var ws;
@@ -56,6 +51,7 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
   const fetchData = async () => {
     // TODO: Implement loading UI
     const response = await getBoard(id);
+    // TODO: Implement redirect if 401 error
     dispatch({ type: 'set_board', payload: response });
   };
 
@@ -64,22 +60,22 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
     if (event.target === event.currentTarget) {
       const { offsetX, offsetY } = event.nativeEvent;
       const randId = Math.random() * 1000000;
-      const data = { left: offsetX, top: offsetY, color: colorSetting, user } as PostData;
+      const data = { left: offsetX, top: offsetY, color: colorSetting, user } as Post;
       // TODO: Instead of add post, call ws.send with relevant data
       addPost(randId.toString(), data);
     }
   };
 
   const addPost = useCallback(
-    (id: string, data: PostData) => {
-      const { left, top, color, user } = data;
-      setPosts(update(posts, { $merge: { [id]: { left, top, color, user } } }));
+    (id: string, data: Partial<Post>) => {
+      setPosts(update(posts, { $merge: { [id]: data } }));
+      console.log('posts', posts);
     },
     [posts, setPosts]
   );
 
   const updatePost = useCallback(
-    (id: string, data: Partial<PostData>) => {
+    (id: string, data: Partial<Post>) => {
       setPosts(
         update(posts, {
           [id]: {
@@ -110,9 +106,11 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
         const newLeft = Math.max(item.left + delta.x, 0);
         const newTop = Math.max(item.top + delta.y, 0);
         const zIndex = highestZ + 1;
-        const data = { left: newLeft, top: newTop, zIndex } as PostData;
+        const data = { id: item.id, left: newLeft, top: newTop, zIndex } as Post;
         // TODO: Instead of update post, call ws.send with relevant data
-        updatePost(item.postId, data);
+        console.log('item', item);
+        console.log('data to be updated', data, item.id);
+        updatePost(item.id, data);
         setHighestZ(zIndex);
         return undefined;
       },
@@ -132,12 +130,11 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
       >
         {Object.keys(posts).map((key) => {
           const post = posts[key] as Post;
-          const data = { id: key, ...post };
           return (
-            <Post
+            <PostUI
               key={key}
-              data={data}
-              updatePost={(data: PostData) => updatePost(key, data)}
+              post={post}
+              updatePost={(data: Post) => updatePost(key, data)}
               setColorSetting={setColorSetting}
               deletePost={deletePost}
             />

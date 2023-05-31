@@ -5,7 +5,7 @@ import { FaRegTrashAlt, FaVoteYea } from 'react-icons/fa';
 import { User } from '@/api/users';
 import Avatar from './avatar';
 
-export interface PostData {
+export interface Post {
   id: any;
   left: number;
   top: number;
@@ -16,14 +16,14 @@ export interface PostData {
   user: User;
 }
 interface PostProps {
-  data: PostData;
-  updatePost: (data: PostData) => void;
+  post: Post;
+  updatePost: (data: Post) => void;
   setColorSetting: (color: string) => void;
   deletePost: (id: string) => void;
 }
 
-const Post: FC<PostProps> = ({ data, updatePost, setColorSetting, deletePost }) => {
-  const { id: postId, left, top, content, color, zIndex, customHeight, user } = data;
+const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) => {
+  const { id, left, top, content, color, zIndex, customHeight, user } = post;
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [textareaValue, setTextareaValue] = useState(content);
@@ -62,7 +62,7 @@ const Post: FC<PostProps> = ({ data, updatePost, setColorSetting, deletePost }) 
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: ItemTypes.POST,
-      item: { postId, left, top },
+      item: { id, left, top , thing: '123'},
       canDrag: (_) => !isFocused,
       collect: (monitor) => {
         return {
@@ -70,7 +70,7 @@ const Post: FC<PostProps> = ({ data, updatePost, setColorSetting, deletePost }) 
         };
       },
     }),
-    [postId, left, top, isFocused]
+    [id, left, top, isFocused]
   );
 
   // If Post is being dragged, then hide the original Post from view
@@ -99,7 +99,7 @@ const Post: FC<PostProps> = ({ data, updatePost, setColorSetting, deletePost }) 
       <div className="card-body !py-1">
         <div className="card-actions justify-between">
           <ColorPicker updatePost={updatePost} setColorSetting={setColorSetting} />
-          <button className="btn-xs text-gray-500 hover:text-gray-700" onClick={() => deletePost(postId)}>
+          <button className="btn-xs text-gray-500 hover:text-gray-700" onClick={() => deletePost(id)}>
             <FaRegTrashAlt />
           </button>
         </div>
@@ -113,8 +113,8 @@ const Post: FC<PostProps> = ({ data, updatePost, setColorSetting, deletePost }) 
           onBlur={handleBlur}
         />
         <div className="flex h-6 justify-between items-center">
-          <div key={`author-${data.user.id}`} data-tooltip-id="my-tooltip" data-tooltip-content={user.name}>
-            <Avatar id={user.id} size={4} />
+          <div key={`author-${post.user.id}`} data-tooltip-id="my-tooltip" data-tooltip-content={user.name}>
+            <Avatar id={user.id} size={6} />
           </div>
         </div>
       </div>
@@ -123,7 +123,7 @@ const Post: FC<PostProps> = ({ data, updatePost, setColorSetting, deletePost }) 
 };
 
 interface ColorPickerProps {
-  updatePost: (data: PostData) => void;
+  updatePost: (data: Post) => void;
   setColorSetting: (color: string) => void;
 }
 
@@ -133,7 +133,7 @@ const ColorPicker = ({ updatePost, setColorSetting }: ColorPickerProps) => {
       {Object.keys(POST_COLORS).map((key) => {
         const colorName = displayColor(key);
         const colorValue = POST_COLORS[key];
-        const data = { color: colorValue } as PostData;
+        const data = { color: colorValue } as Post;
         return (
           <div key={`color-${key}`} data-tooltip-id="my-tooltip" data-tooltip-content={colorName}>
             <button
