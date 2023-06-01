@@ -1,4 +1,4 @@
-import React, { ChangeEvent, FC, useRef, useState } from 'react';
+import React, { ChangeEvent, FC, useEffect, useRef, useState } from 'react';
 import { ItemTypes, POST_COLORS, POST_HEIGHT, POST_WIDTH } from '@/constants';
 import { useDrag } from 'react-dnd';
 import { FaRegTrashAlt, FaVoteYea } from 'react-icons/fa';
@@ -27,8 +27,25 @@ const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) 
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [textareaValue, setTextareaValue] = useState(content);
+  const [previousTextareaValue, setPreviousTextareaValue] = useState(content);
   const [textareaHeight, setTextareaHeight] = useState(customHeight);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // This useEffect will send an update to the websocket every 2 seconds when it detects
+  // changes in the textarea
+  useEffect(() => {
+    if (isFocused && textareaValue != previousTextareaValue) {
+      const interval = setInterval(() => {
+        setPreviousTextareaValue(textareaValue);
+        const data = { content: textareaValue } as Post;
+        updatePost(data);
+      }, 2000);
+
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [textareaValue, previousTextareaValue, updatePost, isFocused]);
 
   // handleChange updates the textarea value and the textarea height
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
@@ -48,6 +65,7 @@ const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) 
 
   const handleBlur = (event: ChangeEvent<HTMLTextAreaElement>) => {
     setIsFocused(false);
+    // update content
   };
 
   // isHovered is used to customize styles if a Post is hovered
