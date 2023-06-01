@@ -62,7 +62,7 @@ const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) 
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: ItemTypes.POST,
-      item: { id, left, top , thing: '123'},
+      item: { id, left, top },
       canDrag: (_) => !isFocused,
       collect: (monitor) => {
         return {
@@ -114,7 +114,7 @@ const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) 
         />
         <div className="flex h-6 justify-between items-center">
           <div key={`author-${post.user.id}`} data-tooltip-id="my-tooltip" data-tooltip-content={user.name}>
-            <Avatar id={user.id} size={6} />
+            <Avatar id={user.id} size={16} />
           </div>
         </div>
       </div>

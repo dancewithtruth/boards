@@ -18,7 +18,6 @@ export interface DragItem {
   id: string;
   top: number;
   left: number;
-  thing: string;
 }
 
 type PostsMap = {
@@ -32,7 +31,6 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
   const { dispatch } = useBoard();
 
   const [posts, setPosts] = useState<PostsMap>({});
-  console.log(posts);
   const [highestZ, setHighestZ] = useState(getHighestZIndex(posts));
   const [colorSetting, setColorSetting] = useState(pickColor(posts));
   var ws;
@@ -60,7 +58,7 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
     if (event.target === event.currentTarget) {
       const { offsetX, offsetY } = event.nativeEvent;
       const randId = Math.random() * 1000000;
-      const data = { left: offsetX, top: offsetY, color: colorSetting, user } as Post;
+      const data = { id: randId, left: offsetX, top: offsetY, color: colorSetting, user } as Post;
       // TODO: Instead of add post, call ws.send with relevant data
       addPost(randId.toString(), data);
     }
@@ -69,7 +67,6 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
   const addPost = useCallback(
     (id: string, data: Partial<Post>) => {
       setPosts(update(posts, { $merge: { [id]: data } }));
-      console.log('posts', posts);
     },
     [posts, setPosts]
   );
@@ -108,8 +105,6 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
         const zIndex = highestZ + 1;
         const data = { id: item.id, left: newLeft, top: newTop, zIndex } as Post;
         // TODO: Instead of update post, call ws.send with relevant data
-        console.log('item', item);
-        console.log('data to be updated', data, item.id);
         updatePost(item.id, data);
         setHighestZ(zIndex);
         return undefined;
