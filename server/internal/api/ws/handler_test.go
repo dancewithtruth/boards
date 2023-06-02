@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/Wave-95/boards/server/internal/jwt"
+	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"
@@ -16,7 +17,8 @@ import (
 func TestHandleWebSocket(t *testing.T) {
 	// Set up server
 	jwtService := jwt.New("jwt_secret", 1)
-	wsAPI := NewAPI(jwtService)
+	validator := validator.New()
+	wsAPI := NewAPI(jwtService, validator)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", wsAPI.HandleWebSocket)
 	server := httptest.NewServer(mux)
@@ -45,7 +47,7 @@ func TestHandleWebSocket(t *testing.T) {
 	if len(connectUser1Message.Data.ExistingUsers) == 0 {
 		t.Fatal("Failed to return user ID in first message")
 	}
-	assert.Equal(t, MessageTypeConnectUser, connectUser1Message.Type)
+	assert.Equal(t, TypeConnectUser, connectUser1Message.Type)
 	assert.Equal(t, 0, len(connectUser1Message.Data.ExistingUsers))
 	assert.Equal(t, user1Id, connectUser1Message.Data.NewUser)
 

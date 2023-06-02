@@ -44,6 +44,7 @@ func (api *API) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 
 	// Initialize and register new client
 	client := &Client{
+		api:    api,
 		userId: userId,
 		hub:    api.hub,
 		conn:   conn,
@@ -68,7 +69,7 @@ func (api *API) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 func broadcastConnectUser(client *Client, existingUsers []string) error {
 	messageUserConnected := MessageResponseConnectUser{
 		MessageResponse: MessageResponse{
-			Type:   MessageTypeConnectUser,
+			Type:   TypeConnectUser,
 			Sender: client.userId,
 		},
 		Data: DataConnectUser{

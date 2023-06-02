@@ -5,9 +5,13 @@
 package ws
 
 import (
+	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
+	"github.com/Wave-95/boards/server/internal/api/post"
+	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/gorilla/websocket"
 )
 
@@ -32,6 +36,8 @@ var (
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
+	api *API
+
 	userId string
 
 	hub *Hub
@@ -64,13 +70,7 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		// responseMessage, err := handleMessage(message)
-		// if err !=nil {
-		// 	// Give error response message back to sender only
-		// 	continue
-		// }
-
-		c.hub.broadcast <- message
+		handleMessage(c, message)
 	}
 }
 
@@ -120,6 +120,71 @@ func (c *Client) writePump() {
 	}
 }
 
-func handleMessage(message []byte) ([]byte, error) {
-	return nil, nil
+func handleMessage(c *Client, message []byte) {
+	// Identify message type
+	var messageRequest MessageRequest
+	err := json.Unmarshal(message, &messageRequest)
+	if err != nil {
+		sendMessageBadRequest(c)
+		return
+	}
+
+	// Route message type and handle accordingly
+	switch messageRequest.Type {
+	case TypeCreatePost:
+		// Unmarshal payload
+		var payload post.CreatePostInput
+		err := json.Unmarshal(messageRequest.Payload, &payload)
+		if err != nil {
+			sendMessageBadRequest(c)
+			return
+		}
+		// Validate create post payload
+		err = c.api.validator.Struct(payload)
+		fmt.Println(payload)
+		if err != nil {
+			sendMessageValidationErr(c, err)
+			return
+		}
+
+		// TODO: Create post
+		// post, err := c.api.postService.CreatePost(payload)
+		// if err != nil {
+		// 	sendMessageInternalServerErr(c, ErrorMessageInternalCreatePost)
+		// 	return
+		// }
+
+	default:
+		errorResponse := buildErrorResponse(TypeBadRequest, ErrorMessageBadType)
+		c.send <- errorResponse
+		return
+	}
+}
+
+func sendMessageBadRequest(c *Client) {
+	errorResponse := buildErrorResponse(TypeBadRequest, ErrorMessageBadRequest)
+	c.send <- errorResponse
+}
+
+func sendMessageValidationErr(c *Client, err error) {
+	errMsg := "Invalid request"
+	validationErrMsg := validator.GetValidationErrMsg(err)
+	if validationErrMsg != "" {
+		errMsg = validationErrMsg
+	}
+	c.send <- buildErrorResponse(TypeInvalidRequest, errMsg)
+}
+
+func sendMessageInternalServerErr(c *Client, errMsg string) {
+	errorResponse := buildErrorResponse(TypeInternalServerError, errMsg)
+	c.send <- errorResponse
+}
+
+func buildErrorResponse(messageType string, messageError string) []byte {
+	messageResponse := MessageResponse{
+		Type:         messageType,
+		ErrorMessage: messageError,
+	}
+	messageResponseBytes, _ := json.Marshal(messageResponse)
+	return messageResponseBytes
 }

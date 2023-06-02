@@ -11,13 +11,6 @@ import (
 	"github.com/Wave-95/boards/server/pkg/logger"
 )
 
-type CreateUserInput struct {
-	Name     string  `json:"name" validate:"required,min=2,max=12"`
-	Email    *string `json:"email" validate:"omitempty,email,required"`
-	Password *string `json:"password" validate:"omitempty,min=8"`
-	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
-}
-
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
@@ -34,7 +27,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// validate request
 	if err := api.validator.Struct(input); err != nil {
 		logger.Errorf("handler: failed to validate request: %v", err)
-		endpoint.HandleValidationErr(w, err)
+		endpoint.WriteValidationErr(w, err)
 		return
 	}
 
@@ -77,4 +70,12 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 	}
 	// write response
 	endpoint.WriteWithStatus(w, http.StatusOK, user)
+}
+
+// Inputs
+type CreateUserInput struct {
+	Name     string  `json:"name" validate:"required,min=2,max=12"`
+	Email    *string `json:"email" validate:"omitempty,email,required"`
+	Password *string `json:"password" validate:"omitempty,min=8"`
+	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
 }

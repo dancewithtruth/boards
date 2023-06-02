@@ -36,7 +36,7 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 
 	// validate input
 	if err := api.validator.Struct(input); err != nil {
-		endpoint.HandleValidationErr(w, err)
+		endpoint.WriteValidationErr(w, err)
 		return
 	}
 

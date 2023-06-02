@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-playground/validator/v10"
+	"github.com/Wave-95/boards/server/pkg/validator"
 )
 
 const (
@@ -57,18 +57,13 @@ func HandleDecodeErr(w http.ResponseWriter, err error) {
 	WriteWithError(w, http.StatusBadRequest, errMsg)
 }
 
-// HandleValidationErr responds with the appropriate validation error msg and
+// WriteValidationErr responds with the appropriate validation error msg and
 // sets the http status to 400
-func HandleValidationErr(w http.ResponseWriter, err error) {
+func WriteValidationErr(w http.ResponseWriter, err error) {
 	errMsg := InvalidRequest
-	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
-		fieldErr := fieldErrors[0]
-		switch fieldErr.Tag() {
-		case "required":
-			errMsg = fmt.Sprintf("%s is a required field", fieldErr.Field())
-		default:
-			errMsg = fmt.Sprintf("Invalid input on %s", fieldErr.Field())
-		}
+	validationErrMsg := validator.GetValidationErrMsg(err)
+	if validationErrMsg != "" {
+		errMsg = validationErrMsg
 	}
 	WriteWithError(w, http.StatusBadRequest, errMsg)
 }
