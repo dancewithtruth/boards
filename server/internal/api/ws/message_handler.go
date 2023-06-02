@@ -19,32 +19,35 @@ func HandleMessage(c *Client, message []byte) {
 	// Route message type and handle accordingly
 	switch messageRequest.Type {
 	case TypeCreatePost:
-		// Unmarshal payload
-		var payload post.CreatePostInput
-		err := json.Unmarshal(messageRequest.Payload, &payload)
-		if err != nil {
-			sendMessageBadRequest(c)
-			return
-		}
-		// Validate create post payload
-		err = c.api.validator.Struct(payload)
-		if err != nil {
-			sendMessageValidationErr(c, payload, err)
-			return
-		}
-
-		// TODO: Create post
-		// post, err := c.api.postService.CreatePost(payload)
-		// if err != nil {
-		// 	sendMessageInternalServerErr(c, ErrorMessageInternalCreatePost)
-		// 	return
-		// }
-
+		handleCreatePost(c, messageRequest.Data)
 	default:
 		errorResponse := buildErrorResponse(TypeBadRequest, ErrorMessageBadType)
 		c.send <- errorResponse
 		return
 	}
+}
+
+func handleCreatePost(c *Client, data []byte) {
+	// Unmarshal input
+	var input post.CreatePostInput
+	err := json.Unmarshal(data, &input)
+	if err != nil {
+		sendMessageBadRequest(c)
+		return
+	}
+	// Validate create post payload
+	err = c.api.validator.Struct(input)
+	if err != nil {
+		sendMessageValidationErr(c, input, err)
+		return
+	}
+
+	// TODO: Create post
+	// post, err := c.api.postService.CreatePost(payload)
+	// if err != nil {
+	// 	sendMessageInternalServerErr(c, ErrorMessageInternalCreatePost)
+	// 	return
+	// }
 }
 
 func sendMessageBadRequest(c *Client) {

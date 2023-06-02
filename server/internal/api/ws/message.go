@@ -3,7 +3,7 @@ package ws
 import "encoding/json"
 
 const (
-	// Types
+	// Message types
 	TypeConnectUser         = "CONNECT_USER"
 	TypeCreatePost          = "CREATE_POST"
 	TypeBadRequest          = "BAD_REQUEST"
@@ -18,8 +18,8 @@ const (
 
 // MessageRequest is a struct that describes the shape of every message request
 type MessageRequest struct {
-	Type    string          `json:"type"`
-	Payload json.RawMessage `json:"data"`
+	Type string          `json:"type"`
+	Data json.RawMessage `json:"data"`
 }
 
 // MessageResponse is a struct that describes the shape of every message response. If a request is handled and
