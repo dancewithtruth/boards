@@ -1,7 +1,10 @@
 package middleware
 
 import (
+	"bufio"
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"time"
 
@@ -41,6 +44,14 @@ func (lrw *LoggerRW) Write(p []byte) (int, error) {
 func (lrw *LoggerRW) WriteHeader(statusCode int) {
 	lrw.StatusCode = statusCode
 	lrw.ResponseWriter.WriteHeader(statusCode)
+}
+
+func (lrw *LoggerRW) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	h, ok := lrw.ResponseWriter.(http.Hijacker)
+	if !ok {
+		return nil, nil, errors.New("hijack not supported")
+	}
+	return h.Hijack()
 }
 
 // RequestLogger is a middleware that creates a context-aware logger for every request and makes it available to downstream

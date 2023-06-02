@@ -13,6 +13,7 @@ import (
 	"github.com/Wave-95/boards/server/internal/api/auth"
 	"github.com/Wave-95/boards/server/internal/api/board"
 	"github.com/Wave-95/boards/server/internal/api/user"
+	"github.com/Wave-95/boards/server/internal/api/ws"
 	"github.com/Wave-95/boards/server/internal/config"
 	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/internal/middleware"
@@ -62,9 +63,6 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.Cors())
 
-	// set up auth handler
-	authHandler := middleware.Auth(cfg.JwtSecret)
-
 	// set up repositories
 	userRepo := user.NewRepository(db)
 	boardRepo := board.NewRepository(db)
@@ -79,11 +77,16 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	userAPI := user.NewAPI(userService, jwtService, v)
 	authAPI := auth.NewAPI(authService, v)
 	boardAPI := board.NewAPI(boardService, v)
+	wsAPI := ws.NewAPI(jwtService)
+
+	// set up auth handler
+	authHandler := middleware.Auth(jwtService)
 
 	// register handlers
 	userAPI.RegisterHandlers(r, authHandler)
 	authAPI.RegisterHandlers(r)
 	boardAPI.RegisterHandlers(r, authHandler)
+	wsAPI.RegisterHandlers(r)
 
 	return r
 }

@@ -10,7 +10,6 @@ import type { XYCoord } from 'react-dnd';
 import { useDrop } from 'react-dnd';
 
 import { ItemTypes, LOCAL_STORAGE_AUTH_TOKEN, POST_COLORS, WS_BASE_URL } from '@/constants';
-import WebSocketConnection from '../../../../websocket';
 import { useUser } from '@/providers/user';
 import { User } from '../../../api/users';
 export interface DragItem {
@@ -42,7 +41,7 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
     if (window.WebSocket) {
       const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN);
       const wsUrl = `${WS_BASE_URL}/ws?token=${token}&boardId=${id}`;
-      ws = new WebSocketConnection(wsUrl);
+      ws = new WebSocket(wsUrl);
     }
   }, []);
 

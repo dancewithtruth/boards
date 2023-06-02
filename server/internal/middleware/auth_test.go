@@ -4,9 +4,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/golang-jwt/jwt/v5"
+	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +15,9 @@ func TestAuth(t *testing.T) {
 	t.Run("valid jwt token sets userId into request context", func(t *testing.T) {
 		userId := "abc123"
 		expiration := 1
-		token, err := generateTestToken(userId, expiration, jwtSecret)
+		jwtService := jwt.New(jwtSecret, expiration)
+
+		token, err := jwtService.GenerateToken(userId)
 		if err != nil {
 			t.Fatalf("Issue generating test token: %v", err)
 		}
@@ -30,14 +31,14 @@ func TestAuth(t *testing.T) {
 				assert.Equal(t, userId, ctxUserId, "Expected ctx user id to match jwt user id")
 			}
 		})
-
-		authMiddleware := Auth(jwtSecret)
+		authMiddleware := Auth(jwtService)
 		protectedHandler := authMiddleware(testHandler)
 		protectedHandler.ServeHTTP(res, req)
 	})
 
 	t.Run("invalid jwt token returns unauthorized error", func(t *testing.T) {
-		token, err := generateTestToken("abc123", 0, jwtSecret)
+		jwtService := jwt.New(jwtSecret, 0)
+		token, err := jwtService.GenerateToken("abc123")
 		if err != nil {
 			t.Fatalf("Issue generating test token: %v", err)
 		}
@@ -47,7 +48,7 @@ func TestAuth(t *testing.T) {
 		req.Header.Set("Authorization", "Bearer "+token)
 
 		mux := http.NewServeMux()
-		authMiddleware := Auth(jwtSecret)
+		authMiddleware := Auth(jwt.New(jwtSecret, 1))
 		handler := authMiddleware(mux)
 		handler.ServeHTTP(res, req)
 
@@ -55,14 +56,6 @@ func TestAuth(t *testing.T) {
 		assert.Contains(t, res.Body.String(), ErrMsgInvalidToken)
 	})
 
-}
-
-func generateTestToken(userId string, expiration int, jwtSigningKey string) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userId": userId,
-		"exp":    time.Now().Add(time.Duration(expiration) * time.Hour).Unix(),
-	})
-	return token.SignedString([]byte(jwtSigningKey))
 }
 
 func buildAuthRequest(token string) *http.Request {
