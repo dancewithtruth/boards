@@ -34,7 +34,7 @@ func TestHandleLogin(t *testing.T) {
 		api.HandleLogin(res, req)
 
 		assert.Equal(t, http.StatusOK, res.Code)
-		var response LoginResponse
+		var response LoginDTO
 		json.NewDecoder(res.Body).Decode(&response)
 		assert.NotEmpty(t, response.Token)
 	})

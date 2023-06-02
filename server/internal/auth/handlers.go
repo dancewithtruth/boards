@@ -13,15 +13,6 @@ const (
 	ErrMsgInternalServer = "Issue logging in"
 )
 
-type LoginInput struct {
-	Email    string `json:"email" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
-type LoginResponse struct {
-	Token string `json:"token"`
-}
-
 func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var input LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -44,5 +35,5 @@ func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
-	endpoint.WriteWithStatus(w, http.StatusOK, LoginResponse{Token: token})
+	endpoint.WriteWithStatus(w, http.StatusOK, LoginDTO{Token: token})
 }

@@ -13,7 +13,7 @@ func TestRepository(t *testing.T) {
 	db := test.DB(t)
 	repo := NewRepository(db)
 
-	testUser := NewTestUser()
+	testUser := test.NewUser()
 
 	t.Run("Create user", func(t *testing.T) {
 		err := repo.CreateUser(context.Background(), testUser)

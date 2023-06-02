@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/internal/test"
+	"github.com/Wave-95/boards/server/internal/user"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -96,7 +96,7 @@ func TestRepository(t *testing.T) {
 }
 
 func setUpTestUser(t *testing.T, userRepo user.Repository) models.User {
-	testUser := user.NewTestUser()
+	testUser := test.NewUser()
 	err := userRepo.CreateUser(context.Background(), testUser)
 	if err != nil {
 		assert.FailNow(t, "Could not set up test user for board testing")

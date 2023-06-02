@@ -7,7 +7,6 @@ import (
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
 	"github.com/Wave-95/boards/server/internal/middleware"
-	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/Wave-95/boards/server/pkg/logger"
 )
 
@@ -49,10 +48,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// write response
-	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
-		User     models.User `json:"user"`
-		JwtToken string      `json:"jwt_token"`
-	}{user, jwtToken})
+	endpoint.WriteWithStatus(w, http.StatusCreated, CreateUserDTO{User: user, JwtToken: jwtToken})
 }
 
 // HandleGetUserMe is protected with an authHandler and expects the userID to be present
@@ -70,12 +66,4 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 	}
 	// write response
 	endpoint.WriteWithStatus(w, http.StatusOK, user)
-}
-
-// Inputs
-type CreateUserInput struct {
-	Name     string  `json:"name" validate:"required,min=2,max=12"`
-	Email    *string `json:"email" validate:"omitempty,email,required"`
-	Password *string `json:"password" validate:"omitempty,min=8"`
-	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
 }
