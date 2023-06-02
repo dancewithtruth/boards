@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	u "github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/jwt"
+	u "github.com/Wave-95/boards/server/internal/user"
 )
 
 var (

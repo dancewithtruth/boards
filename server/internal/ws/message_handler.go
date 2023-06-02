@@ -3,7 +3,7 @@ package ws
 import (
 	"encoding/json"
 
-	"github.com/Wave-95/boards/server/internal/api/post"
+	"github.com/Wave-95/boards/server/internal/post"
 	"github.com/Wave-95/boards/server/pkg/validator"
 )
 

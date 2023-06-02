@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Wave-95/boards/server/internal/api/user"
 	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/internal/models"
+	"github.com/Wave-95/boards/server/internal/user"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
