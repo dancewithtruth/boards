@@ -77,7 +77,7 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	userAPI := user.NewAPI(userService, jwtService, v)
 	authAPI := auth.NewAPI(authService, v)
 	boardAPI := board.NewAPI(boardService, v)
-	wsAPI := ws.NewAPI(jwtService)
+	wsAPI := ws.NewAPI(jwtService, v)
 
 	// set up auth handler
 	authHandler := middleware.Auth(jwtService)
