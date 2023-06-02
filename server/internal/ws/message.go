@@ -4,15 +4,14 @@ import "encoding/json"
 
 const (
 	// Message types
-	TypeConnectUser         = "CONNECT_USER"
-	TypeCreatePost          = "CREATE_POST"
-	TypeBadRequest          = "BAD_REQUEST"
-	TypeInvalidRequest      = "INVALID_REQUEST"
-	TypeInternalServerError = "INTERNAL_SERVER_ERROR"
+	TypeConnectUser = "CONNECT_USER"
+	TypeCreatePost  = "CREATE_POST"
 
 	// Error messages
-	ErrorMessageBadRequest         = "Bad message request. Please make sure your field types are correct."
-	ErrorMessageBadType            = "Message request type not supported. Please make sure you have the right type."
+	ErrorMessageBadType            = "Bad message type. Please make sure the type field is a string."
+	ErrorMessageMissingType        = "Message request type is missing. Please make sure you have specified a type."
+	ErrorMessageUnsupportedType    = "Message request type is not supported. Please make sure you have the right type."
+	ErrorMessageBadInput           = "Bad payload. Please make sure all the fields are the correct type."
 	ErrorMessageInternalCreatePost = "There was an issue creating a post."
 )
 
@@ -25,7 +24,7 @@ type MessageRequest struct {
 // MessageResponse is a struct that describes the shape of every message response. If a request is handled and
 // encounters an error, then display the appropriate error using ErrorMessage.
 type MessageResponse struct {
-	Type         string `json:"type"`
+	Type         string `json:"type,omitempty"`
 	ErrorMessage string `json:"error,omitempty"`
 	Sender       string `json:"sender,omitempty"`
 }

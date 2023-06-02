@@ -122,6 +122,7 @@ const Board = ({ params: { id } }: { params: { id: string } }) => {
         style={{ width: `calc(100vw - 12rem)` }}
         onDoubleClick={handleDoubleClick}
       >
+        {' '}
         {Object.keys(posts).map((key) => {
           const post = posts[key] as Post;
           return (
