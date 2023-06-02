@@ -2,7 +2,6 @@ package ws
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/Wave-95/boards/server/internal/endpoint"
@@ -20,8 +19,6 @@ var (
 )
 
 func (api *API) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("w's type is %T\n", w)
-
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 	// Parse jwt token from query param
