@@ -59,9 +59,9 @@ func HandleDecodeErr(w http.ResponseWriter, err error) {
 
 // WriteValidationErr responds with the appropriate validation error msg and
 // sets the http status to 400
-func WriteValidationErr(w http.ResponseWriter, err error) {
+func WriteValidationErr(w http.ResponseWriter, s interface{}, err error) {
 	errMsg := InvalidRequest
-	validationErrMsg := validator.GetValidationErrMsg(err)
+	validationErrMsg := validator.GetValidationErrMsg(s, err)
 	if validationErrMsg != "" {
 		errMsg = validationErrMsg
 	}

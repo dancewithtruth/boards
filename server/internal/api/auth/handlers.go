@@ -31,7 +31,7 @@ func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	if err := api.validator.Struct(input); err != nil {
-		endpoint.WriteValidationErr(w, err)
+		endpoint.WriteValidationErr(w, input, err)
 		return
 	}
 

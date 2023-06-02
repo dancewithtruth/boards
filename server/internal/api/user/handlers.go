@@ -27,7 +27,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	// validate request
 	if err := api.validator.Struct(input); err != nil {
 		logger.Errorf("handler: failed to validate request: %v", err)
-		endpoint.WriteValidationErr(w, err)
+		endpoint.WriteValidationErr(w, input, err)
 		return
 	}
 
