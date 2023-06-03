@@ -56,11 +56,11 @@ func setupUserAndConnection(t *testing.T, jwtService jwt.JWTService, server *htt
 func assertReceivedInitialMessage(t *testing.T, conn *websocket.Conn, user models.User, numExisting int) {
 	// Assert first message received from WebSocket is a json with an array containing one user ID
 	_, bytes, _ := conn.ReadMessage()
-	var message MessageResponseConnectUser
+	var message ResponseUserConnect
 	if err := json.Unmarshal(bytes, &message); err != nil {
 		t.Fatalf("Failed to unmarshal first message: %v", err)
 	}
-	assert.Equal(t, TypeConnectUser, message.Type)
-	assert.Equal(t, numExisting, len(message.Data.ExistingUsers))
-	assert.Equal(t, user.Id.String(), message.Data.NewUser)
+	assert.Equal(t, EventBoardConnectUser, message.Event)
+	assert.Equal(t, numExisting, len(message.Result.ExistingUsers))
+	assert.Equal(t, user.Id.String(), message.Result.NewUser)
 }
