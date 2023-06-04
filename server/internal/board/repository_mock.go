@@ -13,6 +13,17 @@ type mockRepository struct {
 	users            map[uuid.UUID]models.User
 }
 
+func NewMockRepository(boards map[uuid.UUID]models.Board) *mockRepository {
+	boardMemberships := make(map[uuid.UUID]models.BoardMembership)
+	users := make(map[uuid.UUID]models.User)
+	return &mockRepository{boards, boardMemberships, users}
+}
+
+// AddUser is a mock specific function to help join the relation between users and boards
+func (r *mockRepository) AddUser(user models.User) {
+	r.users[user.Id] = user
+}
+
 func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) error {
 	r.boards[board.Id] = board
 	return nil
@@ -26,8 +37,9 @@ func (r *mockRepository) GetBoard(ctx context.Context, boardId uuid.UUID) (model
 }
 
 func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardId uuid.UUID) ([]BoardAndUser, error) {
-	// TODO: mock this out
-	return nil, nil
+	// TODO: mock this out, return board, board membership, and user
+	board := r.boards[boardId]
+	return []BoardAndUser{{Board: &board}}, nil
 }
 
 func (r *mockRepository) ListOwnedBoards(ctx context.Context, userId uuid.UUID) ([]models.Board, error) {
@@ -61,10 +73,4 @@ func (r *mockRepository) CreateMembership(ctx context.Context, membership models
 func (r *mockRepository) DeleteBoard(ctx context.Context, boardId uuid.UUID) error {
 	delete(r.boards, boardId)
 	return nil
-}
-
-func NewMockRepository(users map[uuid.UUID]models.User) *mockRepository {
-	boards := make(map[uuid.UUID]models.Board)
-	boardMemberships := make(map[uuid.UUID]models.BoardMembership)
-	return &mockRepository{boards, boardMemberships, users}
 }

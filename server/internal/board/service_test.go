@@ -14,9 +14,8 @@ import (
 func TestService(t *testing.T) {
 	validator := validator.New()
 	testUser := test.NewUser()
-	mockUsers := make(map[uuid.UUID]models.User)
-	mockUsers[testUser.Id] = testUser
-	mockBoardRepo := NewMockRepository(mockUsers)
+	mockBoardRepo := NewMockRepository(make(map[uuid.UUID]models.Board))
+	mockBoardRepo.AddUser(testUser)
 	boardService := NewService(mockBoardRepo, validator)
 	assert.NotNil(t, boardService)
 	t.Run("Create board", func(t *testing.T) {
