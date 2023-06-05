@@ -14,11 +14,11 @@ const (
 
 type API struct {
 	userService Service
-	jwtService  jwt.JWTService
+	jwtService  jwt.Service
 	validator   validator.Validate
 }
 
-func NewAPI(userService Service, jwtService jwt.JWTService, validator validator.Validate) API {
+func NewAPI(userService Service, jwtService jwt.Service, validator validator.Validate) API {
 	return API{
 		userService: userService,
 		jwtService:  jwtService,

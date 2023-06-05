@@ -8,11 +8,11 @@ import (
 
 type API struct {
 	hub        *Hub
-	jwtService jwt.JWTService
+	jwtService jwt.Service
 	validator  validator.Validate
 }
 
-func NewAPI(jwtService jwt.JWTService, validator validator.Validate) API {
+func NewAPI(jwtService jwt.Service, validator validator.Validate) API {
 	hub := newHub()
 	go hub.run()
 	return API{

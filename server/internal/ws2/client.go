@@ -31,9 +31,9 @@ var (
 	space   = []byte{' '}
 )
 
+// Very thin wrapper that encapsulates Board data for a given client
 type Board struct {
-	hasWritePermission bool
-	hub                *Hub
+	canWrite bool
 }
 
 // Client is a middleman between the websocket connection and the hub.
@@ -79,18 +79,19 @@ func (c *Client) readPump() {
 		var msgReq Request
 		err = json.Unmarshal(msg, &msgReq)
 		if err != nil {
-			// TODO: Close connection with close reason
-			// closeConnectionWithReason(statusCode int, errorMessage string)
+			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
 			return
 		}
 
 		// Route message and handle accordingly
 		switch msgReq.Event {
 		case "":
-			// TODO: Close connection with close reason
+			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
 			return
-		case EventConnectUser:
-			handleConnectUser(c, msgReq)
+		case EventUserAuthenticate:
+			handleUserAuthenticate(c, msgReq)
+		case EventBoardConnect:
+			handleBoardConnect(c, msgReq)
 		default:
 			// TODO: Close connection with close reason
 			return
@@ -146,7 +147,7 @@ func (c *Client) writePump() {
 }
 
 func (c *Client) unregisterAll() {
-	for _, board := range c.boards {
-		board.hub.unregister <- c
+	for boardId := range c.boards {
+		c.ws.boardHubs[boardId].unregister <- c
 	}
 }

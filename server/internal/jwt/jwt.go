@@ -8,7 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type JWTService interface {
+type Service interface {
 	GenerateToken(userId string) (string, error)
 	VerifyToken(token string) (string, error)
 }
@@ -18,7 +18,7 @@ type service struct {
 	expiration int
 }
 
-func New(jwtSecret string, expiration int) JWTService {
+func New(jwtSecret string, expiration int) *service {
 	return &service{jwtSecret, expiration}
 }
 

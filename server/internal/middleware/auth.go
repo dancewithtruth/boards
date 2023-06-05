@@ -22,7 +22,7 @@ const (
 // Auth creates a middleware function that retrieves a bearer token and validates the token.
 // The middleware sets the userId in the jwt payload into the request context. If the token is
 // invalid, it will write an Unauthorized response.
-func Auth(jwtService jwt.JWTService) func(next http.Handler) http.Handler {
+func Auth(jwtService jwt.Service) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()

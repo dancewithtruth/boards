@@ -11,7 +11,6 @@ import { useDrop } from 'react-dnd';
 
 import { ItemTypes, LOCAL_STORAGE_AUTH_TOKEN, POST_COLORS, WS_BASE_URL } from '@/constants';
 import { useUser } from '@/providers/user';
-import { User } from '../../../api/users';
 export interface DragItem {
   type: string;
   id: string;

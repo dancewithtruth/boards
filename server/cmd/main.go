@@ -16,7 +16,7 @@ import (
 	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/internal/middleware"
 	"github.com/Wave-95/boards/server/internal/user"
-	"github.com/Wave-95/boards/server/internal/ws"
+	"github.com/Wave-95/boards/server/internal/ws2"
 	"github.com/Wave-95/boards/server/pkg/logger"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/go-chi/chi/v5"
@@ -77,7 +77,7 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	userAPI := user.NewAPI(userService, jwtService, v)
 	authAPI := auth.NewAPI(authService, v)
 	boardAPI := board.NewAPI(boardService, v)
-	wsAPI := ws.NewAPI(jwtService, v)
+	websocket := ws2.NewWebSocket(userService, boardService, jwtService)
 
 	// set up auth handler
 	authHandler := middleware.Auth(jwtService)
@@ -86,7 +86,7 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	userAPI.RegisterHandlers(r, authHandler)
 	authAPI.RegisterHandlers(r)
 	boardAPI.RegisterHandlers(r, authHandler)
-	wsAPI.RegisterHandlers(r)
+	websocket.RegisterHandlers(r)
 
 	return r
 }

@@ -28,7 +28,7 @@ func TestHandleWebSocket(t *testing.T) {
 	assertReceivedInitialMessage(t, user2Conn, user2, 1)
 }
 
-func setupServer(t *testing.T) (jwt.JWTService, *httptest.Server) {
+func setupServer(t *testing.T) (jwt.Service, *httptest.Server) {
 	jwtService := jwt.New("jwt_secret", 1)
 	validator := validator.New()
 	wsAPI := NewAPI(jwtService, validator)
@@ -38,7 +38,7 @@ func setupServer(t *testing.T) (jwt.JWTService, *httptest.Server) {
 	return jwtService, server
 }
 
-func setupUserAndConnection(t *testing.T, jwtService jwt.JWTService, server *httptest.Server) (models.User, *websocket.Conn) {
+func setupUserAndConnection(t *testing.T, jwtService jwt.Service, server *httptest.Server) (models.User, *websocket.Conn) {
 	user := test.NewUser()
 	token, err := jwtService.GenerateToken(user.Id.String())
 	if err != nil {

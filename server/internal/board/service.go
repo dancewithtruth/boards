@@ -12,8 +12,8 @@ import (
 )
 
 var (
-	ErrInvalidBoardId = errors.New("Board ID not in UUID format")
-
+	ErrInvalidBoardId       = errors.New("Board ID not in UUID format")
+	ErrBoardNotFound        = errors.New("Board not found.")
 	defaultBoardDescription = "This is a default description for the board. Feel free to customize it and add relevant information about your board."
 )
 
@@ -100,6 +100,9 @@ func (s *service) GetBoardWithMembers(ctx context.Context, boardId string) (Boar
 		return BoardWithMembersDTO{}, fmt.Errorf("service: failed to get board with members: %w", err)
 	}
 	list := ToBoardWithMembersDTO(rows)
+	if len(list) == 0 {
+		return BoardWithMembersDTO{}, ErrBoardNotFound
+	}
 	return list[0], nil
 }
 

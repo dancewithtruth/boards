@@ -19,7 +19,7 @@ type Service interface {
 
 type service struct {
 	userRepo   u.Repository
-	jwtService jwt.JWTService
+	jwtService jwt.Service
 }
 
 func (s *service) Login(ctx context.Context, input LoginInput) (token string, err error) {
@@ -33,7 +33,7 @@ func (s *service) Login(ctx context.Context, input LoginInput) (token string, er
 	return s.jwtService.GenerateToken(user.Id.String())
 }
 
-func NewService(userRepo u.Repository, jwtService jwt.JWTService) Service {
+func NewService(userRepo u.Repository, jwtService jwt.Service) Service {
 	return &service{
 		userRepo:   userRepo,
 		jwtService: jwtService,
