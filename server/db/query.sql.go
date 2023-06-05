@@ -92,12 +92,58 @@ func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipPara
 	return err
 }
 
+const createPost = `-- name: CreatePost :exec
+INSERT INTO posts
+(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+`
+
+type CreatePostParams struct {
+	ID        pgtype.UUID
+	BoardID   pgtype.UUID
+	UserID    pgtype.UUID
+	Content   pgtype.Text
+	PosX      pgtype.Int4
+	PosY      pgtype.Int4
+	Color     pgtype.Text
+	Height    pgtype.Numeric
+	ZIndex    pgtype.Int4
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
+	_, err := q.db.Exec(ctx, createPost,
+		arg.ID,
+		arg.BoardID,
+		arg.UserID,
+		arg.Content,
+		arg.PosX,
+		arg.PosY,
+		arg.Color,
+		arg.Height,
+		arg.ZIndex,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	return err
+}
+
 const deleteBoard = `-- name: DeleteBoard :exec
 DELETE from boards WHERE id = $1
 `
 
 func (q *Queries) DeleteBoard(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteBoard, id)
+	return err
+}
+
+const deletePost = `-- name: DeletePost :exec
+DELETE from posts WHERE id = $1
+`
+
+func (q *Queries) DeletePost(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deletePost, id)
 	return err
 }
 
@@ -172,6 +218,30 @@ func (q *Queries) GetBoardAndUsers(ctx context.Context, id pgtype.UUID) ([]GetBo
 		return nil, err
 	}
 	return items, nil
+}
+
+const getPost = `-- name: GetPost :one
+SELECT id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at FROM posts
+WHERE posts.id = $1
+`
+
+func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
+	row := q.db.QueryRow(ctx, getPost, id)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.BoardID,
+		&i.UserID,
+		&i.Content,
+		&i.PosX,
+		&i.PosY,
+		&i.Color,
+		&i.Height,
+		&i.ZIndex,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const listOwnedBoardAndUsers = `-- name: ListOwnedBoardAndUsers :many
@@ -313,4 +383,41 @@ func (q *Queries) ListSharedBoardAndUsers(ctx context.Context, userID pgtype.UUI
 		return nil, err
 	}
 	return items, nil
+}
+
+const updatePost = `-- name: UpdatePost :exec
+UPDATE posts SET
+(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) =
+($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) WHERE id = $1
+`
+
+type UpdatePostParams struct {
+	ID        pgtype.UUID
+	BoardID   pgtype.UUID
+	UserID    pgtype.UUID
+	Content   pgtype.Text
+	PosX      pgtype.Int4
+	PosY      pgtype.Int4
+	Color     pgtype.Text
+	Height    pgtype.Numeric
+	ZIndex    pgtype.Int4
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
+	_, err := q.db.Exec(ctx, updatePost,
+		arg.ID,
+		arg.BoardID,
+		arg.UserID,
+		arg.Content,
+		arg.PosX,
+		arg.PosY,
+		arg.Color,
+		arg.Height,
+		arg.ZIndex,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	return err
 }
