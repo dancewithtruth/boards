@@ -1,14 +1,14 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
 
-	"github.com/Wave-95/boards/server/internal/endpoint"
-	"github.com/Wave-95/boards/server/internal/post"
+	"github.com/Wave-95/boards/server/internal/board"
 	"github.com/Wave-95/boards/server/pkg/logger"
-	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/gorilla/websocket"
 )
 
@@ -17,26 +17,11 @@ var (
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 	}
-
-	ErrMsgInvalidToken = "Missing or invalid jwt token. Please ensure jwt is passed as query param to WebSocket endpoint"
 )
 
-// HandleWebSocket is the handler for the "/ws" endpoint and is responsible for authenticating the user
-// and upgrading the http connection to a WebSocket. Once a connection is established, it registers the
-// client to a hub, sends an initial message, and listens for incoming messages via client.ReadPump()
-func (api *API) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
+func (ws *WebSocket) HandleConnection(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
-	// Parse jwt token from query param
-	queryParams := r.URL.Query()
-	token := queryParams.Get("jwt")
-
-	// Verify jwt token
-	userId, err := api.jwtService.VerifyToken(token)
-	if err != nil || userId == "" {
-		endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
-		return
-	}
 
 	// Upgrade connection to WebSocket
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -45,116 +30,149 @@ func (api *API) HandleWebSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize and register new client
-	client := &Client{
-		api:    api,
-		userId: userId,
-		hub:    api.hub,
+	client := Client{
+		boards: make(map[string]Board),
 		conn:   conn,
 		send:   make(chan []byte, 256),
+		ws:     ws,
 	}
-	existingUsers := api.hub.getUsers()
-	client.hub.register <- client
 
 	// Allow collection of memory referenced by the caller by doing all work in
 	// new goroutines.
 	go client.writePump()
 	go client.readPump()
-
-	// Broadcast users connected
-	if err := broadcastConnectUser(client, existingUsers); err != nil {
-		logger.Errorf("handler: failed to broadcast user connected message: %v", err)
-		client.hub.unregister <- client
-	}
-
 }
 
-// HandleMessage handles every message that comes in. It's responsible for handling errors
-// that occur when unmarshaling the []byte message into its relevant struct. HandleMessage
-// will close the connection with a close reason for bad requests. If there's no formatting
-// issue, the handler will either send a successful or unsuccessful message response.
-func HandleMessage(c *Client, msg []byte) {
-	// Identify message event
-	var msgReq Request
-	err := json.Unmarshal(msg, &msgReq)
+func handleDestroy(destroy chan string, boardHubs map[string]*Hub) {
+	for {
+		boardId := <-destroy
+		delete(boardHubs, boardId)
+	}
+}
+
+// handleUserAuthenticate will authenticate the user and store a userId in the Client.
+func handleUserAuthenticate(c *Client, msgReq Request) {
+	// Unmarshal params
+	var params ParamsUserAuthenticate
+	err := json.Unmarshal(msgReq.Params, &params)
 	if err != nil {
-		// TODO: Close connection with close reason
-		// closeConnectionWithReason(statusCode int, errorMessage string)
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
 		return
 	}
-
-	// Route message and handle accordingly
-	switch msgReq.Event {
-	case "":
-		// TODO: Close connection with close reason
-		return
-	case EventPostCreate:
-		handleCreatePost(c, msgReq)
-	default:
-		// TODO: Close connection with close reason
-		return
-	}
-}
-
-func handleCreatePost(c *Client, msgReq Request) {
-	// Unmarshal input
-	var input post.CreatePostInput
-	err := json.Unmarshal(msgReq.Params, &input)
-	if err != nil {
-		// TODO: Close connnection with close reason
-		return
-	}
-	// Validate create post payload
-	err = c.api.validator.Struct(input)
-	if err != nil {
-		sendMsgValidationErr(c, msgReq.Event, input, err)
-		return
-	}
-
-	// TODO: Create post
-	// post, err := c.api.postService.CreatePost(payload)
-	// if err != nil {
-	// 	sendMessageInternalServerErr(c, ErrorMessageInternalCreatePost)
-	// 	return
-	// }
-}
-
-func sendMsgValidationErr(c *Client, event string, s interface{}, err error) {
-	errMsg := "Invalid request"
-	validationErrMsg := validator.GetValidationErrMsg(s, err)
-	if validationErrMsg != "" {
-		errMsg = validationErrMsg
-	}
-	c.send <- buildErrorResponse(event, errMsg)
-}
-
-func buildErrorResponse(event string, errMsg string) []byte {
-	messageResponse := Response{
-		Event:        event,
-		ErrorMessage: errMsg,
-	}
-	messageResponseBytes, err := json.Marshal(messageResponse)
-	if err != nil {
-		log.Printf("Failed to marshal error response into json:%v", err)
-	}
-	return messageResponseBytes
-}
-
-func broadcastConnectUser(client *Client, existingUsers []string) error {
-	messageUserConnected := ResponseUserConnect{
-		Response: Response{
-			Event:   EventBoardConnectUser,
+	// Verify jwt token
+	userId, err := c.ws.jwtService.VerifyToken(params.Jwt)
+	var msgRes ResponseUserAuthenticate
+	if err != nil || userId == "" {
+		// Prepare error response
+		msgRes = ResponseUserAuthenticate{
+			Event:        EventBoardConnect,
+			Success:      false,
+			ErrorMessage: ErrMsgInvalidJwt,
+		}
+	} else {
+		// Prepare success response
+		msgRes = ResponseUserAuthenticate{
+			Event:   EventBoardConnect,
 			Success: true,
-		},
-		Result: ResultUserConnect{
-			NewUser:       client.userId,
-			ExistingUsers: existingUsers,
-		},
+			Result: ResultUserAuthenticate{
+				UserId: userId,
+			},
+		}
+		// Assign userId to client struct
+		c.userId = userId
 	}
-	messageUserConnectedBytes, err := json.Marshal(messageUserConnected)
+
+	// Send response
+	msgResBytes, err := json.Marshal(msgRes)
 	if err != nil {
-		return err
+		log.Printf("handleUserAuthenticate: Failed to marshal response into JSON: %v", err)
+		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		return
 	}
-	client.hub.broadcast <- messageUserConnectedBytes
-	return nil
+	c.send <- msgResBytes
+}
+
+// handleBoardConnect will attempt to connect a user to the board by registering the client
+// to a board hub. If a board hub does not exist, it will be created in this handler. A successful
+// board connect event will be broadcasted to all connected clients. The response contains the new
+// user that's been connected as well as existing users.
+func handleBoardConnect(c *Client, msgReq Request) {
+	// Check if user is authenticated
+	userId := c.userId
+	if userId == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	// Unmarshal params
+	var params ParamsBoardConnect
+	err := json.Unmarshal(msgReq.Params, &params)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return
+	}
+	// Check if user has access to board
+	boardId := params.BoardId
+	board, err := c.ws.boardService.GetBoardWithMembers(context.Background(), boardId)
+	var msgRes ResponseBoardConnect
+	// If no access, return error response
+	if err != nil || !hasAccess(board, userId) {
+		msgRes = ResponseBoardConnect{
+			Event:        EventBoardConnect,
+			Success:      false,
+			ErrorMessage: ErrMsgBoardNotFound,
+		}
+	} else {
+		// If board does not exist as a hub, create one and run it
+		if _, ok := c.ws.boardHubs[boardId]; !ok {
+			c.ws.boardHubs[boardId] = newHub(boardId, c.ws.destroy)
+			go c.ws.boardHubs[boardId].run()
+		}
+		// Store write permission on the client's boards map
+		boardHub := c.ws.boardHubs[boardId]
+		c.boards[boardId] = Board{
+			canWrite: true,
+		}
+		existingUsers := boardHub.listConnectedUsers()
+		boardHub.register <- c
+
+		// Broacast successful message response
+		msgRes = ResponseBoardConnect{
+			Event:   EventBoardConnect,
+			Success: true,
+			Result: ResultBoardConnect{
+				BoardId:       boardId,
+				UserId:        userId,
+				ExistingUsers: existingUsers,
+			},
+		}
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+	if err != nil {
+		log.Printf("handleUserAuthenticate: Failed to marshal response into JSON: %v", err)
+		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		return
+	}
+	// Only broadcast message if successful, otherwise send only to the client
+	if msgRes.Success == true {
+		c.ws.boardHubs[params.BoardId].broadcast <- msgResBytes
+	} else if msgRes.Success == false {
+		c.send <- msgResBytes
+	}
+}
+
+func hasAccess(board board.BoardWithMembersDTO, userId string) bool {
+	if board.UserId.String() == userId {
+		return true
+	}
+
+	for _, member := range board.Members {
+		if member.Id.String() == userId {
+			return true
+		}
+	}
+	return false
+}
+
+func closeConnection(c *Client, statusCode int, text string) {
+	c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(statusCode, text), time.Now().Add(writeWait))
 }

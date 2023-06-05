@@ -1,4 +1,4 @@
-package ws2
+package ws
 
 import (
 	"github.com/Wave-95/boards/server/internal/board"

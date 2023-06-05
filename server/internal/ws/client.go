@@ -5,6 +5,7 @@
 package ws
 
 import (
+	"encoding/json"
 	"log"
 	"time"
 
@@ -30,13 +31,20 @@ var (
 	space   = []byte{' '}
 )
 
+// Very thin wrapper that encapsulates Board data for a given client
+type Board struct {
+	canWrite bool
+}
+
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	api *API
-
 	userId string
 
-	hub *Hub
+	// A map of board IDs to Board, a thin wrapper containing write permission and hub location.
+	boards map[string]Board
+
+	// Websocket dependencies.
+	ws *WebSocket
 
 	// The websocket connection.
 	conn *websocket.Conn
@@ -52,21 +60,42 @@ type Client struct {
 // reads from this goroutine.
 func (c *Client) readPump() {
 	defer func() {
-		c.hub.unregister <- c
+		// Unregister client from every hub
+		c.unregisterAll()
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, message, err := c.conn.ReadMessage()
+		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
 				log.Printf("error: %v", err)
 			}
 			break
 		}
-		HandleMessage(c, message)
+		// Identify message event
+		var msgReq Request
+		err = json.Unmarshal(msg, &msgReq)
+		if err != nil {
+			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
+			return
+		}
+
+		// Route message and handle accordingly
+		switch msgReq.Event {
+		case "":
+			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
+			return
+		case EventUserAuthenticate:
+			handleUserAuthenticate(c, msgReq)
+		case EventBoardConnect:
+			handleBoardConnect(c, msgReq)
+		default:
+			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonUnsupportedEvent)
+			return
+		}
 	}
 }
 
@@ -79,6 +108,7 @@ func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
+		c.unregisterAll()
 		c.conn.Close()
 	}()
 	for {
@@ -113,5 +143,11 @@ func (c *Client) writePump() {
 				return
 			}
 		}
+	}
+}
+
+func (c *Client) unregisterAll() {
+	for boardId := range c.boards {
+		c.ws.boardHubs[boardId].unregister <- c
 	}
 }

@@ -1,4 +1,4 @@
-package ws2
+package ws
 
 import "encoding/json"
 
