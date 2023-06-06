@@ -106,7 +106,7 @@ type CreatePostParams struct {
 	PosX      pgtype.Int4
 	PosY      pgtype.Int4
 	Color     pgtype.Text
-	Height    pgtype.Numeric
+	Height    pgtype.Int4
 	ZIndex    pgtype.Int4
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp
@@ -331,6 +331,43 @@ func (q *Queries) ListOwnedBoards(ctx context.Context, userID pgtype.UUID) ([]Bo
 	return items, nil
 }
 
+const listPosts = `-- name: ListPosts :many
+SELECT id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at FROM posts
+WHERE posts.board_id = $1
+`
+
+func (q *Queries) ListPosts(ctx context.Context, boardID pgtype.UUID) ([]Post, error) {
+	rows, err := q.db.Query(ctx, listPosts, boardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.UserID,
+			&i.Content,
+			&i.PosX,
+			&i.PosY,
+			&i.Color,
+			&i.Height,
+			&i.ZIndex,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSharedBoardAndUsers = `-- name: ListSharedBoardAndUsers :many
 SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
 LEFT JOIN board_memberships on board_memberships.board_id = boards.id
@@ -399,7 +436,7 @@ type UpdatePostParams struct {
 	PosX      pgtype.Int4
 	PosY      pgtype.Int4
 	Color     pgtype.Text
-	Height    pgtype.Numeric
+	Height    pgtype.Int4
 	ZIndex    pgtype.Int4
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp

@@ -125,3 +125,16 @@ func hasUser(members []BoardMemberDTO, userId string) bool {
 	}
 	return false
 }
+
+func HasBoardAccess(board BoardWithMembersDTO, userId string) bool {
+	if board.UserId.String() == userId {
+		return true
+	}
+
+	for _, member := range board.Members {
+		if member.Id.String() == userId {
+			return true
+		}
+	}
+	return false
+}

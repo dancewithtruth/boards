@@ -15,6 +15,7 @@ import (
 	"github.com/Wave-95/boards/server/internal/config"
 	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/internal/middleware"
+	"github.com/Wave-95/boards/server/internal/post"
 	"github.com/Wave-95/boards/server/internal/user"
 	"github.com/Wave-95/boards/server/internal/ws"
 	"github.com/Wave-95/boards/server/pkg/logger"
@@ -66,18 +67,21 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	// set up repositories
 	userRepo := user.NewRepository(db)
 	boardRepo := board.NewRepository(db)
+	postRepo := post.NewRepository(db)
 
 	// set up services
 	jwtService := jwt.New(cfg.JwtSecret, cfg.JwtExpiration)
 	authService := auth.NewService(userRepo, jwtService)
 	userService := user.NewService(userRepo, v)
 	boardService := board.NewService(boardRepo, v)
+	postService := post.NewService(postRepo)
 
 	// set up APIs
 	userAPI := user.NewAPI(userService, jwtService, v)
 	authAPI := auth.NewAPI(authService, v)
 	boardAPI := board.NewAPI(boardService, v)
-	websocket := ws.NewWebSocket(userService, boardService, jwtService)
+	postAPI := post.NewAPI(postService, boardService, v)
+	websocket := ws.NewWebSocket(userService, boardService, postService, jwtService)
 
 	// set up auth handler
 	authHandler := middleware.Auth(jwtService)
@@ -86,6 +90,7 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	userAPI.RegisterHandlers(r, authHandler)
 	authAPI.RegisterHandlers(r)
 	boardAPI.RegisterHandlers(r, authHandler)
+	postAPI.RegisterHandlers(r, authHandler)
 	websocket.RegisterHandlers(r)
 
 	return r

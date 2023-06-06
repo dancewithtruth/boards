@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS posts (
   pos_x INTEGER,
   pos_y INTEGER,
   color VARCHAR(7),
-  height DECIMAL,
+  height INTEGER,
   z_index INTEGER,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL

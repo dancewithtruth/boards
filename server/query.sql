@@ -55,6 +55,10 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
 SELECT * FROM posts
 WHERE posts.id = $1;
 
+-- name: ListPosts :many
+SELECT * FROM posts
+WHERE posts.board_id = $1;
+
 -- name: UpdatePost :exec
 UPDATE posts SET
 (id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) =

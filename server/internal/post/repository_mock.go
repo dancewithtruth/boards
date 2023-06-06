@@ -37,3 +37,13 @@ func (r *mockRepository) DeletePost(ctx context.Context, postId uuid.UUID) error
 	delete(r.posts, postId)
 	return nil
 }
+
+func (r *mockRepository) ListPosts(ctx context.Context, boardId uuid.UUID) ([]models.Post, error) {
+	posts := []models.Post{}
+	for _, post := range r.posts {
+		if post.BoardId == boardId {
+			posts = append(posts, post)
+		}
+	}
+	return posts, nil
+}

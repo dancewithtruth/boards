@@ -9,6 +9,14 @@ import (
 	"github.com/google/uuid"
 )
 
+type Service interface {
+	CreatePost(ctx context.Context, input CreatePostInput) (models.Post, error)
+	GetPost(ctx context.Context, postId string) (models.Post, error)
+	ListPosts(ctx context.Context, boardId string) ([]models.Post, error)
+	UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error)
+	DeletePost(ctx context.Context, postId string) error
+}
+
 type service struct {
 	repo Repository
 }
@@ -56,7 +64,6 @@ func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models
 	return post, nil
 }
 
-// CreatePost takes an input, validates it, and creates a new post
 func (s *service) GetPost(ctx context.Context, postId string) (models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
@@ -67,6 +74,18 @@ func (s *service) GetPost(ctx context.Context, postId string) (models.Post, erro
 	}
 	//TODO: Handle error in service layer
 	return s.repo.GetPost(ctx, postIdUUID)
+}
+
+func (s *service) ListPosts(ctx context.Context, boardId string) ([]models.Post, error) {
+	logger := logger.FromContext(ctx)
+	// Validate input
+	boardIdUUID, err := uuid.Parse(boardId)
+	if err != nil {
+		logger.Errorf("service: failed to parse boardId into UUID")
+		return []models.Post{}, err
+	}
+	//TODO: Handle error in service layer
+	return s.repo.ListPosts(ctx, boardIdUUID)
 }
 
 func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error) {

@@ -18,7 +18,7 @@ type Post struct {
 	PosX      int       `json:"pos_x"`
 	PosY      int       `json:"pos_y"`
 	Color     string    `json:"color"`
-	Height    float64   `json:"height"`
+	Height    int       `json:"height"`
 	ZIndex    int       `json:"z_index"`
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`

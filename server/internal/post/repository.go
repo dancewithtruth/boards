@@ -3,7 +3,6 @@ package post
 import (
 	"context"
 	"errors"
-	"math/big"
 
 	"github.com/Wave-95/boards/server/db"
 	"github.com/Wave-95/boards/server/internal/models"
@@ -18,6 +17,7 @@ var (
 type Repository interface {
 	CreatePost(ctx context.Context, post models.Post) error
 	GetPost(ctx context.Context, postId uuid.UUID) (models.Post, error)
+	ListPosts(ctx context.Context, postId uuid.UUID) ([]models.Post, error)
 	UpdatePost(ctx context.Context, post models.Post) error
 	DeletePost(ctx context.Context, postId uuid.UUID) error
 }
@@ -33,9 +33,6 @@ func NewRepository(conn *db.DB) *repository {
 }
 
 func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
-	heightFloatVal := big.NewFloat(post.Height)
-	heightBigInt := new(big.Int)
-	heightFloatVal.Int(heightBigInt)
 	arg := db.CreatePostParams{
 		ID:        pgtype.UUID{Bytes: post.Id, Valid: true},
 		BoardID:   pgtype.UUID{Bytes: post.BoardId, Valid: true},
@@ -44,7 +41,7 @@ func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 		PosX:      pgtype.Int4{Int32: int32(post.PosX), Valid: true},
 		PosY:      pgtype.Int4{Int32: int32(post.PosY), Valid: true},
 		Color:     pgtype.Text{String: post.Color, Valid: true},
-		Height:    pgtype.Numeric{Int: heightBigInt, Valid: true},
+		Height:    pgtype.Int4{Int32: int32(post.Height), Valid: true},
 		ZIndex:    pgtype.Int4{Int32: int32(post.ZIndex), Valid: true},
 		CreatedAt: pgtype.Timestamp{Time: post.CreatedAt, Valid: true},
 		UpdatedAt: pgtype.Timestamp{Time: post.UpdatedAt, Valid: true},
@@ -65,7 +62,7 @@ func (r *repository) GetPost(ctx context.Context, postId uuid.UUID) (models.Post
 		PosX:      int(postDB.PosX.Int32),
 		PosY:      int(postDB.PosY.Int32),
 		Color:     postDB.Color.String,
-		Height:    float64(postDB.Height.Exp),
+		Height:    int(postDB.Height.Int32),
 		ZIndex:    int(postDB.ZIndex.Int32),
 		CreatedAt: postDB.CreatedAt.Time,
 		UpdatedAt: postDB.UpdatedAt.Time,
@@ -73,10 +70,32 @@ func (r *repository) GetPost(ctx context.Context, postId uuid.UUID) (models.Post
 	return post, nil
 }
 
+func (r *repository) ListPosts(ctx context.Context, boardId uuid.UUID) ([]models.Post, error) {
+	postsDB, err := r.q.ListPosts(ctx, pgtype.UUID{Bytes: boardId, Valid: true})
+	if err != nil {
+		return []models.Post{}, err
+	}
+	posts := []models.Post{}
+	for _, postDB := range postsDB {
+		post := models.Post{
+			Id:        postDB.ID.Bytes,
+			BoardId:   postDB.BoardID.Bytes,
+			UserId:    postDB.UserID.Bytes,
+			Content:   postDB.Content.String,
+			PosX:      int(postDB.PosX.Int32),
+			PosY:      int(postDB.PosY.Int32),
+			Color:     postDB.Color.String,
+			Height:    int(postDB.Height.Int32),
+			ZIndex:    int(postDB.ZIndex.Int32),
+			CreatedAt: postDB.CreatedAt.Time,
+			UpdatedAt: postDB.UpdatedAt.Time,
+		}
+		posts = append(posts, post)
+	}
+	return posts, nil
+}
+
 func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
-	heightFloatVal := big.NewFloat(post.Height)
-	heightBigInt := new(big.Int)
-	heightFloatVal.Int(heightBigInt)
 	arg := db.UpdatePostParams{
 		ID:        pgtype.UUID{Bytes: post.Id, Valid: true},
 		BoardID:   pgtype.UUID{Bytes: post.BoardId, Valid: true},
@@ -85,7 +104,7 @@ func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
 		PosX:      pgtype.Int4{Int32: int32(post.PosX), Valid: true},
 		PosY:      pgtype.Int4{Int32: int32(post.PosY), Valid: true},
 		Color:     pgtype.Text{String: post.Color, Valid: true},
-		Height:    pgtype.Numeric{Int: heightBigInt, Valid: true},
+		Height:    pgtype.Int4{Int32: int32(post.Height), Valid: true},
 		ZIndex:    pgtype.Int4{Int32: int32(post.ZIndex), Valid: true},
 		CreatedAt: pgtype.Timestamp{Time: post.CreatedAt, Valid: true},
 		UpdatedAt: pgtype.Timestamp{Time: post.UpdatedAt, Valid: true},

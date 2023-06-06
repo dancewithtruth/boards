@@ -11,6 +11,7 @@ import (
 	"github.com/Wave-95/boards/server/internal/board"
 	"github.com/Wave-95/boards/server/internal/jwt"
 	"github.com/Wave-95/boards/server/internal/models"
+	"github.com/Wave-95/boards/server/internal/post"
 	"github.com/Wave-95/boards/server/internal/test"
 	"github.com/Wave-95/boards/server/internal/user"
 	"github.com/Wave-95/boards/server/pkg/validator"
@@ -23,15 +24,17 @@ func TestHandleWebSocket(t *testing.T) {
 	// Set up mock repositories
 	mockUserRepo := user.NewMockRepository(make(map[uuid.UUID]models.User))
 	mockBoardRepo := board.NewMockRepository(make(map[uuid.UUID]models.Board))
+	mockPostRepo := post.NewMockRepository()
 
 	// Set up mock services
 	validator := validator.New()
 	mockUserService := user.NewService(mockUserRepo, validator)
 	mockBoardService := board.NewService(mockBoardRepo, validator)
+	mockPostService := post.NewService(mockPostRepo)
 	jwtService := jwt.New("jwt_secret", 1)
 
 	// Set up server
-	ws := NewWebSocket(mockUserService, mockBoardService, jwtService)
+	ws := NewWebSocket(mockUserService, mockBoardService, mockPostService, jwtService)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", ws.HandleConnection)
 	server := httptest.NewServer(mux)
@@ -203,14 +206,17 @@ func setupServer(t *testing.T, testUser models.User, testBoard models.Board, jwt
 	if err != nil {
 		t.Fatalf("Failed to create test board: %v", err)
 	}
+	// Set up mock board repo
+	mockPostRepo := post.NewMockRepository()
 
 	// Set up mock user and board service
 	validator := validator.New()
 	mockUserService := user.NewService(mockUserRepo, validator)
 	mockBoardService := board.NewService(mockBoardRepo, validator)
+	mockPostService := post.NewService(mockPostRepo)
 
 	// Set up server
-	ws := NewWebSocket(mockUserService, mockBoardService, jwtService)
+	ws := NewWebSocket(mockUserService, mockBoardService, mockPostService, jwtService)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", ws.HandleConnection)
 	return httptest.NewServer(mux)

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/server/internal/models"
+	"github.com/Wave-95/boards/server/pkg/logger"
 	"github.com/Wave-95/boards/server/pkg/validator"
 	"github.com/google/uuid"
 )
@@ -91,11 +92,15 @@ func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, e
 
 // GetBoardWithMembers returns a single board with a list of associated members
 func (s *service) GetBoardWithMembers(ctx context.Context, boardId string) (BoardWithMembersDTO, error) {
+	fmt.Println("hello")
+	logger := logger.FromContext(ctx)
 	boardIdUUID, err := uuid.Parse(boardId)
 	if err != nil {
+		logger.Errorf("service: failed to parse boardId")
 		return BoardWithMembersDTO{}, ErrInvalidBoardId
 	}
 	rows, err := s.repo.GetBoardAndUsers(ctx, boardIdUUID)
+	fmt.Println("rows", rows)
 	if err != nil {
 		return BoardWithMembersDTO{}, fmt.Errorf("service: failed to get board with members: %w", err)
 	}

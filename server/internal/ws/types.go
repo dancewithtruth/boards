@@ -1,11 +1,16 @@
 package ws
 
-import "encoding/json"
+import (
+	"encoding/json"
+
+	"github.com/Wave-95/boards/server/internal/models"
+)
 
 const (
 	// Events
 	EventUserAuthenticate = "user.authenticate"
 	EventBoardConnect     = "board.connect"
+	EventPostCreate       = "post.create"
 
 	// Close reasons
 	CloseReasonMissingEvent     = "The event field is missing."
@@ -16,8 +21,10 @@ const (
 	CloseReasonUnauthorized     = "Unauthorized."
 
 	// Error messages
-	ErrMsgInvalidJwt    = "Invalid JWT token supplied."
-	ErrMsgBoardNotFound = "Board not found."
+	ErrMsgInvalidJwt     = "Invalid JWT token supplied."
+	ErrMsgBoardNotFound  = "Board not found."
+	ErrMsgUnauthorized   = "Unauthorized."
+	ErrMsgInternalServer = "Internal server error."
 )
 
 // Requests
@@ -46,7 +53,28 @@ type ParamsUserAuthenticate struct {
 	Jwt string `json:"jwt"`
 }
 
+type RequestPostCreate struct {
+	Event  string           `json:"event"`
+	Params ParamsPostCreate `json:"params"`
+}
+
+type ParamsPostCreate struct {
+	BoardId string `json:"board_id" validate:"required,uuid"`
+	Content string `json:"content"`
+	PosX    int    `json:"pos_x" validate:"required,min=0"`
+	PosY    int    `json:"pos_y" validate:"required,min=0"`
+	Color   string `json:"color" validate:"required,min=7,max=7"`
+	Height  int    `json:"height" validate:"min=0"`
+	ZIndex  int    `json:"z_index" validate:"min=1"`
+}
+
 // Responses
+
+type ResponseBase struct {
+	Event        string `json:"event"`
+	Success      bool   `json:"success"`
+	ErrorMessage string `json:"error_message,omitempty"`
+}
 
 type ResponseUserAuthenticate struct {
 	Event        string                 `json:"event"`
@@ -58,13 +86,16 @@ type ResultUserAuthenticate struct {
 	UserId string `json:"user_id"`
 }
 type ResponseBoardConnect struct {
-	Event        string             `json:"event"`
-	Success      bool               `json:"success"`
-	Result       ResultBoardConnect `json:"result,omitempty"`
-	ErrorMessage string             `json:"error_message,omitempty"`
+	ResponseBase
+	Result ResultBoardConnect `json:"result,omitempty"`
 }
 type ResultBoardConnect struct {
 	BoardId       string   `json:"board_id"`
 	UserId        string   `json:"user_id"`
 	ExistingUsers []string `json:"existing_users"`
+}
+
+type ResponsePostCreate struct {
+	ResponseBase
+	Result models.Post `json:"result,omitempty"`
 }

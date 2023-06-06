@@ -75,27 +75,7 @@ func (c *Client) readPump() {
 			}
 			break
 		}
-		// Identify message event
-		var msgReq Request
-		err = json.Unmarshal(msg, &msgReq)
-		if err != nil {
-			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
-			return
-		}
-
-		// Route message and handle accordingly
-		switch msgReq.Event {
-		case "":
-			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
-			return
-		case EventUserAuthenticate:
-			handleUserAuthenticate(c, msgReq)
-		case EventBoardConnect:
-			handleBoardConnect(c, msgReq)
-		default:
-			closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonUnsupportedEvent)
-			return
-		}
+		handleMessage(c, msg)
 	}
 }
 
@@ -108,7 +88,6 @@ func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
 	defer func() {
 		ticker.Stop()
-		c.unregisterAll()
 		c.conn.Close()
 	}()
 	for {
@@ -149,5 +128,31 @@ func (c *Client) writePump() {
 func (c *Client) unregisterAll() {
 	for boardId := range c.boards {
 		c.ws.boardHubs[boardId].unregister <- c
+	}
+}
+
+func handleMessage(c *Client, msg []byte) {
+	// Identify message event
+	var msgReq Request
+	err := json.Unmarshal(msg, &msgReq)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
+		return
+	}
+
+	// Route message and handle accordingly
+	switch msgReq.Event {
+	case "":
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadEvent)
+		return
+	case EventUserAuthenticate:
+		handleUserAuthenticate(c, msgReq)
+	case EventBoardConnect:
+		handleBoardConnect(c, msgReq)
+	case EventPostCreate:
+		handlePostCreate(c, msgReq)
+	default:
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonUnsupportedEvent)
+		return
 	}
 }

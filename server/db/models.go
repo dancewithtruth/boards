@@ -43,7 +43,7 @@ type Post struct {
 	PosX      pgtype.Int4
 	PosY      pgtype.Int4
 	Color     pgtype.Text
-	Height    pgtype.Numeric
+	Height    pgtype.Int4
 	ZIndex    pgtype.Int4
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp

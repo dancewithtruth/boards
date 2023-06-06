@@ -3,12 +3,16 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/Wave-95/boards/server/internal/board"
+	"github.com/Wave-95/boards/server/internal/post"
 	"github.com/Wave-95/boards/server/pkg/logger"
+	v "github.com/Wave-95/boards/server/pkg/validator"
+	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/websocket"
 )
 
@@ -16,6 +20,10 @@ var (
 	upgrader = websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			// Allow all origins
+			return true
+		},
 	}
 )
 
@@ -72,7 +80,7 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 	} else {
 		// Prepare success response
 		msgRes = ResponseUserAuthenticate{
-			Event:   EventBoardConnect,
+			Event:   EventUserAuthenticate,
 			Success: true,
 			Result: ResultUserAuthenticate{
 				UserId: userId,
@@ -112,14 +120,15 @@ func handleBoardConnect(c *Client, msgReq Request) {
 	}
 	// Check if user has access to board
 	boardId := params.BoardId
-	board, err := c.ws.boardService.GetBoardWithMembers(context.Background(), boardId)
+	boardWithMembers, err := c.ws.boardService.GetBoardWithMembers(context.Background(), boardId)
 	var msgRes ResponseBoardConnect
 	// If no access, return error response
-	if err != nil || !hasAccess(board, userId) {
+	if err != nil || !board.HasBoardAccess(boardWithMembers, userId) {
 		msgRes = ResponseBoardConnect{
-			Event:        EventBoardConnect,
-			Success:      false,
-			ErrorMessage: ErrMsgBoardNotFound,
+			ResponseBase: ResponseBase{
+				Event:        EventBoardConnect,
+				Success:      false,
+				ErrorMessage: ErrMsgBoardNotFound},
 		}
 	} else {
 		// If board does not exist as a hub, create one and run it
@@ -137,8 +146,10 @@ func handleBoardConnect(c *Client, msgReq Request) {
 
 		// Broacast successful message response
 		msgRes = ResponseBoardConnect{
-			Event:   EventBoardConnect,
-			Success: true,
+			ResponseBase: ResponseBase{
+				Event:   EventBoardConnect,
+				Success: true,
+			},
 			Result: ResultBoardConnect{
 				BoardId:       boardId,
 				UserId:        userId,
@@ -160,19 +171,79 @@ func handleBoardConnect(c *Client, msgReq Request) {
 	}
 }
 
-func hasAccess(board board.BoardWithMembersDTO, userId string) bool {
-	if board.UserId.String() == userId {
-		return true
+func handlePostCreate(c *Client, msgReq Request) {
+	userId := c.userId
+	if userId == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
 	}
-
-	for _, member := range board.Members {
-		if member.Id.String() == userId {
-			return true
+	var params ParamsPostCreate
+	err := json.Unmarshal(msgReq.Params, &params)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return
+	}
+	boardId := params.BoardId
+	if !c.boards[boardId].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	createPostInput := post.CreatePostInput{
+		UserId:  userId,
+		BoardId: boardId,
+		Content: params.Content,
+		PosX:    params.PosX,
+		PosY:    params.PosY,
+		Color:   params.Color,
+		Height:  params.Height,
+		ZIndex:  params.ZIndex,
+	}
+	post, err := c.ws.postService.CreatePost(context.Background(), createPostInput)
+	if err != nil {
+		if errors.Is(err, validator.ValidationErrors{}) {
+			validationErrMsg := v.GetValidationErrMsg(createPostInput, err)
+			sendErrorMessage(c, buildErrorResponse(msgReq, validationErrMsg))
+		} else {
+			sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 		}
+		return
 	}
-	return false
+	msgRes := ResponsePostCreate{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: post,
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+
+	if err != nil {
+		log.Printf("handlePostCreate: Failed to marshal response into JSON: %v", err)
+		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		return
+	}
+	c.ws.boardHubs[boardId].broadcast <- msgResBytes
 }
 
 func closeConnection(c *Client, statusCode int, text string) {
 	c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(statusCode, text), time.Now().Add(writeWait))
+}
+
+func buildErrorResponse(msg Request, errMsg string) ResponseBase {
+	return ResponseBase{
+		Event:        msg.Event,
+		Success:      false,
+		ErrorMessage: errMsg,
+	}
+}
+
+func sendErrorMessage(c *Client, msgRes interface{}) {
+	msgResBytes, err := json.Marshal(msgRes)
+	if err != nil {
+		log.Printf("Failed to marshal response into JSON: %v", err)
+		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		return
+	}
+	c.send <- msgResBytes
 }
