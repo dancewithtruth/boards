@@ -1,5 +1,5 @@
 import { sendPostRequest } from '@/api/base';
-import { API_BASE_URL } from '@/constants';
+import { BASE_URL } from '@/constants';
 
 export type LoginParams = {
   email: string;
@@ -11,6 +11,6 @@ type LoginResponse = {
 };
 
 export async function login(params: LoginParams): Promise<LoginResponse> {
-  const url = `${API_BASE_URL}/auth/login`;
+  const url = `${BASE_URL}/auth/login`;
   return sendPostRequest<LoginResponse>(url, params);
 }

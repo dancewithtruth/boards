@@ -1,7 +1,7 @@
 export * from './dnd';
 
-export const API_BASE_URL = 'http://localhost:8080';
-export const WS_BASE_URL = 'ws://localhost:8080';
+export const BASE_URL = 'http://localhost:8080';
+export const WS_URL = 'ws://localhost:8080/ws'
 export const LOCAL_STORAGE_AUTH_TOKEN = 'boards_auth_token';
 export const POST_COLORS: { [key: string]: string } = {
   LIGHT_PINK: '#F5E6E8',

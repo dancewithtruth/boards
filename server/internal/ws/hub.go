@@ -1,5 +1,7 @@
 package ws
 
+import "github.com/Wave-95/boards/server/internal/models"
+
 type Hub struct {
 	// Board ID
 	boardId string
@@ -59,10 +61,10 @@ func (h *Hub) run() {
 	}
 }
 
-func (h *Hub) listConnectedUsers() []string {
-	users := []string{}
+func (h *Hub) listConnectedUsers() []models.User {
+	users := []models.User{}
 	for client := range h.clients {
-		users = append(users, client.userId)
+		users = append(users, client.user)
 	}
 	return users
 }

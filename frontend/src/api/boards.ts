@@ -1,5 +1,5 @@
 import { sendGetRequest, sendPostRequest } from './base';
-import { API_BASE_URL, LOCAL_STORAGE_AUTH_TOKEN } from '@/constants';
+import { BASE_URL, LOCAL_STORAGE_AUTH_TOKEN } from '@/constants';
 
 export type CreateBoardParams = {
   name?: string;
@@ -49,18 +49,18 @@ export type BoardsResponse = Array<BoardResponse>;
 
 export async function createBoard(params: CreateBoardParams): Promise<BoardResponse> {
   const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
-  const url = `${API_BASE_URL}/boards`;
+  const url = `${BASE_URL}/boards`;
   return sendPostRequest<BoardResponse>(url, params, token);
 }
 
 export async function getBoard(boardId: string): Promise<GetBoardsResponse> {
   const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
-  const url = `${API_BASE_URL}/boards/${boardId}`;
+  const url = `${BASE_URL}/boards/${boardId}`;
   return sendGetRequest<GetBoardsResponse>(url, token);
 }
 
 export async function getBoards(): Promise<GetBoardsResponse> {
   const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN) || undefined;
-  const url = `${API_BASE_URL}/boards`;
+  const url = `${BASE_URL}/boards`;
   return sendGetRequest<GetBoardsResponse>(url, token);
 }

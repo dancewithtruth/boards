@@ -9,6 +9,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/Wave-95/boards/server/internal/models"
 	"github.com/gorilla/websocket"
 )
 
@@ -38,7 +39,7 @@ type Board struct {
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	userId string
+	user models.User
 
 	// A map of board IDs to Board, a thin wrapper containing write permission and hub location.
 	boards map[string]Board
@@ -151,6 +152,10 @@ func handleMessage(c *Client, msg []byte) {
 		handleBoardConnect(c, msgReq)
 	case EventPostCreate:
 		handlePostCreate(c, msgReq)
+	case EventPostUpdate:
+		handlePostUpdate(c, msgReq)
+	case EventPostDelete:
+		handlePostDelete(c, msgReq)
 	default:
 		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonUnsupportedEvent)
 		return

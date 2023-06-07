@@ -67,10 +67,12 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
 		return
 	}
-	// Verify jwt token
+	// Verify user
 	userId, err := c.ws.jwtService.VerifyToken(params.Jwt)
+	user, err := c.ws.userService.GetUser(context.Background(), userId)
+	user.Password = nil
 	var msgRes ResponseUserAuthenticate
-	if err != nil || userId == "" {
+	if err != nil {
 		// Prepare error response
 		msgRes = ResponseUserAuthenticate{
 			Event:        EventBoardConnect,
@@ -83,11 +85,11 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 			Event:   EventUserAuthenticate,
 			Success: true,
 			Result: ResultUserAuthenticate{
-				UserId: userId,
+				User: user,
 			},
 		}
 		// Assign userId to client struct
-		c.userId = userId
+		c.user = user
 	}
 
 	// Send response
@@ -106,8 +108,8 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 // user that's been connected as well as existing users.
 func handleBoardConnect(c *Client, msgReq Request) {
 	// Check if user is authenticated
-	userId := c.userId
-	if userId == "" {
+	user := c.user
+	if user.Id.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
@@ -123,7 +125,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 	boardWithMembers, err := c.ws.boardService.GetBoardWithMembers(context.Background(), boardId)
 	var msgRes ResponseBoardConnect
 	// If no access, return error response
-	if err != nil || !board.HasBoardAccess(boardWithMembers, userId) {
+	if err != nil || !board.HasBoardAccess(boardWithMembers, user.Id.String()) {
 		msgRes = ResponseBoardConnect{
 			ResponseBase: ResponseBase{
 				Event:        EventBoardConnect,
@@ -152,7 +154,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 			},
 			Result: ResultBoardConnect{
 				BoardId:       boardId,
-				UserId:        userId,
+				UserId:        user.Id.String(),
 				ExistingUsers: existingUsers,
 			},
 		}
@@ -172,8 +174,8 @@ func handleBoardConnect(c *Client, msgReq Request) {
 }
 
 func handlePostCreate(c *Client, msgReq Request) {
-	userId := c.userId
-	if userId == "" {
+	user := c.user
+	if user.Id.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
@@ -190,7 +192,7 @@ func handlePostCreate(c *Client, msgReq Request) {
 		return
 	}
 	createPostInput := post.CreatePostInput{
-		UserId:  userId,
+		UserId:  user.Id.String(),
 		BoardId: boardId,
 		Content: params.Content,
 		PosX:    params.PosX,
@@ -209,7 +211,7 @@ func handlePostCreate(c *Client, msgReq Request) {
 		}
 		return
 	}
-	msgRes := ResponsePostCreate{
+	msgRes := ResponsePost{
 		ResponseBase: ResponseBase{
 			Event:   msgReq.Event,
 			Success: true,
@@ -226,24 +228,104 @@ func handlePostCreate(c *Client, msgReq Request) {
 	c.ws.boardHubs[boardId].broadcast <- msgResBytes
 }
 
-func closeConnection(c *Client, statusCode int, text string) {
-	c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(statusCode, text), time.Now().Add(writeWait))
-}
-
-func buildErrorResponse(msg Request, errMsg string) ResponseBase {
-	return ResponseBase{
-		Event:        msg.Event,
-		Success:      false,
-		ErrorMessage: errMsg,
+func handlePostUpdate(c *Client, msgReq Request) {
+	user := c.user
+	if user.Id.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
 	}
-}
-
-func sendErrorMessage(c *Client, msgRes interface{}) {
-	msgResBytes, err := json.Marshal(msgRes)
+	var params ParamsPostUpdate
+	err := json.Unmarshal(msgReq.Params, &params)
 	if err != nil {
-		log.Printf("Failed to marshal response into JSON: %v", err)
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return
+	}
+	boardId := params.BoardId
+	if !c.boards[boardId].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	updatePostInput := post.UpdatePostInput{
+		Id:      params.Id,
+		Content: params.Content,
+		PosX:    params.PosX,
+		PosY:    params.PosY,
+		Color:   params.Color,
+		Height:  params.Height,
+		ZIndex:  params.ZIndex,
+	}
+	post, err := c.ws.postService.UpdatePost(context.Background(), updatePostInput)
+	if err != nil {
+		if errors.Is(err, validator.ValidationErrors{}) {
+			validationErrMsg := v.GetValidationErrMsg(updatePostInput, err)
+			sendErrorMessage(c, buildErrorResponse(msgReq, validationErrMsg))
+		} else {
+			sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		}
+		return
+	}
+	msgRes := ResponsePost{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: post,
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+
+	if err != nil {
+		log.Printf("handlePostUpdate: Failed to marshal response into JSON: %v", err)
 		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		return
 	}
-	c.send <- msgResBytes
+	c.ws.boardHubs[boardId].broadcast <- msgResBytes
+}
+
+func handlePostDelete(c *Client, msgReq Request) {
+	user := c.user
+	if user.Id.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	var params ParamsPostDelete
+	err := json.Unmarshal(msgReq.Params, &params)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return
+	}
+	postId := params.PostId
+	boardId := params.BoardId
+	if !c.boards[boardId].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	err = c.ws.postService.DeletePost(context.Background(), postId)
+	if err != nil {
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		return
+	}
+	msgRes := ResponsePostDelete{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: ResultPostDelete{
+			PostId:  postId,
+			BoardId: boardId,
+		},
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+
+	if err != nil {
+		log.Printf("handlePostDelete: Failed to marshal response into JSON: %v", err)
+		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		return
+	}
+	c.ws.boardHubs[boardId].broadcast <- msgResBytes
+}
+
+func closeConnection(c *Client, statusCode int, text string) {
+	c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(statusCode, text), time.Now().Add(writeWait))
 }

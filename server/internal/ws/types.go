@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/Wave-95/boards/server/internal/models"
+	"github.com/Wave-95/boards/server/internal/post"
 )
 
 const (
@@ -11,6 +12,8 @@ const (
 	EventUserAuthenticate = "user.authenticate"
 	EventBoardConnect     = "board.connect"
 	EventPostCreate       = "post.create"
+	EventPostUpdate       = "post.update"
+	EventPostDelete       = "post.delete"
 
 	// Close reasons
 	CloseReasonMissingEvent     = "The event field is missing."
@@ -68,6 +71,26 @@ type ParamsPostCreate struct {
 	ZIndex  int    `json:"z_index" validate:"min=1"`
 }
 
+type RequestPostUpdate struct {
+	Event  string           `json:"event"`
+	Params ParamsPostUpdate `json:"params"`
+}
+
+type ParamsPostUpdate struct {
+	BoardId string `json:"board_id" validate:"required,uuid"`
+	post.UpdatePostInput
+}
+
+type RequestPostDelete struct {
+	Event  string           `json:"event"`
+	Params ParamsPostDelete `json:"params"`
+}
+
+type ParamsPostDelete struct {
+	PostId  string `json:"post_id" validate:"required,uuid"`
+	BoardId string `json:"board_id" validate:"required,uuid"`
+}
+
 // Responses
 
 type ResponseBase struct {
@@ -83,19 +106,29 @@ type ResponseUserAuthenticate struct {
 	ErrorMessage string                 `json:"error_message,omitempty"`
 }
 type ResultUserAuthenticate struct {
-	UserId string `json:"user_id"`
+	User models.User `json:"user"`
 }
 type ResponseBoardConnect struct {
 	ResponseBase
 	Result ResultBoardConnect `json:"result,omitempty"`
 }
 type ResultBoardConnect struct {
-	BoardId       string   `json:"board_id"`
-	UserId        string   `json:"user_id"`
-	ExistingUsers []string `json:"existing_users"`
+	BoardId       string        `json:"board_id"`
+	UserId        string        `json:"user_id"`
+	ExistingUsers []models.User `json:"existing_users"`
 }
 
-type ResponsePostCreate struct {
+type ResponsePost struct {
 	ResponseBase
 	Result models.Post `json:"result,omitempty"`
+}
+
+type ResponsePostDelete struct {
+	ResponseBase
+	Result ResultPostDelete `json:"result,omitempty"`
+}
+
+type ResultPostDelete struct {
+	PostId  string `json:"post_id"`
+	BoardId string `json:"board_id"`
 }

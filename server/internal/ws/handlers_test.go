@@ -71,7 +71,7 @@ func TestHandleWebSocket(t *testing.T) {
 			var resUserAuthenticate ResponseUserAuthenticate
 			json.Unmarshal(msgRes, &resUserAuthenticate)
 			assert.Equal(t, true, resUserAuthenticate.Success, "expected user.authenticate response to be successful")
-			assert.Equal(t, testUser.Id.String(), resUserAuthenticate.Result.UserId, "user ID from JWT does not match user ID returned in response")
+			assert.Equal(t, testUser.Id, resUserAuthenticate.Result.User.Id, "user ID from JWT does not match user ID returned in response")
 		})
 
 		t.Run("bad params result in connection close", func(t *testing.T) {

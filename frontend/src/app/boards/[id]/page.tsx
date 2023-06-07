@@ -9,8 +9,9 @@ import update from 'immutability-helper';
 import type { XYCoord } from 'react-dnd';
 import { useDrop } from 'react-dnd';
 
-import { ItemTypes, LOCAL_STORAGE_AUTH_TOKEN, POST_COLORS, WS_BASE_URL } from '@/constants';
+import { BASE_URL, ItemTypes, LOCAL_STORAGE_AUTH_TOKEN, POST_COLORS, WS_URL } from '@/constants';
 import { useUser } from '@/providers/user';
+import { PostResponse, listPosts } from '@/api/posts';
 export interface DragItem {
   type: string;
   id: string;
@@ -22,76 +23,149 @@ type PostsMap = {
   [key: string]: Post;
 };
 
-const Board = ({ params: { id } }: { params: { id: string } }) => {
+const Board = ({ params: { id: boardId } }: { params: { id: string } }) => {
   const {
     state: { user },
   } = useUser();
   const { dispatch } = useBoard();
-
+  const [ws, setWs] = useState<WebSocket>();
   const [posts, setPosts] = useState<PostsMap>({});
-  const [highestZ, setHighestZ] = useState(getHighestZIndex(posts));
+  const [highestZ, setHighestZ] = useState(0);
   const [colorSetting, setColorSetting] = useState(pickColor(posts));
-  var ws;
   useEffect(() => {
     fetchData();
-
     // Establish ws connection
     // TODO: Handle if browser does not have websocket API
     if (window.WebSocket) {
-      const token = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN);
-      const wsUrl = `${WS_BASE_URL}/ws?token=${token}&boardId=${id}`;
-      ws = new WebSocket(wsUrl);
+      console.log('has websocket');
+      const ws = new WebSocket(WS_URL);
+      ws.addEventListener('open', (event) => {
+        const jwtToken = localStorage.getItem(LOCAL_STORAGE_AUTH_TOKEN);
+        const eventUserAuthenticate = {
+          event: 'user.authenticate',
+          params: { jwt: jwtToken },
+        };
+        ws.send(JSON.stringify(eventUserAuthenticate));
+      });
+      ws.addEventListener('message', (event) => {
+        console.log('message', event);
+        const data = JSON.parse(event.data);
+        if (data.event == 'user.authenticate') {
+          const eventBoardConnect = {
+            event: 'board.connect',
+            params: { board_id: boardId },
+          };
+          ws.send(JSON.stringify(eventBoardConnect));
+        }
+
+        if (data.event == 'board.connect') {
+          // Handle connected users and such
+        }
+
+        if (data.event == 'post.create') {
+          //TODO: Show user is online
+          const { id: postId, pos_x: left, pos_y: top, user_id: userId, content, color, z_index: zIndex } = data.result;
+          console.log(data.result);
+          const createdPost: Post = {
+            id: postId,
+            left,
+            top,
+            content,
+            color,
+            zIndex,
+            userId,
+          };
+          addPost(postId, createdPost);
+        }
+      });
+      ws.addEventListener('error', (event) => {
+        console.log('error', event);
+      });
+      ws.addEventListener('close', (event) => {
+        console.log('close', event);
+      });
+      setWs(ws);
     }
   }, []);
 
   const fetchData = async () => {
     // TODO: Implement loading UI
-    const response = await getBoard(id);
+    const response = await getBoard(boardId);
+    const posts = await listPosts(boardId);
+    const postsMap = posts.data.reduce((map: PostsMap, post: PostResponse) => {
+      const { id: postId, pos_x: left, pos_y: top, user_id: userId, content, color, z_index: zIndex } = post;
+      const postFormatted: Post = {
+        id: postId,
+        left,
+        top,
+        content,
+        color,
+        zIndex,
+        userId,
+      };
+      map[post.id] = postFormatted;
+      return map;
+    }, {});
     // TODO: Implement redirect if 401 error
     dispatch({ type: 'set_board', payload: response });
+    setHighestZ(getHighestZIndex(postsMap));
+    setPosts(postsMap);
   };
 
   // handleDoubleClick creates a new post
   const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
       const { offsetX, offsetY } = event.nativeEvent;
-      const randId = Math.random() * 1000000;
-      const data = { id: randId, left: offsetX, top: offsetY, color: colorSetting, user } as Post;
-      // TODO: Instead of add post, call ws.send with relevant data
-      addPost(randId.toString(), data);
+      const params = {
+        board_id: boardId,
+        content: '',
+        pos_x: offsetX,
+        pos_y: offsetY,
+        color: colorSetting,
+        z_index: highestZ + 1,
+      };
+      const msgPostCreate = {
+        event: 'post.create',
+        params,
+      };
+      ws?.send(JSON.stringify(msgPostCreate));
+      setHighestZ(highestZ + 1);
+      // const randId = Math.random() * 1000000;
+      // const data = { id: randId, left: offsetX, top: offsetY, color: colorSetting, user } as Post;
+      // // TODO: Instead of add post, call ws.send with relevant data
+      // addPost(randId.toString(), data);
     }
   };
 
-  const addPost = useCallback(
-    (id: string, data: Partial<Post>) => {
-      setPosts(update(posts, { $merge: { [id]: data } }));
-    },
-    [posts, setPosts]
-  );
+  const addPost = (id: string, data: Partial<Post>) => {
+    // console.log('first we get posts', posts);
+    // const updatedPosts = update(posts, { $merge: { [id]: data } });
+    // console.log('then we get updatedposts', updatedPosts);
+    // setPosts(updatedPosts);
 
-  const updatePost = useCallback(
-    (id: string, data: Partial<Post>) => {
-      setPosts(
-        update(posts, {
-          [id]: {
-            $merge: data,
-          },
-        })
-      );
-    },
-    [posts, setPosts]
-  );
+    setPosts((prevPosts) => {
+      const updatedPosts = update(prevPosts, { $merge: { [id]: data } });
+      return updatedPosts;
+    });
+  };
 
-  const deletePost = useCallback(
-    (id: string) => {
-      setPosts(
-        update(posts, {
-          $unset: [id],
-        })
-      );
-    },
-    [posts, setPosts]
-  );
+  const updatePost = (id: string, data: Partial<Post>) => {
+    setPosts(
+      update(posts, {
+        [id]: {
+          $merge: data,
+        },
+      })
+    );
+  };
+
+  const deletePost = (id: string) => {
+    setPosts(
+      update(posts, {
+        $unset: [id],
+      })
+    );
+  };
 
   const [, drop] = useDrop(
     () => ({

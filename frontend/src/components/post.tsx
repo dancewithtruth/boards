@@ -13,7 +13,7 @@ export interface Post {
   color: string;
   zIndex: number;
   customHeight?: number;
-  user: User;
+  userId: string;
 }
 interface PostProps {
   post: Post;
@@ -23,7 +23,7 @@ interface PostProps {
 }
 
 const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) => {
-  const { id, left, top, content, color, zIndex, customHeight, user } = post;
+  const { id, left, top, content, color, zIndex, customHeight, userId } = post;
   const [isHovered, setIsHovered] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
   const [textareaValue, setTextareaValue] = useState(content);
@@ -104,7 +104,7 @@ const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) 
         top: top,
         left: left,
         background: color,
-        ...(isHovered
+        ...(isHovered || isFocused
           ? {
               zIndex: 10000,
               border: `1px solid black`,
@@ -131,8 +131,8 @@ const Post: FC<PostProps> = ({ post, updatePost, setColorSetting, deletePost }) 
           onBlur={handleBlur}
         />
         <div className="flex h-6 justify-between items-center">
-          <div key={`author-${post.user.id}`} data-tooltip-id="my-tooltip" data-tooltip-content={user.name}>
-            <Avatar id={user.id} size={16} />
+          <div key={`author-${post.userId}`} data-tooltip-id="my-tooltip" data-tooltip-content={'TODO: GET NAME'}>
+            <Avatar id={userId} size={16} />
           </div>
         </div>
       </div>
