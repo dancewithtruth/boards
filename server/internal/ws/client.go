@@ -152,6 +152,8 @@ func handleMessage(c *Client, msg []byte) {
 		handleBoardConnect(c, msgReq)
 	case EventPostCreate:
 		handlePostCreate(c, msgReq)
+	case EventPostFocus:
+		handlePostFocus(c, msgReq)
 	case EventPostUpdate:
 		handlePostUpdate(c, msgReq)
 	case EventPostDelete:

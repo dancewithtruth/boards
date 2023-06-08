@@ -153,9 +153,9 @@ func handleBoardConnect(c *Client, msgReq Request) {
 				Success: true,
 			},
 			Result: ResultBoardConnect{
-				BoardId:       boardId,
-				UserId:        user.Id.String(),
-				ExistingUsers: existingUsers,
+				BoardId:        boardId,
+				NewUser:        user,
+				ConnectedUsers: existingUsers,
 			},
 		}
 	}
@@ -222,6 +222,46 @@ func handlePostCreate(c *Client, msgReq Request) {
 
 	if err != nil {
 		log.Printf("handlePostCreate: Failed to marshal response into JSON: %v", err)
+		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		return
+	}
+	c.ws.boardHubs[boardId].broadcast <- msgResBytes
+}
+
+func handlePostFocus(c *Client, msgReq Request) {
+	user := c.user
+	if user.Id.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	var params ParamsPostFocus
+	err := json.Unmarshal(msgReq.Params, &params)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return
+	}
+	postId := params.Id
+	boardId := params.BoardId
+	if !c.boards[boardId].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	msgRes := ResponsePostFocus{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: ResultPostFocus{
+			Id:      postId,
+			BoardId: boardId,
+			User:    c.user,
+		},
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+
+	if err != nil {
+		log.Printf("handlePostFocus: Failed to marshal response into JSON: %v", err)
 		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		return
 	}

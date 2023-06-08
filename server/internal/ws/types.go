@@ -14,6 +14,7 @@ const (
 	EventPostCreate       = "post.create"
 	EventPostUpdate       = "post.update"
 	EventPostDelete       = "post.delete"
+	EventPostFocus        = "post.focus"
 
 	// Close reasons
 	CloseReasonMissingEvent     = "The event field is missing."
@@ -91,6 +92,16 @@ type ParamsPostDelete struct {
 	BoardId string `json:"board_id" validate:"required,uuid"`
 }
 
+type RequestPostFocus struct {
+	Event  string           `json:"event"`
+	Params ParamsPostDelete `json:"params"`
+}
+
+type ParamsPostFocus struct {
+	Id      string `json:"id" validate:"required,uuid"`
+	BoardId string `json:"board_id" validate:"required,uuid"`
+}
+
 // Responses
 
 type ResponseBase struct {
@@ -113,9 +124,9 @@ type ResponseBoardConnect struct {
 	Result ResultBoardConnect `json:"result,omitempty"`
 }
 type ResultBoardConnect struct {
-	BoardId       string        `json:"board_id"`
-	UserId        string        `json:"user_id"`
-	ExistingUsers []models.User `json:"existing_users"`
+	BoardId        string        `json:"board_id"`
+	NewUser        models.User   `json:"new_user"`
+	ConnectedUsers []models.User `json:"connected_users"`
 }
 
 type ResponsePost struct {
@@ -131,4 +142,15 @@ type ResponsePostDelete struct {
 type ResultPostDelete struct {
 	PostId  string `json:"post_id"`
 	BoardId string `json:"board_id"`
+}
+
+type ResponsePostFocus struct {
+	ResponseBase
+	Result ResultPostFocus `json:"result,omitempty"`
+}
+
+type ResultPostFocus struct {
+	Id      string      `json:"id"`
+	BoardId string      `json:"board_id"`
+	User    models.User `json:"user"`
 }

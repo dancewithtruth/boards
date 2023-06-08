@@ -2,7 +2,6 @@
 INSERT INTO board_memberships (id, user_id, board_id, role, created_at, updated_at)
 VALUES
     -- Board 1 memberships
-    ('ebd26e9a-49a2-4e4a-a4e7-618acd6f2667', 'd0865843-8494-4d6a-b9be-5c8f7d0e568f', 'b9e95ae4-9c3f-412f-8b3b-201bd7083fc1', 'Member', '2023-05-29 10:30:00', '2023-05-29 10:30:00'),
     ('463f9f8f-2e71-408a-a1fd-55e0d19a48f3', '3c85c78d-d6a2-48c1-aec0-7fe2a9e2d8db', 'b9e95ae4-9c3f-412f-8b3b-201bd7083fc1', 'Member', '2023-05-29 10:30:00', '2023-05-29 10:30:00'),
     ('fc6e09d9-3b37-491c-9566-0c5a2b6a2b8c', '82d1a682-82e7-4ed9-bb6d-ef5b53f9827a', 'b9e95ae4-9c3f-412f-8b3b-201bd7083fc1', 'Member', '2023-05-29 10:30:00', '2023-05-29 10:30:00'),
     ('8c891b21-c971-4c56-aac1-4a43268e2c3a', '2345c28d-b125-4c37-b9d4-96ce2c2456d5', 'b9e95ae4-9c3f-412f-8b3b-201bd7083fc1', 'Member', '2023-05-29 10:30:00', '2023-05-29 10:30:00'),

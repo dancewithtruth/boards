@@ -140,7 +140,7 @@ func TestHandleWebSocket(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal board connect response to Go struct: %v", err)
 			}
-			assert.Equal(t, testUser.Id.String(), resBoardConnect.Result.UserId)
+			assert.Equal(t, testUser.Id.String(), resBoardConnect.Result.NewUser.Id)
 		})
 
 		t.Run("user is not authenticated and cannot connect to board, close connection", func(t *testing.T) {
