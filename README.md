@@ -1,19 +1,38 @@
 ## Project Setup
 
-Please make sure you have docker installed:
-
 `docker-compose up`
 
 You may need to run `chmod +x ./start.sh` locally since your host machine is mounted onto the container and will need access to the `start.sh` script to start the backend server.
 
-## Migrations
+## Database Migrations
 
-First access the container's terminal
+Database migrations are run using [`golang-migrate`](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate).
 
-`docker exec -it boards-server /bin/bash`
+### Running migrations
 
-Now that you have access to the installed `golang-migrate` library, you can run migrations in the container:
+Access the server container first by finding the container ID
 
-`migrate create -ext sql -dir db/migrations -seq create_users_table`
+```bash
+docker ps
+```
 
-Migrations are run on server start. 
+```bash
+docker exec -it <SERVER_CONTAINER_ID> /bin/bash
+```
+
+Once inside the container's terminal, run the following migrate command
+
+
+```bash
+migrate -path ./db/migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@db:${DB_PORT}/${DB_NAME}?sslmode=disable" up
+```
+
+To run the down migrations, simply change the `up` command to `down`.
+
+### Creating migrations
+
+Inside the docker container, run
+
+```bash
+migrate create -ext sql -dir db/migrations -seq <MIGRATION_NAME>
+```
