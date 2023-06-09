@@ -92,7 +92,6 @@ func (s *service) GetBoard(ctx context.Context, boardId string) (models.Board, e
 
 // GetBoardWithMembers returns a single board with a list of associated members
 func (s *service) GetBoardWithMembers(ctx context.Context, boardId string) (BoardWithMembersDTO, error) {
-	fmt.Println("hello")
 	logger := logger.FromContext(ctx)
 	boardIdUUID, err := uuid.Parse(boardId)
 	if err != nil {
@@ -100,7 +99,6 @@ func (s *service) GetBoardWithMembers(ctx context.Context, boardId string) (Boar
 		return BoardWithMembersDTO{}, ErrInvalidBoardId
 	}
 	rows, err := s.repo.GetBoardAndUsers(ctx, boardIdUUID)
-	fmt.Println("rows", rows)
 	if err != nil {
 		return BoardWithMembersDTO{}, fmt.Errorf("service: failed to get board with members: %w", err)
 	}
