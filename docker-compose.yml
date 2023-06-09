@@ -9,21 +9,21 @@ services:
     volumes:
       - ./frontend:/app
     depends_on:
-      - server
+      - backend-core
     env_file:
       - frontend/.env
-  server:
+  backend-core:
     build:
-      context: ./server
+      context: ./backend-core
     ports:
       - 8080:8080
     volumes:
-      - ./server:/app
+      - ./backend-core:/app
     env_file:
-      - server/.env
+      - backend-core/.env
     depends_on:
-      - db
-  db:
+      - db-core
+  db-core:
     image: postgres
     restart: always
     environment:
@@ -34,10 +34,6 @@ services:
       - 5432:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
+      interval: 20s
+      timeout: 10s
       retries: 5
-    volumes:
-      - db-data:/var/lib/postgresql/data
-volumes:
-  db-data:

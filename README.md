@@ -1,6 +1,11 @@
 ## Project Setup
 
-This application is containerized with Docker. Please make sure you have docker installed. To set up the project, first clone the source code:
+Before proceeding with the project setup, please ensure that you have Docker installed on your machine. If you haven't installed Docker yet, follow the instructions below:
+
+Visit the official Docker website at https://www.docker.com/ and navigate to the Downloads section.
+Choose the appropriate version of Docker for your operating system (Windows, macOS, or Linux).
+Download and run the Docker installer.
+Once Docker is successfully installed, you'll be able to proceed with the project setup and utilize its containerization capabilities.
 
 ```bash
 git clone https://github.com/Wave-95/boards.git
@@ -8,15 +13,13 @@ git clone https://github.com/Wave-95/boards.git
 cd boards
 ```
 
-Then run the `docker-compose.yml` file:
+To start the project and bring up all the necessary containers, execute the following:
 
 ```bash
 docker-compose up
 ```
 
-This will set up the database (:5432), server (:8080), and frontend (:3000) containers. The database migrations will be run when the container is run for the server image.
-
-You may need to run `chmod +x ./start.sh` locally since your host machine is mounted onto the container and will need access to the `start.sh` script to start the backend server.
+This will set up the database (:5432), server (:8080), and frontend (:3000) containers. The database migrations will be run when the container is created for the server.
 
 ## Development
 

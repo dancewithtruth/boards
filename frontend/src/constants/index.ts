@@ -1,7 +1,7 @@
 export * from './settings';
 export * from './websocket';
 
-export const BASE_URL = 'http://server:8080';
+export const BASE_URL = 'http://backend-core:8080';
 export const COOKIE_NAME_JWT_TOKEN = 'jwt_token';
 export const POST_WIDTH = 275;
 export const POST_HEIGHT = 100;
