@@ -1,6 +1,20 @@
 ## Project Setup
 
-`docker-compose up`
+This application is containerized with Docker. Please make sure you have docker installed. To set up the project, first clone the source code:
+
+```bash
+git clone https://github.com/Wave-95/boards.git
+
+cd boards
+```
+
+Then run the `docker-compose.yml` file:
+
+```bash
+docker-compose up
+```
+
+This will set up the database (:5432), server (:8080), and frontend (:3000) containers. The database migrations will be run when the container is run for the server image.
 
 You may need to run `chmod +x ./start.sh` locally since your host machine is mounted onto the container and will need access to the `start.sh` script to start the backend server.
 
