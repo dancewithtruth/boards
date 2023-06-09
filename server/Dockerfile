@@ -18,4 +18,4 @@ RUN go build -o ./cmd/main ./cmd/main.go
 
 EXPOSE 8080
 
-ENTRYPOINT [ "./start.sh" ] 
+CMD [ "./start.sh" ] 
