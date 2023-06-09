@@ -1,6 +1,6 @@
 FROM golang:latest
 
-# Install air
+# Install air for development hot reloading
 RUN go install github.com/cosmtrek/air@latest
 
 # Intall go migrate tool

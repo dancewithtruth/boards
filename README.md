@@ -18,6 +18,10 @@ This will set up the database (:5432), server (:8080), and frontend (:3000) cont
 
 You may need to run `chmod +x ./start.sh` locally since your host machine is mounted onto the container and will need access to the `start.sh` script to start the backend server.
 
+## Development
+
+The `docker-compose.yml` file loads in env vars for the server and frontend containers in their respective `.env` files. Depending on the `ENV` env varaible, the containers will either boot up in development or production mode. The server uses [air](https://github.com/cosmtrek/air) and the frontend uses `next dev`. 
+
 ## Database Migrations
 
 Database migrations are run using [`golang-migrate`](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate).
