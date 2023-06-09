@@ -16,4 +16,4 @@ COPY . .
 EXPOSE 3000
 
 # Run the application when the docker is launched
-CMD [ "npm", "run", "dev" ]
+ENTRYPOINT [ "./start.sh" ]

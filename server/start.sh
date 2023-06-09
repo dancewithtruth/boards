@@ -3,5 +3,5 @@
 if [ "${ENV}" = "development" ]; then
     exec air
 else
-    exec ../main/main
+    exec ./cmd/main
 fi

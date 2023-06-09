@@ -25,6 +25,7 @@ services:
       - db
   db:
     image: postgres
+    restart: always
     environment:
       POSTGRES_DB: "boards"
       POSTGRES_USER: "postgres"
