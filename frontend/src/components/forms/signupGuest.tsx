@@ -29,8 +29,8 @@ export default function SignUpGuestForm() {
       const expirationDate = new Date();
       expirationDate.setDate(expirationDate.getDate() + 30);
       cookies.set(COOKIE_NAME_JWT_TOKEN, token, { path: '/', expires: expirationDate });
-      router.refresh();
       router.push('/dashboard');
+      router.refresh();
     } catch (error) {
       toast.error(String(error));
     } finally {

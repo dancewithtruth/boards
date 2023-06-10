@@ -1,4 +1,4 @@
-import { User, sendPostRequest } from './index';
+import { sendPostRequest } from './index';
 import { BASE_URL } from '@/constants';
 
 export type LoginParams = {
