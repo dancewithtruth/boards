@@ -25,3 +25,8 @@ testdata:
         docker exec -it ${CONTAINER_NAME_DB} psql "${DSN}" -f $$file; \
     done
 	
+.PHONY: migrate-create
+migrate-create:
+	@read -p "Enter a name for your migration file: " name; \
+	${MIGRATE} create -ext sql -dir ./db/migrations $${name// /_}
+	
