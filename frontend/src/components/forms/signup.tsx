@@ -1,6 +1,6 @@
 'use client';
 
-import { createUser, login } from '@/api';
+import { APIError, createUser, login } from '@/api';
 import { COOKIE_NAME_JWT_TOKEN } from '@/constants';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -42,7 +42,9 @@ export default function SignUpForm() {
       router.refresh();
       router.push('/dashboard');
     } catch (error) {
-      toast.error(String(error));
+      if (error instanceof APIError) {
+        toast.error(error.message);
+      }
     } finally {
       setIsLoading(false);
     }

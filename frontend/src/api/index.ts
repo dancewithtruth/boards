@@ -2,7 +2,7 @@ export * from './auth';
 export * from './user';
 export * from './board';
 
-class APIError extends Error {
+export class APIError extends Error {
   status: number;
 
   constructor(message: string, status: number) {

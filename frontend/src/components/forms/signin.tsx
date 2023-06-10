@@ -1,7 +1,8 @@
 'use client';
 
-import { login } from '@/api';
+import { APIError, login } from '@/api';
 import { COOKIE_NAME_JWT_TOKEN } from '@/constants';
+import { ApiError } from 'next/dist/server/api-utils';
 import { useRouter } from 'next/navigation';
 import { ChangeEvent, FormEvent, useState } from 'react';
 import { toast } from 'react-toastify';
@@ -36,7 +37,9 @@ export default function SignInForm() {
       router.refresh();
       router.push('/dashboard');
     } catch (error) {
-      toast.error(String(error));
+      if (error instanceof APIError) {
+        toast.error(error.message);
+      }
     } finally {
       setIsLoading(false);
     }
