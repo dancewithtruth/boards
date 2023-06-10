@@ -5,5 +5,5 @@ migrate -path ./db/migrations -database "postgres://${DB_USER}:${DB_PASSWORD}@${
 if [ "${ENV}" = "development" ]; then
     exec air
 else
-    exec ./cmd/main
+    exec /app/main
 fi

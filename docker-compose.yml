@@ -18,7 +18,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./backend-core:/app
+      - ./backend-core:/app/src
     env_file:
       - backend-core/.env
     depends_on:

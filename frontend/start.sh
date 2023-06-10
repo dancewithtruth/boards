@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "${ENV}" = "development" ]; then
-    exec npm run dev
+    npm run dev
 else
-    exec npm run build && npm run start
+    npm run build && npm run start
 fi

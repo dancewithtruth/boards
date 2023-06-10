@@ -7,14 +7,14 @@ RUN go install github.com/cosmtrek/air@latest
 # https://github.com/golang-migrate/migrate/tree/master/cmd/migrate
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
-WORKDIR /app
+WORKDIR /app/src
 
 COPY go.* ./
 RUN go mod download && go mod verify
 
 COPY . .
 
-RUN go build -o ./cmd/main ./cmd/main.go
+RUN go build -o /app/main ./cmd/main.go
 
 EXPOSE 8080
 
