@@ -2,6 +2,7 @@ version: "3"
 
 services:
   frontend:
+    container_name: frontend
     build:
       context: ./frontend
     ports:
@@ -13,6 +14,7 @@ services:
     env_file:
       - frontend/.env
   backend-core:
+    container_name: backend-core
     build:
       context: ./backend-core
     ports:
@@ -24,6 +26,7 @@ services:
     depends_on:
       - db-core
   db-core:
+    container_name: db-core
     image: postgres
     restart: always
     environment:
