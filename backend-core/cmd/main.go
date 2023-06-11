@@ -27,7 +27,7 @@ func main() {
 	logger := logger.New()
 	validator := validator.New()
 	// load env vars into config
-	cfg, err := config.Load()
+	cfg, err := config.Load(".env")
 	if err != nil {
 		logger.Fatalf("Error loading config: %v", err)
 	}

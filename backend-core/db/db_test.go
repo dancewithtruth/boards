@@ -9,7 +9,7 @@ import (
 
 func TestConnect(t *testing.T) {
 	// load env vars into config
-	cfg, err := config.Load()
+	cfg, err := config.Load("../.env")
 	if err != nil {
 		t.Fatalf("Error loading config: %v", err)
 	}

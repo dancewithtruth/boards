@@ -39,7 +39,7 @@ type Board struct {
 
 // Client is a middleman between the websocket connection and the hub.
 type Client struct {
-	user models.User
+	user *models.User
 
 	// A map of board IDs to Board, a thin wrapper containing write permission and hub location.
 	boards map[string]Board

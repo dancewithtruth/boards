@@ -99,7 +99,7 @@ func setUpTestUser(t *testing.T, userRepo user.Repository) models.User {
 	testUser := test.NewUser()
 	err := userRepo.CreateUser(context.Background(), testUser)
 	if err != nil {
-		assert.FailNow(t, "Could not set up test user for board testing")
+		assert.FailNow(t, "Could not set up test user for board testing", err)
 	}
 	return testUser
 }

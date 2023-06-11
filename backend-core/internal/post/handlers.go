@@ -1,7 +1,6 @@
 package post
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/Wave-95/boards/backend-core/internal/board"
@@ -28,7 +27,6 @@ func (api *API) HandleListPosts(w http.ResponseWriter, r *http.Request) {
 		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardId)
 		return
 	}
-	fmt.Println("boardIds", boardId)
 
 	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardId)
 	if err != nil {

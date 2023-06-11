@@ -64,7 +64,7 @@ func (h *Hub) run() {
 func (h *Hub) listConnectedUsers() []models.User {
 	users := []models.User{}
 	for client := range h.clients {
-		users = append(users, client.user)
+		users = append(users, *client.user)
 	}
 	return users
 }

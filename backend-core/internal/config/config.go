@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/joho/godotenv"
 )
 
 const (
@@ -41,7 +42,11 @@ type Config struct {
 	JwtExpiration  int
 }
 
-func Load() (*Config, error) {
+func Load(file string) (*Config, error) {
+	err := godotenv.Load(file)
+	if err != nil {
+		return nil, fmt.Errorf("error loading .env file: %w", err)
+	}
 	databaseConfig, err := getDatabaseConfig()
 	if err != nil {
 		return nil, err

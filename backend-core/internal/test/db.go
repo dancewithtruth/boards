@@ -1,6 +1,8 @@
 package test
 
 import (
+	"path"
+	"runtime"
 	"testing"
 
 	"github.com/Wave-95/boards/backend-core/db"
@@ -9,7 +11,8 @@ import (
 
 func DB(t *testing.T) *db.DB {
 	// load env vars into config
-	cfg, err := config.Load()
+	dir := getSourcePath()
+	cfg, err := config.Load(dir + "/../../.env")
 	if err != nil {
 		t.Errorf("Issue loading config:%v", err)
 		t.FailNow()
@@ -21,4 +24,11 @@ func DB(t *testing.T) *db.DB {
 		t.FailNow()
 	}
 	return db
+}
+
+// getSourcePath returns the directory containing the source code that is calling this function.
+// thanks go-rest-api
+func getSourcePath() string {
+	_, filename, _, _ := runtime.Caller(1)
+	return path.Dir(filename)
 }

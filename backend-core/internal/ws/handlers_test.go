@@ -140,7 +140,7 @@ func TestHandleWebSocket(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal board connect response to Go struct: %v", err)
 			}
-			assert.Equal(t, testUser.Id.String(), resBoardConnect.Result.NewUser.Id)
+			assert.Equal(t, testUser.Id, resBoardConnect.Result.NewUser.Id)
 		})
 
 		t.Run("user is not authenticated and cannot connect to board, close connection", func(t *testing.T) {
@@ -163,15 +163,13 @@ func TestHandleWebSocket(t *testing.T) {
 		})
 
 		t.Run("user is not authorized--should return an error response", func(t *testing.T) {
-			randTestUser := test.NewUser()
 			c := setupConnection(t, server)
-			authenticateUser(t, c, jwtService, randTestUser)
-
+			authenticateUser(t, c, jwtService, testUser)
 			// Prepare board connect request
 			msgReq := RequestBoardConnect{
 				Event: EventBoardConnect,
 				Params: ParamsBoardConnect{
-					BoardId: testBoard.Id.String(),
+					BoardId: uuid.New().String(),
 				},
 			}
 			// Send request

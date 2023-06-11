@@ -89,7 +89,7 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 			},
 		}
 		// Assign userId to client struct
-		c.user = user
+		c.user = &user
 	}
 
 	// Send response
@@ -109,7 +109,7 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 func handleBoardConnect(c *Client, msgReq Request) {
 	// Check if user is authenticated
 	user := c.user
-	if user.Id.String() == "" {
+	if user == nil {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
@@ -154,7 +154,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 			},
 			Result: ResultBoardConnect{
 				BoardId:        boardId,
-				NewUser:        user,
+				NewUser:        *user,
 				ConnectedUsers: existingUsers,
 			},
 		}
@@ -255,7 +255,7 @@ func handlePostFocus(c *Client, msgReq Request) {
 		Result: ResultPostFocus{
 			Id:      postId,
 			BoardId: boardId,
-			User:    c.user,
+			User:    *c.user,
 		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
