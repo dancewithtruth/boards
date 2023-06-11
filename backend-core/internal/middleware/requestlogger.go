@@ -73,11 +73,15 @@ func RequestLogger(l logger.Logger) func(http.Handler) http.Handler {
 			lrw := &LoggerRW{ResponseWriter: rw, StatusCode: http.StatusOK}
 			next.ServeHTTP(lrw, r)
 
+			queryString := ""
+			if r.URL.RawQuery != "" {
+				queryString = "?" + r.URL.RawQuery
+			}
 			// Log duration of request
 			requestLogger.
 				WithoutCaller().
 				With(FieldDuration, time.Since(start).Milliseconds(), FieldBytes, lrw.BytesWritten).
-				Infof("[%v] %s: %s", lrw.StatusCode, r.Method, r.URL.Path)
+				Infof("[%v] %s: %s%s", lrw.StatusCode, r.Method, r.URL.Path, queryString)
 		})
 	}
 }
