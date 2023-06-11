@@ -23,6 +23,8 @@ services:
       - ./backend-core:/app/src
     env_file:
       - backend-core/.env
+    environment:
+      - DOCKER=true
     depends_on:
       - db-core
   db-core:

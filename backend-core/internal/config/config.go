@@ -18,6 +18,8 @@ const (
 
 	JWTSecretKey     = "JWT_SIGNING_KEY"
 	JWTExpirationKey = "JWT_EXPIRATION"
+
+	DockerKey = "DOCKER"
 )
 
 type DatabaseConfig struct {
@@ -73,6 +75,12 @@ func getDatabaseConfig() (DatabaseConfig, error) {
 		Name:     os.Getenv(DBNameKey),
 		User:     os.Getenv(DBUserKey),
 		Password: os.Getenv(DBPasswordKey),
+	}
+
+	// This allows running tests from outside the docker network assuming your local
+	// development environment has ports exposed
+	if os.Getenv(DockerKey) == "" {
+		databaseConfig.Host = "localhost"
 	}
 
 	// validate all db params are available
