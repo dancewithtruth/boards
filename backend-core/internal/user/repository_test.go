@@ -45,7 +45,33 @@ func TestRepository(t *testing.T) {
 	})
 
 	t.Run("Delete user", func(t *testing.T) {
-		err := repo.DeleteUser(testUser.Id)
+		err := repo.DeleteUser(context.Background(), testUser.Id)
 		assert.NoError(t, err)
+	})
+
+	t.Run("List users by fuzzy email", func(t *testing.T) {
+		testEmails := []string{"Georgia@gmail.com", "George@gmail.com", "Georgina@gmail.com"}
+		testIds := []uuid.UUID{}
+		for _, email := range testEmails {
+			testUser := test.NewUser(test.WithEmail(email))
+			err := repo.CreateUser(context.Background(), testUser)
+			if err != nil {
+				assert.FailNow(t, "Issue creating test users for fuzzy search", err)
+			}
+			testIds = append(testIds, testUser.Id)
+		}
+
+		defer func() {
+			for _, userId := range testIds {
+				repo.DeleteUser(context.Background(), userId)
+			}
+		}()
+
+		users, err := repo.ListUsersByFuzzyEmail(context.Background(), "George@gmail.com")
+		assert.NoError(t, err)
+		assert.GreaterOrEqual(t, len(users), 3, "Expected at least 3 users to be returned")
+		assert.Equal(t, testEmails[1], *users[0].Email, "Expected George@gmail.com to be first result")
+		assert.Equal(t, testEmails[0], *users[1].Email, "Expected Georgia@gmail.com to be second result")
+		assert.Equal(t, testEmails[2], *users[2].Email, "Expected Georgina@gmail.com to be third result")
 	})
 }

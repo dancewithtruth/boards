@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	ErrMsgInternalServer = "Issue creating user"
+	ErrMsgInternalServer     = "Issue creating user"
+	ErrMsgInvalidSearchParam = `Invalid or missing search param. Try using "email".`
 )
 
 type API struct {
@@ -29,6 +30,7 @@ func NewAPI(userService Service, jwtService jwt.Service, validator validator.Val
 func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) http.Handler) {
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", api.HandleCreateUser)
+		r.Get("/search", api.HandleListUsersBySearch)
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
 			r.Get("/me", api.HandleGetUserMe)

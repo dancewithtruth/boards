@@ -67,3 +67,7 @@ UPDATE posts SET
 -- name: DeletePost :exec
 DELETE from posts WHERE id = $1;
 
+-- name: ListUsersByFuzzyEmail :many
+SELECT * FROM users
+ORDER BY levenshtein(users.email, $1) LIMIT 10;
+

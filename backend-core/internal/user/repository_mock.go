@@ -32,9 +32,14 @@ func (r *mockRepository) GetUserByLogin(ctx context.Context, email, password str
 	return models.User{}, ErrUserDoesNotExist
 }
 
-func (r *mockRepository) DeleteUser(userId uuid.UUID) error {
+func (r *mockRepository) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 	delete(r.users, userId)
 	return nil
+}
+
+func (r *mockRepository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
+	// TODO: Mock out
+	return []models.User{}, nil
 }
 
 func NewMockRepository(users map[uuid.UUID]models.User) Repository {

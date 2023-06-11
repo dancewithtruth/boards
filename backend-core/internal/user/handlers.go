@@ -7,7 +7,10 @@ import (
 
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
+	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
+	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	v "github.com/go-playground/validator/v10"
 )
 
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -66,4 +69,30 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 	}
 	// write response
 	endpoint.WriteWithStatus(w, http.StatusOK, user)
+}
+
+// HandleListUsersBySearch looks for an email query param and lists the top 10 closest user matches
+// by email input
+func (api *API) HandleListUsersBySearch(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	queryParams := r.URL.Query()
+	email := queryParams.Get("email")
+	if email == "" {
+		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidSearchParam)
+		return
+	}
+	input := ListUsersByFuzzyEmailInput{Email: email}
+	users, err := api.userService.ListUsersByFuzzyEmail(ctx, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, v.ValidationErrors{}):
+			endpoint.WriteWithError(w, http.StatusConflict, validator.GetValidationErrMsg(input, err))
+		default:
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusOK, struct {
+		Result []models.User `json:"result"`
+	}{Result: users})
 }

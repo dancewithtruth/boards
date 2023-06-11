@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 var (
@@ -22,7 +23,8 @@ type Repository interface {
 	CreateUser(ctx context.Context, user models.User) error
 	GetUser(ctx context.Context, userId uuid.UUID) (models.User, error)
 	GetUserByLogin(ctx context.Context, email, password string) (models.User, error)
-	DeleteUser(userId uuid.UUID) error
+	DeleteUser(ctx context.Context, userId uuid.UUID) error
+	ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error)
 }
 
 type repository struct {
@@ -95,12 +97,33 @@ func (r *repository) GetUserByLogin(ctx context.Context, email, password string)
 	return user, nil
 }
 
-func (r *repository) DeleteUser(userId uuid.UUID) error {
-	ctx := context.Background()
+func (r *repository) DeleteUser(ctx context.Context, userId uuid.UUID) error {
 	sql := "DELETE from users where id = $1"
 	_, err := r.db.Exec(ctx, sql, userId)
 	if err != nil {
 		return fmt.Errorf("repository: failed to delete user: %w", err)
 	}
 	return nil
+}
+
+func (r *repository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
+	rows, err := r.q.ListUsersByFuzzyEmail(ctx, pgtype.Text{String: email, Valid: true})
+	if err != nil {
+		return []models.User{}, fmt.Errorf("repository: failed to list users by fuzzy email: %w", err)
+	}
+	users := []models.User{}
+	for _, row := range rows {
+		row := row
+		user := models.User{
+			Id:        row.ID.Bytes,
+			Name:      row.Name.String,
+			Email:     &row.Email.String,
+			Password:  &row.Password.String,
+			IsGuest:   row.IsGuest.Bool,
+			CreatedAt: row.CreatedAt.Time,
+			UpdatedAt: row.UpdatedAt.Time,
+		}
+		users = append(users, user)
+	}
+	return users, nil
 }

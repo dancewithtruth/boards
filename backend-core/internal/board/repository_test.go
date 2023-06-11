@@ -105,7 +105,7 @@ func setUpTestUser(t *testing.T, userRepo user.Repository) models.User {
 }
 
 func cleanUpTestUser(t *testing.T, userRepo user.Repository, userId uuid.UUID) {
-	err := userRepo.DeleteUser(userId)
+	err := userRepo.DeleteUser(context.Background(), userId)
 	if err != nil {
 		assert.FailNow(t, "Could not clean up test user", err)
 	}

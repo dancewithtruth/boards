@@ -422,6 +422,39 @@ func (q *Queries) ListSharedBoardAndUsers(ctx context.Context, userID pgtype.UUI
 	return items, nil
 }
 
+const listUsersByFuzzyEmail = `-- name: ListUsersByFuzzyEmail :many
+SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
+ORDER BY levenshtein(users.email, $1) LIMIT 10
+`
+
+func (q *Queries) ListUsersByFuzzyEmail(ctx context.Context, levenshtein interface{}) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsersByFuzzyEmail, levenshtein)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Email,
+			&i.Password,
+			&i.IsGuest,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updatePost = `-- name: UpdatePost :exec
 UPDATE posts SET
 (id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) =
