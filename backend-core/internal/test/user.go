@@ -7,7 +7,15 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewUser() models.User {
+type NewUserOpt func(user *models.User)
+
+func WithEmail(email string) NewUserOpt {
+	return func(user *models.User) {
+		user.Email = &email
+	}
+}
+
+func NewUser(opts ...NewUserOpt) models.User {
 	email := uuid.New().String() + "email.com"
 	password := "password123"
 	user := models.User{
@@ -18,6 +26,9 @@ func NewUser() models.User {
 		IsGuest:   false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+	}
+	for _, opt := range opts {
+		opt(&user)
 	}
 	return user
 }
