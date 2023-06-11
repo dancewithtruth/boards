@@ -1,1 +1,2 @@
-DROP TABLE IF EXISTS board_invites
+DROP TABLE IF EXISTS board_invites;
+DROP EXTENSION IF EXISTS pg_trgm;
