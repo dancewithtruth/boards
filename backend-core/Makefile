@@ -29,4 +29,8 @@ testdata:
 migrate-create:
 	@read -p "Enter a name for your migration file: " name; \
 	${MIGRATE} create -ext sql -dir ./db/migrations $${name// /_}
+
+.PHONY: test
+test:
+	@docker exec backend-core go test ./...
 	
