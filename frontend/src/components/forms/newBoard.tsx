@@ -48,8 +48,6 @@ const NewBoardForm = () => {
     }
   };
   return (
-    <>
-      <h3 className="text-2xl font-bold">New Board</h3>
       <form onSubmit={handleSubmit} className="mt-4">
         <div className="form-control">
           <label className="label">
@@ -85,7 +83,6 @@ const NewBoardForm = () => {
           </div>
         </div>
       </form>
-    </>
   );
 };
 

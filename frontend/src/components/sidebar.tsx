@@ -3,6 +3,7 @@ import { NAVBAR_HEIGHT } from '@/constants';
 import Avatar from './avatar';
 import { User, BoardWithMembers } from '@/api';
 import { mergeArrays } from '@/utils';
+import InviteMemberModal from './modals/inviteMember';
 
 interface SidebarProps {
   width: string;
@@ -34,6 +35,7 @@ const Sidebar = ({ width, board, user, connectedUsers }: SidebarProps) => {
               ))}
             </div>
           </div>
+          <InviteMemberModal />
           <div className="divider" />
         </div>
         <div className="flex flex-col justify-center items-center space-y-1">
