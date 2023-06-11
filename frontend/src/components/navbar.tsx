@@ -1,13 +1,10 @@
 import Link from 'next/link';
-import { FaChevronDown } from 'react-icons/fa';
 
 import Logo from './logo';
 import WidthContainer from './widthContainer';
-import { COOKIE_NAME_JWT_TOKEN, NAVBAR_HEIGHT } from '@/constants';
+import { NAVBAR_HEIGHT } from '@/constants';
 import { User } from '@/api';
 import Avatar from './avatar';
-import Cookies from 'universal-cookie';
-import { useRouter } from 'next/navigation';
 import AccountMenu from './menus/account';
 
 export default function Navbar({ user }: { user: User | null }) {
