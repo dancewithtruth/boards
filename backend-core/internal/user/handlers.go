@@ -9,8 +9,6 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
-	"github.com/Wave-95/boards/backend-core/pkg/validator"
-	v "github.com/go-playground/validator/v10"
 )
 
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
@@ -75,18 +73,17 @@ func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 // by email input
 func (api *API) HandleListUsersBySearch(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	logger := logger.FromContext(ctx)
 	queryParams := r.URL.Query()
 	email := queryParams.Get("email")
 	if email == "" {
 		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidSearchParam)
 		return
 	}
-	input := ListUsersByFuzzyEmailInput{Email: email}
-	users, err := api.userService.ListUsersByFuzzyEmail(ctx, input)
+	users, err := api.userService.ListUsersByFuzzyEmail(ctx, email)
 	if err != nil {
+		logger.Errorf("handler: failed to list users by search: %w", err)
 		switch {
-		case errors.Is(err, v.ValidationErrors{}):
-			endpoint.WriteWithError(w, http.StatusConflict, validator.GetValidationErrMsg(input, err))
 		default:
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
