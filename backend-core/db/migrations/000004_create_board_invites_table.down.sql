@@ -1,2 +1,2 @@
 DROP TABLE IF EXISTS board_invites;
-DROP EXTENSION IF EXISTS pg_trgm;
+DROP EXTENSION IF EXISTS fuzzystrmatch;

@@ -10,4 +10,4 @@ CREATE TABLE IF NOT EXISTS board_invites (
 
 CREATE INDEX idx_board_invites_user_id ON board_invites (receiver_id);
 CREATE INDEX idx_board_invites_board_id ON board_invites (board_id);
-CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
