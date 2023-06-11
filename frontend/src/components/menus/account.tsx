@@ -5,6 +5,7 @@ import { COOKIE_NAME_JWT_TOKEN } from '@/constants';
 import { User } from '@/api';
 import Cookies from 'universal-cookie';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AccountMenu({ user, avatar }: { user: User; avatar: React.ReactNode }) {
   const cookies = new Cookies();
@@ -26,13 +27,10 @@ export default function AccountMenu({ user, avatar }: { user: User; avatar: Reac
       <div className="right-0 mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
         <ul className="menu menu-compact gap-1 p-3">
           <li>
-            <button className="flex items-center justify-between">
-              Profile
+            <Link href="/dashboard" className="flex items-center justify-between">
+              Dashboard
               <span className="badge ml-2">New</span>
-            </button>
-          </li>
-          <li>
-            <button>Settings</button>
+            </Link>
           </li>
           <li>
             <button onClick={handleLogout}>Logout</button>

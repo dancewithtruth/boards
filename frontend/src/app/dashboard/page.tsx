@@ -5,6 +5,7 @@ import WidthContainer from '@/components/widthContainer';
 import { COOKIE_NAME_JWT_TOKEN, FOOTER_HEIGHT, NAVBAR_HEIGHT } from '@/constants';
 import NewBoardForm from '@/components/forms/newBoard';
 import { FaPlus } from 'react-icons/fa';
+import NewBoardModal from '@/components/modals/newBoard';
 
 export const metadata = {
   title: 'Dashboard',
@@ -25,20 +26,6 @@ async function getDashboardData() {
 export default async function DashboardPage() {
   const data = await getDashboardData();
 
-  const NewBoardModal = () => (
-    <>
-      <label htmlFor="my-modal-4" className="btn btn-primary">
-        <FaPlus />
-        New Board
-      </label>
-      <input type="checkbox" id="my-modal-4" className="modal-toggle" />
-      <label htmlFor="my-modal-4" className="modal cursor-pointer">
-        <label className="modal-box relative" htmlFor="">
-          <NewBoardForm />
-        </label>
-      </label>
-    </>
-  );
   return (
     <div className="min-h-screen" style={{ minHeight: `calc(100vh - ${NAVBAR_HEIGHT} - ${FOOTER_HEIGHT})` }}>
       <WidthContainer>
