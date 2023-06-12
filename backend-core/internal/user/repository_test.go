@@ -22,7 +22,7 @@ func TestRepository(t *testing.T) {
 
 	t.Run("Create user with non-unique email", func(t *testing.T) {
 		testUserBadEmail := testUser
-		testUserBadEmail.Id = uuid.New()
+		testUserBadEmail.ID = uuid.New()
 		err := repo.CreateUser(context.Background(), testUserBadEmail)
 		assert.ErrorIs(t, err, ErrEmailAlreadyExists)
 	})
@@ -45,7 +45,7 @@ func TestRepository(t *testing.T) {
 	})
 
 	t.Run("Delete user", func(t *testing.T) {
-		err := repo.DeleteUser(context.Background(), testUser.Id)
+		err := repo.DeleteUser(context.Background(), testUser.ID)
 		assert.NoError(t, err)
 	})
 
@@ -58,12 +58,12 @@ func TestRepository(t *testing.T) {
 			if err != nil {
 				assert.FailNow(t, "Issue creating test users for fuzzy search", err)
 			}
-			testIds = append(testIds, testUser.Id)
+			testIds = append(testIds, testUser.ID)
 		}
 
 		defer func() {
-			for _, userId := range testIds {
-				repo.DeleteUser(context.Background(), userId)
+			for _, userID := range testIds {
+				repo.DeleteUser(context.Background(), userID)
 			}
 		}()
 

@@ -17,31 +17,31 @@ func NewMockRepository() *mockRepository {
 }
 
 func (r *mockRepository) CreatePost(ctx context.Context, post models.Post) error {
-	r.posts[post.Id] = post
+	r.posts[post.ID] = post
 	return nil
 }
 
-func (r *mockRepository) GetPost(ctx context.Context, postId uuid.UUID) (models.Post, error) {
-	if post, ok := r.posts[postId]; ok {
+func (r *mockRepository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
+	if post, ok := r.posts[postID]; ok {
 		return post, nil
 	}
 	return models.Post{}, ErrPostNotFound
 }
 
 func (r *mockRepository) UpdatePost(ctx context.Context, post models.Post) error {
-	r.posts[post.Id] = post
+	r.posts[post.ID] = post
 	return nil
 }
 
-func (r *mockRepository) DeletePost(ctx context.Context, postId uuid.UUID) error {
-	delete(r.posts, postId)
+func (r *mockRepository) DeletePost(ctx context.Context, postID uuid.UUID) error {
+	delete(r.posts, postID)
 	return nil
 }
 
-func (r *mockRepository) ListPosts(ctx context.Context, boardId uuid.UUID) ([]models.Post, error) {
+func (r *mockRepository) ListPosts(ctx context.Context, boardID uuid.UUID) ([]models.Post, error) {
 	posts := []models.Post{}
 	for _, post := range r.posts {
-		if post.BoardId == boardId {
+		if post.BoardID == boardID {
 			posts = append(posts, post)
 		}
 	}

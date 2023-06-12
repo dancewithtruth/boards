@@ -51,7 +51,7 @@ func newTestUser() models.User {
 	email := "johndoe@gmail.com"
 	password := "password123"
 	user := models.User{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		Name:      "testname",
 		Email:     &email,
 		Password:  &password,

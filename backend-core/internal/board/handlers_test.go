@@ -30,14 +30,14 @@ func TestHandleCreateBoard(t *testing.T) {
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest(http.MethodPost, "/boards", payload)
 
-	// add a userId to request context
-	ctx := context.WithValue(req.Context(), middleware.UserIdKey, testUser.Id.String())
+	// add a userID to request context
+	ctx := context.WithValue(req.Context(), middleware.UserIDKey, testUser.ID.String())
 	req = req.WithContext(ctx)
 
 	boardAPI.HandleCreateBoard(res, req)
 
 	assert.Equal(t, http.StatusCreated, res.Result().StatusCode, "expected 201 status")
-	assert.Contains(t, res.Body.String(), testUser.Id.String(), "expected user ID in response to be same as input")
+	assert.Contains(t, res.Body.String(), testUser.ID.String(), "expected user ID in response to be same as input")
 	assert.Contains(t, res.Body.String(), boardName, "expected board name to be same as input")
 	assert.Contains(t, res.Body.String(), defaultBoardDescription, "expected board description to be default description")
 }

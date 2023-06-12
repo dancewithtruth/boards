@@ -21,7 +21,7 @@ func TestService(t *testing.T) {
 	t.Run("Create board", func(t *testing.T) {
 		t.Run("without name or description", func(t *testing.T) {
 			input := CreateBoardInput{
-				UserId: testUser.Id.String(),
+				UserID: testUser.ID.String(),
 			}
 			board, err := boardService.CreateBoard(context.Background(), input)
 			assert.NoError(t, err)
@@ -33,7 +33,7 @@ func TestService(t *testing.T) {
 			customBoardName := "Custom Board Name"
 			customBoardDescription := "Custom board description"
 			input := CreateBoardInput{
-				UserId:      testUser.Id.String(),
+				UserID:      testUser.ID.String(),
 				Name:        &customBoardName,
 				Description: &customBoardDescription,
 			}
@@ -49,13 +49,13 @@ func TestService(t *testing.T) {
 		if !ok {
 			assert.FailNow(t, "expected a board to exist but got none")
 		}
-		board, err := boardService.GetBoard(context.Background(), board.Id.String())
+		board, err := boardService.GetBoard(context.Background(), board.ID.String())
 		assert.NoError(t, err)
 		assert.NotNil(t, board)
 	})
 
 	t.Run("List owned boards", func(t *testing.T) {
-		boards, err := boardService.ListOwnedBoards(context.Background(), testUser.Id.String())
+		boards, err := boardService.ListOwnedBoards(context.Background(), testUser.ID.String())
 		assert.NoError(t, err)
 		assert.Greater(t, len(boards), 0)
 	})

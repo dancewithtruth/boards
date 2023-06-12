@@ -127,8 +127,8 @@ func (c *Client) writePump() {
 }
 
 func (c *Client) unregisterAll() {
-	for boardId := range c.boards {
-		c.ws.boardHubs[boardId].unregister <- c
+	for boardID := range c.boards {
+		c.ws.boardHubs[boardID].unregister <- c
 	}
 }
 

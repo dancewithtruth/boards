@@ -17,7 +17,7 @@ export type Post = {
 
 export type ListPostsResponse = { data: Array<Post> };
 
-export async function listPosts(boardId: string, token: string): Promise<ListPostsResponse> {
-  const url = `${BASE_URL}/posts/?boardId=${boardId}`;
+export async function listPosts(boardID: string, token: string): Promise<ListPostsResponse> {
+  const url = `${BASE_URL}/posts/?boardID=${boardID}`;
   return sendGetRequest<ListPostsResponse>(url, token);
 }

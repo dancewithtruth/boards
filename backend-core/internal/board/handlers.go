@@ -12,10 +12,14 @@ import (
 )
 
 const (
+	// ErrMsgInternalServer is an error message for notifying an internal server error
 	ErrMsgInternalServer = "Internal server error"
-	ErrMsgInvalidToken   = "Invalid authentication token"
-	ErrMsgBoardNotFound  = "Board not found"
-	ErrMsgInvalidBoardId = "Provided invalid board ID. Please ensure board ID is in UUID format"
+	// ErrMsgInvalidToken is an error message for notifying an invalid auth token
+	ErrMsgInvalidToken = "Invalid authentication token"
+	// ErrMsgBoardNotFound is an error message for notifying when a board is not found
+	ErrMsgBoardNotFound = "Board not found"
+	// ErrMsgInvalidBoardID is an error message for notifying an improper board ID format
+	ErrMsgInvalidBoardID = "Provided invalid board ID. Please ensure board ID is in UUID format"
 )
 
 // HandleCreateBoard is the handler for creating a single board. It requires a user ID
@@ -38,14 +42,14 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// get userId from context
-	userId := middleware.UserIdFromContext(ctx)
-	if userId == "" {
+	// get userID from context
+	userID := middleware.UserIDFromContext(ctx)
+	if userID == "" {
 		logger.Error("handler: failed to parse user ID from request context")
 		endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
 		return
 	}
-	input.UserId = userId
+	input.UserID = userID
 
 	// create board
 	board, err := api.boardService.CreateBoard(ctx, input)
@@ -62,11 +66,11 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	boardId := chi.URLParam(r, "boardId")
-	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardId)
+	boardID := chi.URLParam(r, "boardID")
+	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardID)
 	if err != nil {
-		if errors.Is(err, ErrInvalidBoardId) {
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardId)
+		if errors.Is(err, ErrInvalidBoardID) {
+			endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardID)
 			return
 		}
 		logger.Errorf("handler: failed to get board by board ID: %v", err)
@@ -75,8 +79,8 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if requesting user has permission to view board
-	userId := middleware.UserIdFromContext(ctx)
-	if userId != boardWithMembers.UserId.String() && !hasUser(boardWithMembers.Members, userId) {
+	userID := middleware.UserIDFromContext(ctx)
+	if userID != boardWithMembers.UserID.String() && !hasUser(boardWithMembers.Members, userID) {
 		logger.Infof("handler: user requested for a board they do not have access to : %v", err)
 		endpoint.WriteWithError(w, http.StatusNotFound, ErrMsgBoardNotFound)
 		return
@@ -86,24 +90,24 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleGetBoards returns a list of owned and shared boards for a given user.
-// The userId from the auth jwt will be used to query the boards. Each board will
+// The userID from the auth jwt will be used to query the boards. Each board will
 // be hydrated with associated users and invites
 func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	// get userId from context
-	userId := middleware.UserIdFromContext(ctx)
+	// get userID from context
+	userID := middleware.UserIDFromContext(ctx)
 
 	// TODO: Make concurrent
-	ownedBoards, err := api.boardService.ListOwnedBoardsWithMembers(ctx, userId)
+	ownedBoards, err := api.boardService.ListOwnedBoardsWithMembers(ctx, userID)
 	if err != nil {
 		logger.Errorf("handler: failed to get owned boards by user ID: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
 
-	sharedBoards, err := api.boardService.ListSharedBoardsWithMembers(ctx, userId)
+	sharedBoards, err := api.boardService.ListSharedBoardsWithMembers(ctx, userID)
 	if err != nil {
 		logger.Errorf("handler: failed to get shared boards by user ID: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
@@ -115,24 +119,22 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 	}{Owned: ownedBoards, Shared: sharedBoards})
 }
 
-// Helper functions
-
-func hasUser(members []BoardMemberDTO, userId string) bool {
+func hasUser(members []MemberDTO, userID string) bool {
 	for _, member := range members {
-		if member.Id.String() == userId {
+		if member.ID.String() == userID {
 			return true
 		}
 	}
 	return false
 }
 
-func HasBoardAccess(board BoardWithMembersDTO, userId string) bool {
-	if board.UserId.String() == userId {
+// UserHasAccess checks if a certain user ID exists in a board as the board owner or board member
+func UserHasAccess(board BoardWithMembersDTO, userID string) bool {
+	if board.UserID.String() == userID {
 		return true
 	}
-
 	for _, member := range board.Members {
-		if member.Id.String() == userId {
+		if member.ID.String() == userID {
 			return true
 		}
 	}

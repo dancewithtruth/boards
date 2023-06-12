@@ -12,12 +12,12 @@ import (
 	"github.com/google/uuid"
 )
 
-type requestIdKey int
-type correlationIdKey int
+type requestIDKey int
+type correlationIDKey int
 
 const (
-	RequestIdKey     requestIdKey     = 0
-	CorrelationIdKey correlationIdKey = 0
+	RequestIdKey     requestIDKey     = 0
+	CorrelationIdKey correlationIDKey = 0
 
 	HeaderRequestID     = "X-Request-ID"
 	HeaderCorrelationID = "X-Correlation-ID"
@@ -63,8 +63,8 @@ func RequestLogger(l logger.Logger) func(http.Handler) http.Handler {
 
 			// Get request and correlation IDs and append fields to request logger
 			// Then set logger to request context
-			reqId, corrId := getOrCreateIDs(r)
-			requestLogger := l.With(FieldRequestID, reqId, FieldCorrelationID, corrId)
+			reqID, corrID := getOrCreateIDs(r)
+			requestLogger := l.With(FieldRequestID, reqID, FieldCorrelationID, corrID)
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, logger.LoggerKey, requestLogger)
 			r = r.WithContext(ctx)
@@ -88,16 +88,16 @@ func RequestLogger(l logger.Logger) func(http.Handler) http.Handler {
 
 // Look for existing request ID and correlation ID from request header
 // Return existing values or generate new uuids if not found
-func getOrCreateIDs(r *http.Request) (reqId string, corrId string) {
-	reqId = getRequestID(r)
-	corrId = getCorrelationID(r)
-	if reqId == "" {
-		reqId = uuid.NewString()
+func getOrCreateIDs(r *http.Request) (reqID string, corrID string) {
+	reqID = getRequestID(r)
+	corrID = getCorrelationID(r)
+	if reqID == "" {
+		reqID = uuid.NewString()
 	}
-	if corrId == "" {
-		corrId = uuid.NewString()
+	if corrID == "" {
+		corrID = uuid.NewString()
 	}
-	return reqId, corrId
+	return reqID, corrID
 }
 
 // getRequestID grabs the request ID string off the X-Request-ID header

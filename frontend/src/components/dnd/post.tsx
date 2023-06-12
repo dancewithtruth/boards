@@ -156,10 +156,10 @@ function getStyles(color: string): CSSProperties {
   };
 }
 
-function getName(userId: string, boardMembers: User[]): string | undefined {
+function getName(userID: string, boardMembers: User[]): string | undefined {
   let name;
   boardMembers.forEach((user) => {
-    if (user.id == userId) {
+    if (user.id == userID) {
       name = user.name;
     }
   });

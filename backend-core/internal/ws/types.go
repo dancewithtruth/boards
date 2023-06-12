@@ -45,7 +45,7 @@ type RequestBoardConnect struct {
 }
 
 type ParamsBoardConnect struct {
-	BoardId string `json:"board_id"`
+	BoardID string `json:"board_id"`
 }
 
 type RequestUserAuthenticate struct {
@@ -63,7 +63,7 @@ type RequestPostCreate struct {
 }
 
 type ParamsPostCreate struct {
-	BoardId string `json:"board_id" validate:"required,uuid"`
+	BoardID string `json:"board_id" validate:"required,uuid"`
 	Content string `json:"content"`
 	PosX    int    `json:"pos_x" validate:"required,min=0"`
 	PosY    int    `json:"pos_y" validate:"required,min=0"`
@@ -78,7 +78,7 @@ type RequestPostUpdate struct {
 }
 
 type ParamsPostUpdate struct {
-	BoardId string `json:"board_id" validate:"required,uuid"`
+	BoardID string `json:"board_id" validate:"required,uuid"`
 	post.UpdatePostInput
 }
 
@@ -88,8 +88,8 @@ type RequestPostDelete struct {
 }
 
 type ParamsPostDelete struct {
-	PostId  string `json:"post_id" validate:"required,uuid"`
-	BoardId string `json:"board_id" validate:"required,uuid"`
+	PostID  string `json:"post_id" validate:"required,uuid"`
+	BoardID string `json:"board_id" validate:"required,uuid"`
 }
 
 type RequestPostFocus struct {
@@ -98,8 +98,8 @@ type RequestPostFocus struct {
 }
 
 type ParamsPostFocus struct {
-	Id      string `json:"id" validate:"required,uuid"`
-	BoardId string `json:"board_id" validate:"required,uuid"`
+	ID      string `json:"id" validate:"required,uuid"`
+	BoardID string `json:"board_id" validate:"required,uuid"`
 }
 
 // Responses
@@ -124,7 +124,7 @@ type ResponseBoardConnect struct {
 	Result ResultBoardConnect `json:"result,omitempty"`
 }
 type ResultBoardConnect struct {
-	BoardId        string        `json:"board_id"`
+	BoardID        string        `json:"board_id"`
 	NewUser        models.User   `json:"new_user"`
 	ConnectedUsers []models.User `json:"connected_users"`
 }
@@ -140,8 +140,8 @@ type ResponsePostDelete struct {
 }
 
 type ResultPostDelete struct {
-	PostId  string `json:"post_id"`
-	BoardId string `json:"board_id"`
+	PostID  string `json:"post_id"`
+	BoardID string `json:"board_id"`
 }
 
 type ResponsePostFocus struct {
@@ -150,7 +150,7 @@ type ResponsePostFocus struct {
 }
 
 type ResultPostFocus struct {
-	Id      string      `json:"id"`
-	BoardId string      `json:"board_id"`
+	ID      string      `json:"id"`
+	BoardID string      `json:"board_id"`
 	User    models.User `json:"user"`
 }

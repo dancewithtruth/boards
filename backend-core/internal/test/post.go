@@ -7,13 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
-func NewPost(boardId uuid.UUID, userId uuid.UUID) models.Post {
-	postId := uuid.New()
+func NewPost(boardID uuid.UUID, userID uuid.UUID) models.Post {
+	postID := uuid.New()
 	now := time.Now()
 	testPost := models.Post{
-		Id:        postId,
-		BoardId:   boardId,
-		UserId:    userId,
+		ID:        postID,
+		BoardID:   boardID,
+		UserID:    userID,
 		Content:   "This is a post!",
 		PosX:      10,
 		PosY:      10,

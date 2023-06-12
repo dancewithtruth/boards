@@ -146,10 +146,10 @@ const SelectedPanel = ({ selected, handleSelect }: SelectedPanelProps) => {
   );
 };
 
-function isSelected(userId: string, selected: User[]): boolean {
+function isSelected(userID: string, selected: User[]): boolean {
   let isSelected = false;
   selected.some((user) => {
-    if (user.id == userId) {
+    if (user.id == userID) {
       isSelected = true;
       return;
     }

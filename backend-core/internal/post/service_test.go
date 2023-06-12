@@ -18,8 +18,8 @@ func TestService(t *testing.T) {
 
 		// Create
 		createInput := CreatePostInput{
-			UserId:  uuid.New().String(),
-			BoardId: uuid.New().String(),
+			UserID:  uuid.New().String(),
+			BoardID: uuid.New().String(),
 			Content: "This is great content right here",
 			PosX:    10,
 			PosY:    10,
@@ -28,13 +28,13 @@ func TestService(t *testing.T) {
 		}
 		post, err := service.CreatePost(context.Background(), createInput)
 		assert.NoError(t, err)
-		assert.NotEmpty(t, post.Id)
+		assert.NotEmpty(t, post.ID)
 
 		// Update
 		updatedContent := "This content has been updated"
 		updatedPos := 20
 		updateInput := UpdatePostInput{
-			Id:      post.Id.String(),
+			ID:      post.ID.String(),
 			Content: &updatedContent,
 			PosX:    &updatedPos,
 			PosY:    &updatedPos,
@@ -43,13 +43,13 @@ func TestService(t *testing.T) {
 		assert.NoError(t, err)
 
 		// Get
-		updatedPost, err := service.GetPost(context.Background(), post.Id.String())
+		updatedPost, err := service.GetPost(context.Background(), post.ID.String())
 		assert.NoError(t, err)
 		assert.Equal(t, updatedContent, updatedPost.Content)
 		assert.Equal(t, updatedPos, updatedPost.PosX)
 
 		// Delete
-		err = service.DeletePost(context.Background(), post.Id.String())
+		err = service.DeletePost(context.Background(), post.ID.String())
 		assert.NoError(t, err)
 
 	})

@@ -21,28 +21,28 @@ func NewMockRepository(boards map[uuid.UUID]models.Board) *mockRepository {
 
 // AddUser is a mock specific function to help join the relation between users and boards
 func (r *mockRepository) AddUser(user models.User) {
-	r.users[user.Id] = user
+	r.users[user.ID] = user
 }
 
 func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) error {
-	r.boards[board.Id] = board
+	r.boards[board.ID] = board
 	return nil
 }
 
-func (r *mockRepository) GetBoard(ctx context.Context, boardId uuid.UUID) (models.Board, error) {
-	if board, ok := r.boards[boardId]; ok {
+func (r *mockRepository) GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error) {
+	if board, ok := r.boards[boardID]; ok {
 		return board, nil
 	}
 	return models.Board{}, ErrBoardDoesNotExist
 }
 
-func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardId uuid.UUID) ([]BoardAndUser, error) {
+func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error) {
 	// TODO: mock this out, return board, board membership, and user
-	board := r.boards[boardId]
+	board := r.boards[boardID]
 	return []BoardAndUser{{Board: &board}}, nil
 }
 
-func (r *mockRepository) ListOwnedBoards(ctx context.Context, userId uuid.UUID) ([]models.Board, error) {
+func (r *mockRepository) ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error) {
 	list := []models.Board{}
 	for _, board := range r.boards {
 		list = append(list, board)
@@ -50,12 +50,12 @@ func (r *mockRepository) ListOwnedBoards(ctx context.Context, userId uuid.UUID) 
 	return list, nil
 }
 
-func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error) {
+func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
 	// TODO: mock this out
 	return nil, nil
 }
 
-func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userId uuid.UUID) ([]BoardAndUser, error) {
+func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
 	// TODO: mock this out
 	return nil, nil
 }
@@ -66,11 +66,11 @@ func (r *mockRepository) CreateBoardInvites(ctx context.Context, invites []model
 }
 
 func (r *mockRepository) CreateMembership(ctx context.Context, membership models.BoardMembership) error {
-	r.boardMemberships[membership.Id] = membership
+	r.boardMemberships[membership.ID] = membership
 	return nil
 }
 
-func (r *mockRepository) DeleteBoard(ctx context.Context, boardId uuid.UUID) error {
-	delete(r.boards, boardId)
+func (r *mockRepository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
+	delete(r.boards, boardID)
 	return nil
 }

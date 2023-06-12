@@ -43,7 +43,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtToken, err := api.jwtService.GenerateToken(user.Id.String())
+	jwtToken, err := api.jwtService.GenerateToken(user.ID.String())
 	if err != nil {
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 	}
@@ -56,8 +56,8 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 // on the request context
 func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	userId := middleware.UserIdFromContext(ctx)
-	user, err := api.userService.GetUser(ctx, userId)
+	userID := middleware.UserIDFromContext(ctx)
+	user, err := api.userService.GetUser(ctx, userID)
 	if err != nil {
 		switch {
 		default:

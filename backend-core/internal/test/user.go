@@ -19,7 +19,7 @@ func NewUser(opts ...NewUserOpt) models.User {
 	email := uuid.New().String() + "email.com"
 	password := "password123"
 	user := models.User{
-		Id:        uuid.New(),
+		ID:        uuid.New(),
 		Name:      "testname",
 		Email:     &email,
 		Password:  &password,

@@ -10,17 +10,17 @@ import (
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 )
 
-type UserId int
+type UserID int
 
 const (
-	UserIdKey UserId = 0
+	UserIDKey UserID = 0
 
 	ErrMsgMissingToken = "Missing or invalid bearer token"
 	ErrMsgInvalidToken = "Invalid token"
 )
 
 // Auth creates a middleware function that retrieves a bearer token and validates the token.
-// The middleware sets the userId in the jwt payload into the request context. If the token is
+// The middleware sets the userID in the jwt payload into the request context. If the token is
 // invalid, it will write an Unauthorized response.
 func Auth(jwtService jwt.Service) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -35,27 +35,27 @@ func Auth(jwtService jwt.Service) func(next http.Handler) http.Handler {
 			}
 
 			token := strings.TrimPrefix(authHeader, "Bearer ")
-			userId, err := jwtService.VerifyToken(token)
+			userID, err := jwtService.VerifyToken(token)
 			if err != nil {
 				logger.Errorf("handler: issue verifying jwt token: %w", err)
 				endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
 				return
 			}
-			r = r.WithContext(withUser(ctx, userId))
+			r = r.WithContext(withUser(ctx, userID))
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-// UserIdFromContext returns a user ID from context
-func UserIdFromContext(ctx context.Context) string {
-	if userId, ok := ctx.Value(UserIdKey).(string); ok {
-		return userId
+// UserIDFromContext returns a user ID from context
+func UserIDFromContext(ctx context.Context) string {
+	if userID, ok := ctx.Value(UserIDKey).(string); ok {
+		return userID
 	}
 	return ""
 }
 
-// withUser adds the userId to a context object and returns that context
-func withUser(ctx context.Context, userId string) context.Context {
-	return context.WithValue(ctx, UserIdKey, userId)
+// withUser adds the userID to a context object and returns that context
+func withUser(ctx context.Context, userID string) context.Context {
+	return context.WithValue(ctx, UserIDKey, userID)
 }

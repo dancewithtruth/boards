@@ -7,10 +7,10 @@ import (
 )
 
 type Board struct {
-	Id          uuid.UUID `json:"id"`
+	ID          uuid.UUID `json:"id"`
 	Name        *string   `json:"name"`
 	Description *string   `json:"description"`
-	UserId      uuid.UUID `json:"user_id"`
+	UserID      uuid.UUID `json:"user_id"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -23,9 +23,9 @@ const (
 )
 
 type BoardMembership struct {
-	Id        uuid.UUID           `json:"id"`
-	BoardId   uuid.UUID           `json:"board_id"`
-	UserId    uuid.UUID           `json:"user_id"`
+	ID        uuid.UUID           `json:"id"`
+	BoardID   uuid.UUID           `json:"board_id"`
+	UserID    uuid.UUID           `json:"user_id"`
 	Role      BoardMembershipRole `json:"role"`
 	CreatedAt time.Time           `json:"created_at"`
 	UpdatedAt time.Time           `json:"updated_at"`
@@ -40,9 +40,9 @@ const (
 )
 
 type BoardInvite struct {
-	Id        uuid.UUID         `json:"id"`
-	BoardId   uuid.UUID         `json:"board_id"`
-	UserId    uuid.UUID         `json:"user_id"`
+	ID        uuid.UUID         `json:"id"`
+	BoardID   uuid.UUID         `json:"board_id"`
+	UserID    uuid.UUID         `json:"user_id"`
 	Status    BoardInviteStatus `json:"status"`
 	CreatedAt time.Time         `json:"created_at"`
 	UpdatedAt time.Time         `json:"updated_at"`

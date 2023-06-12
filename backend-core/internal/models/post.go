@@ -11,9 +11,9 @@ const (
 )
 
 type Post struct {
-	Id        uuid.UUID `json:"id"`
-	BoardId   uuid.UUID `json:"board_id"`
-	UserId    uuid.UUID `json:"user_id"`
+	ID        uuid.UUID `json:"id"`
+	BoardID   uuid.UUID `json:"board_id"`
+	UserID    uuid.UUID `json:"user_id"`
 	Content   string    `json:"content"`
 	PosX      int       `json:"pos_x"`
 	PosY      int       `json:"pos_y"`

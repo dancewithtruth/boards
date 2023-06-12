@@ -18,19 +18,19 @@ func TestRepository(t *testing.T) {
 	assert.NotNil(t, repo)
 
 	testUser := test.NewUser()
-	testBoard := test.NewBoard(testUser.Id)
+	testBoard := test.NewBoard(testUser.ID)
 	setupUserAndBoard(t, db, testUser, testBoard)
 
 	t.Run("Create, get, update, and delete post", func(t *testing.T) {
 		// Create
-		testPost := test.NewPost(testBoard.Id, testUser.Id)
+		testPost := test.NewPost(testBoard.ID, testUser.ID)
 		err := repo.CreatePost(context.Background(), testPost)
 		assert.NoError(t, err)
 
 		// Get
-		createdPost, err := repo.GetPost(context.Background(), testPost.Id)
+		createdPost, err := repo.GetPost(context.Background(), testPost.ID)
 		assert.NoError(t, err)
-		assert.Equal(t, testPost.Id, createdPost.Id)
+		assert.Equal(t, testPost.ID, createdPost.ID)
 
 		// Update
 		updatedPost := testPost
@@ -38,13 +38,13 @@ func TestRepository(t *testing.T) {
 		updatedPost.Content = updatedContent
 		err = repo.UpdatePost(context.Background(), updatedPost)
 		assert.NoError(t, err)
-		updatedPost, err = repo.GetPost(context.Background(), updatedPost.Id)
+		updatedPost, err = repo.GetPost(context.Background(), updatedPost.ID)
 		assert.Equal(t, updatedContent, updatedPost.Content)
 
 		// Delete
-		err = repo.DeletePost(context.Background(), testPost.Id)
+		err = repo.DeletePost(context.Background(), testPost.ID)
 		assert.NoError(t, err)
-		_, err = repo.GetPost(context.Background(), testPost.Id)
+		_, err = repo.GetPost(context.Background(), testPost.ID)
 		assert.Error(t, err)
 	})
 }

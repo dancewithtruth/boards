@@ -22,8 +22,8 @@ export const authenticateUser = (jwtToken: string, send: Send) => {
   send(message);
 };
 
-export const connectBoard = (boardId: string, send: Send) => {
-  const message = buildMessageRequest(EVENT_BOARD_CONNECT, { board_id: boardId });
+export const connectBoard = (boardID: string, send: Send) => {
+  const message = buildMessageRequest(EVENT_BOARD_CONNECT, { board_id: boardID });
   send(message);
 };
 

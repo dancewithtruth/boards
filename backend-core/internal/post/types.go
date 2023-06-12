@@ -2,10 +2,10 @@ package post
 
 import "github.com/Wave-95/boards/backend-core/pkg/validator"
 
-// Inputs
+// CreatePostInput defines the structure of a request to create a post
 type CreatePostInput struct {
-	UserId  string `json:"user_id" validate:"required,uuid"`
-	BoardId string `json:"board_id" validate:"required,uuid"`
+	UserID  string `json:"user_id" validate:"required,uuid"`
+	BoardID string `json:"board_id" validate:"required,uuid"`
 	Content string `json:"content"`
 	PosX    int    `json:"pos_x" validate:"required,min=0"`
 	PosY    int    `json:"pos_y" validate:"required,min=0"`
@@ -19,8 +19,9 @@ func (i *CreatePostInput) Validate() error {
 	return validator.Struct(i)
 }
 
+// UpdatePostInput defines the structure of a request to create a post
 type UpdatePostInput struct {
-	Id      string  `json:"id" validate:"required,uuid"`
+	ID      string  `json:"id" validate:"required,uuid"`
 	Content *string `json:"content"`
 	PosX    *int    `json:"pos_x" validate:"omitempty,min=0"`
 	PosY    *int    `json:"pos_y" validate:"omitempty,min=0"`

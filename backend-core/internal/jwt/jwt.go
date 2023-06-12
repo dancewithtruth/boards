@@ -9,7 +9,7 @@ import (
 )
 
 type Service interface {
-	GenerateToken(userId string) (string, error)
+	GenerateToken(userID string) (string, error)
 	VerifyToken(token string) (string, error)
 }
 
@@ -22,15 +22,15 @@ func New(jwtSecret string, expiration int) *service {
 	return &service{jwtSecret, expiration}
 }
 
-func (s *service) GenerateToken(userId string) (string, error) {
+func (s *service) GenerateToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"userId": userId,
+		"userID": userID,
 		"exp":    time.Now().Add(time.Duration(s.expiration) * time.Hour).Unix(),
 	})
 	return token.SignedString([]byte(s.jwtSecret))
 }
 
-// verifyToken parses and validates a jwt token. It returns the userId on a
+// verifyToken parses and validates a jwt token. It returns the userID on a
 // valid token.
 func (s *service) VerifyToken(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
@@ -45,16 +45,15 @@ func (s *service) VerifyToken(tokenString string) (string, error) {
 	}
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userId := claims["userId"]
-		userIdStr, ok := userId.(string)
+		userID := claims["userID"]
+		userIDStr, ok := userID.(string)
 		if !ok {
-			return "", fmt.Errorf("Issue parsing userId: %w", err)
+			return "", fmt.Errorf("Issue parsing userID: %w", err)
 		}
-		if userIdStr == "" {
+		if userIDStr == "" {
 			return "", fmt.Errorf("User id not set: %w", err)
 		}
-		return userIdStr, nil
-
+		return userIDStr, nil
 	} else {
 		return "", errors.New("Invalid token")
 	}

@@ -7,11 +7,13 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// API encapsulates dependencies needed to perform board related duties
 type API struct {
 	boardService Service
 	validator    validator.Validate
 }
 
+// NewAPI creates a new intance of the API struct.
 func NewAPI(boardService Service, validator validator.Validate) API {
 	return API{
 		boardService: boardService,
@@ -19,12 +21,13 @@ func NewAPI(boardService Service, validator validator.Validate) API {
 	}
 }
 
+// RegisterHandlers registers the API's request handlers
 func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) http.Handler) {
 	r.Route("/boards", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
 			r.Get("/", api.HandleGetBoards)
-			r.Get("/{boardId}", api.HandleGetBoard)
+			r.Get("/{boardID}", api.HandleGetBoard)
 			r.Post("/", api.HandleCreateBoard)
 		})
 	})

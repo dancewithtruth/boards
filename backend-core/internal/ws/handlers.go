@@ -53,12 +53,12 @@ func (ws *WebSocket) HandleConnection(w http.ResponseWriter, r *http.Request) {
 
 func handleDestroy(destroy chan string, boardHubs map[string]*Hub) {
 	for {
-		boardId := <-destroy
-		delete(boardHubs, boardId)
+		boardID := <-destroy
+		delete(boardHubs, boardID)
 	}
 }
 
-// handleUserAuthenticate will authenticate the user and store a userId in the Client.
+// handleUserAuthenticate will authenticate the user and store a userID in the Client.
 func handleUserAuthenticate(c *Client, msgReq Request) {
 	// Unmarshal params
 	var params ParamsUserAuthenticate
@@ -68,8 +68,8 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 		return
 	}
 	// Verify user
-	userId, err := c.ws.jwtService.VerifyToken(params.Jwt)
-	user, err := c.ws.userService.GetUser(context.Background(), userId)
+	userID, err := c.ws.jwtService.VerifyToken(params.Jwt)
+	user, err := c.ws.userService.GetUser(context.Background(), userID)
 	user.Password = nil
 	var msgRes ResponseUserAuthenticate
 	if err != nil {
@@ -88,7 +88,7 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 				User: user,
 			},
 		}
-		// Assign userId to client struct
+		// Assign userID to client struct
 		c.user = &user
 	}
 
@@ -121,11 +121,11 @@ func handleBoardConnect(c *Client, msgReq Request) {
 		return
 	}
 	// Check if user has access to board
-	boardId := params.BoardId
-	boardWithMembers, err := c.ws.boardService.GetBoardWithMembers(context.Background(), boardId)
+	boardID := params.BoardID
+	boardWithMembers, err := c.ws.boardService.GetBoardWithMembers(context.Background(), boardID)
 	var msgRes ResponseBoardConnect
 	// If no access, return error response
-	if err != nil || !board.HasBoardAccess(boardWithMembers, user.Id.String()) {
+	if err != nil || !board.UserHasAccess(boardWithMembers, user.ID.String()) {
 		msgRes = ResponseBoardConnect{
 			ResponseBase: ResponseBase{
 				Event:        EventBoardConnect,
@@ -134,13 +134,13 @@ func handleBoardConnect(c *Client, msgReq Request) {
 		}
 	} else {
 		// If board does not exist as a hub, create one and run it
-		if _, ok := c.ws.boardHubs[boardId]; !ok {
-			c.ws.boardHubs[boardId] = newHub(boardId, c.ws.destroy)
-			go c.ws.boardHubs[boardId].run()
+		if _, ok := c.ws.boardHubs[boardID]; !ok {
+			c.ws.boardHubs[boardID] = newHub(boardID, c.ws.destroy)
+			go c.ws.boardHubs[boardID].run()
 		}
 		// Store write permission on the client's boards map
-		boardHub := c.ws.boardHubs[boardId]
-		c.boards[boardId] = Board{
+		boardHub := c.ws.boardHubs[boardID]
+		c.boards[boardID] = Board{
 			canWrite: true,
 		}
 		existingUsers := boardHub.listConnectedUsers()
@@ -153,7 +153,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 				Success: true,
 			},
 			Result: ResultBoardConnect{
-				BoardId:        boardId,
+				BoardID:        boardID,
 				NewUser:        *user,
 				ConnectedUsers: existingUsers,
 			},
@@ -167,7 +167,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 	}
 	// Only broadcast message if successful, otherwise send only to the client
 	if msgRes.Success == true {
-		c.ws.boardHubs[params.BoardId].broadcast <- msgResBytes
+		c.ws.boardHubs[params.BoardID].broadcast <- msgResBytes
 	} else if msgRes.Success == false {
 		c.send <- msgResBytes
 	}
@@ -175,7 +175,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 
 func handlePostCreate(c *Client, msgReq Request) {
 	user := c.user
-	if user.Id.String() == "" {
+	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
@@ -185,15 +185,15 @@ func handlePostCreate(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
 		return
 	}
-	boardId := params.BoardId
-	if !c.boards[boardId].canWrite {
+	boardID := params.BoardID
+	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
 	createPostInput := post.CreatePostInput{
-		UserId:  user.Id.String(),
-		BoardId: boardId,
+		UserID:  user.ID.String(),
+		BoardID: boardID,
 		Content: params.Content,
 		PosX:    params.PosX,
 		PosY:    params.PosY,
@@ -225,12 +225,12 @@ func handlePostCreate(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		return
 	}
-	c.ws.boardHubs[boardId].broadcast <- msgResBytes
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
 func handlePostFocus(c *Client, msgReq Request) {
 	user := c.user
-	if user.Id.String() == "" {
+	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
@@ -240,9 +240,9 @@ func handlePostFocus(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
 		return
 	}
-	postId := params.Id
-	boardId := params.BoardId
-	if !c.boards[boardId].canWrite {
+	postID := params.ID
+	boardID := params.BoardID
+	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
@@ -253,8 +253,8 @@ func handlePostFocus(c *Client, msgReq Request) {
 			Success: true,
 		},
 		Result: ResultPostFocus{
-			Id:      postId,
-			BoardId: boardId,
+			ID:      postID,
+			BoardID: boardID,
 			User:    *c.user,
 		},
 	}
@@ -265,12 +265,12 @@ func handlePostFocus(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		return
 	}
-	c.ws.boardHubs[boardId].broadcast <- msgResBytes
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
 func handlePostUpdate(c *Client, msgReq Request) {
 	user := c.user
-	if user.Id.String() == "" {
+	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
@@ -280,14 +280,14 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
 		return
 	}
-	boardId := params.BoardId
-	if !c.boards[boardId].canWrite {
+	boardID := params.BoardID
+	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
 	updatePostInput := post.UpdatePostInput{
-		Id:      params.Id,
+		ID:      params.ID,
 		Content: params.Content,
 		PosX:    params.PosX,
 		PosY:    params.PosY,
@@ -319,12 +319,12 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		return
 	}
-	c.ws.boardHubs[boardId].broadcast <- msgResBytes
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
 func handlePostDelete(c *Client, msgReq Request) {
 	user := c.user
-	if user.Id.String() == "" {
+	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
@@ -334,14 +334,14 @@ func handlePostDelete(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
 		return
 	}
-	postId := params.PostId
-	boardId := params.BoardId
-	if !c.boards[boardId].canWrite {
+	postID := params.PostID
+	boardID := params.BoardID
+	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
-	err = c.ws.postService.DeletePost(context.Background(), postId)
+	err = c.ws.postService.DeletePost(context.Background(), postID)
 	if err != nil {
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 		return
@@ -352,8 +352,8 @@ func handlePostDelete(c *Client, msgReq Request) {
 			Success: true,
 		},
 		Result: ResultPostDelete{
-			PostId:  postId,
-			BoardId: boardId,
+			PostID:  postID,
+			BoardID: boardID,
 		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
@@ -363,7 +363,7 @@ func handlePostDelete(c *Client, msgReq Request) {
 		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		return
 	}
-	c.ws.boardHubs[boardId].broadcast <- msgResBytes
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
 func closeConnection(c *Client, statusCode int, text string) {

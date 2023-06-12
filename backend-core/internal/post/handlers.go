@@ -13,34 +13,34 @@ import (
 const (
 	ErrMsgInternalServer = "Internal server error"
 	ErrMsgBoardNotFound  = "Board not found"
-	ErrMsgInvalidBoardId = "Invalid board ID. Please pass in a boardId query param"
+	ErrMsgInvalidBoardID = "Invalid board ID. Please pass in a boardID query param"
 )
 
 func (api *API) HandleListPosts(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	// get userId from context
-	userId := middleware.UserIdFromContext(ctx)
-	boardId := r.URL.Query().Get("boardId")
-	if boardId == "" {
-		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardId)
+	// get userID from context
+	userID := middleware.UserIDFromContext(ctx)
+	boardID := r.URL.Query().Get("boardID")
+	if boardID == "" {
+		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardID)
 		return
 	}
 
-	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardId)
+	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardID)
 	if err != nil {
 		logger.Errorf("handler: failed to get board with members: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
 
-	if !board.HasBoardAccess(boardWithMembers, userId) {
+	if !board.UserHasAccess(boardWithMembers, userID) {
 		endpoint.WriteWithError(w, http.StatusNotFound, ErrMsgBoardNotFound)
 		return
 	}
 
-	posts, err := api.postService.ListPosts(ctx, boardId)
+	posts, err := api.postService.ListPosts(ctx, boardID)
 	if err != nil {
 		logger.Errorf("handler: failed to list posts: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)

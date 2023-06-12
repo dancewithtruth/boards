@@ -48,7 +48,7 @@ func TestHandleWebSocket(t *testing.T) {
 			}
 			c := setupConnection(t, server)
 			// Generate test token
-			token, err := jwtService.GenerateToken(testUser.Id.String())
+			token, err := jwtService.GenerateToken(testUser.ID.String())
 			if err != nil {
 				t.Fatalf("Failed to generate test JWT token: %v", err)
 			}
@@ -71,7 +71,7 @@ func TestHandleWebSocket(t *testing.T) {
 			var resUserAuthenticate ResponseUserAuthenticate
 			json.Unmarshal(msgRes, &resUserAuthenticate)
 			assert.Equal(t, true, resUserAuthenticate.Success, "expected user.authenticate response to be successful")
-			assert.Equal(t, testUser.Id, resUserAuthenticate.Result.User.Id, "user ID from JWT does not match user ID returned in response")
+			assert.Equal(t, testUser.ID, resUserAuthenticate.Result.User.ID, "user ID from JWT does not match user ID returned in response")
 		})
 
 		t.Run("bad params result in connection close", func(t *testing.T) {
@@ -111,7 +111,7 @@ func TestHandleWebSocket(t *testing.T) {
 		}
 
 		// // Add test board to repo
-		testBoard := test.NewBoard(testUser.Id)
+		testBoard := test.NewBoard(testUser.ID)
 		err = mockBoardRepo.CreateBoard(context.Background(), testBoard)
 		if err != nil {
 			t.Fatalf("Failed to create test board: %v", err)
@@ -124,7 +124,7 @@ func TestHandleWebSocket(t *testing.T) {
 			msgReq := RequestBoardConnect{
 				Event: EventBoardConnect,
 				Params: ParamsBoardConnect{
-					BoardId: testBoard.Id.String(),
+					BoardID: testBoard.ID.String(),
 				},
 			}
 			// Send request
@@ -140,7 +140,7 @@ func TestHandleWebSocket(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Failed to unmarshal board connect response to Go struct: %v", err)
 			}
-			assert.Equal(t, testUser.Id, resBoardConnect.Result.NewUser.Id)
+			assert.Equal(t, testUser.ID, resBoardConnect.Result.NewUser.ID)
 		})
 
 		t.Run("user is not authenticated and cannot connect to board, close connection", func(t *testing.T) {
@@ -148,7 +148,7 @@ func TestHandleWebSocket(t *testing.T) {
 			msgReq := RequestBoardConnect{
 				Event: EventBoardConnect,
 				Params: ParamsBoardConnect{
-					BoardId: testBoard.Id.String(),
+					BoardID: testBoard.ID.String(),
 				},
 			}
 			// Send request
@@ -169,7 +169,7 @@ func TestHandleWebSocket(t *testing.T) {
 			msgReq := RequestBoardConnect{
 				Event: EventBoardConnect,
 				Params: ParamsBoardConnect{
-					BoardId: uuid.New().String(),
+					BoardID: uuid.New().String(),
 				},
 			}
 			// Send request
@@ -222,8 +222,8 @@ func setupServer(t *testing.T, testUser models.User, testBoard models.Board, jwt
 
 func setupConnection(t *testing.T, server *httptest.Server) *websocket.Conn {
 	// Connect to WebSocket
-	wsUrl := "ws" + strings.TrimPrefix(server.URL, "http") + "/ws"
-	c, _, err := websocket.DefaultDialer.Dial(wsUrl, nil)
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http") + "/ws"
+	c, _, err := websocket.DefaultDialer.Dial(wsURL, nil)
 	if err != nil {
 		t.Fatalf("Failed to establish connection: %v", err)
 	}
@@ -232,7 +232,7 @@ func setupConnection(t *testing.T, server *httptest.Server) *websocket.Conn {
 
 func authenticateUser(t *testing.T, c *websocket.Conn, jwtService jwt.Service, testUser models.User) {
 	// Generate test token
-	token, err := jwtService.GenerateToken(testUser.Id.String())
+	token, err := jwtService.GenerateToken(testUser.ID.String())
 	if err != nil {
 		t.Fatalf("Failed to generate test JWT token: %v", err)
 	}

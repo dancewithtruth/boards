@@ -12,12 +12,12 @@ type mockRepository struct {
 }
 
 func (r *mockRepository) CreateUser(ctx context.Context, user models.User) error {
-	r.users[user.Id] = user
+	r.users[user.ID] = user
 	return nil
 }
 
-func (r *mockRepository) GetUser(ctx context.Context, userId uuid.UUID) (models.User, error) {
-	if user, ok := r.users[userId]; ok {
+func (r *mockRepository) GetUser(ctx context.Context, userID uuid.UUID) (models.User, error) {
+	if user, ok := r.users[userID]; ok {
 		return user, nil
 	}
 	return models.User{}, ErrUserDoesNotExist
@@ -32,8 +32,8 @@ func (r *mockRepository) GetUserByLogin(ctx context.Context, email, password str
 	return models.User{}, ErrUserDoesNotExist
 }
 
-func (r *mockRepository) DeleteUser(ctx context.Context, userId uuid.UUID) error {
-	delete(r.users, userId)
+func (r *mockRepository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	delete(r.users, userID)
 	return nil
 }
 

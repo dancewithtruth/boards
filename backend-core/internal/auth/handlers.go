@@ -11,8 +11,10 @@ import (
 )
 
 const (
-	ErrMsgBadLogin       = "User does not exist" // Error message when user provides bad login credentials
-	ErrMsgInternalServer = "Issue logging in"    // Error message when an unexpected error occurs during login
+	// ErrMsgBadLogin is a message displayed when a user provides bad login credentials
+	ErrMsgBadLogin = "User does not exist"
+	// ErrMsgInternalServer is a message displayed when an unexpected error occurs
+	ErrMsgInternalServer = "Internal server error"
 )
 
 // HandleLogin handles a user's login request. It returns a token in the response

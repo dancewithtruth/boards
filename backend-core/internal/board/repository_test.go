@@ -20,23 +20,23 @@ func TestRepository(t *testing.T) {
 	boardRepo := NewRepository(db)
 
 	t.Cleanup(func() {
-		cleanUpTestUser(t, userRepo, testUser.Id)
+		cleanUpTestUser(t, userRepo, testUser.ID)
 		db.Close()
 	})
 
 	t.Run("Create, get, and delete a board", func(t *testing.T) {
-		testBoard := test.NewBoard(testUser.Id)
+		testBoard := test.NewBoard(testUser.ID)
 
 		// Create board
 		assert.NoError(t, boardRepo.CreateBoard(context.Background(), testBoard))
 
 		// Get board
-		board, err := boardRepo.GetBoard(context.Background(), testBoard.Id)
+		board, err := boardRepo.GetBoard(context.Background(), testBoard.ID)
 		assert.NoError(t, err)
-		assert.Equal(t, testBoard.UserId, board.UserId)
+		assert.Equal(t, testBoard.UserID, board.UserID)
 
 		// Delete board
-		assert.NoError(t, boardRepo.DeleteBoard(context.Background(), testBoard.Id))
+		assert.NoError(t, boardRepo.DeleteBoard(context.Background(), testBoard.ID))
 	})
 
 	t.Run("Get board that does not exist", func(t *testing.T) {
@@ -47,12 +47,12 @@ func TestRepository(t *testing.T) {
 	})
 
 	t.Run("Create a board membership and check for membership", func(t *testing.T) {
-		testBoard := test.NewBoard(testUser.Id)
+		testBoard := test.NewBoard(testUser.ID)
 		// Create a membership struct to be inserted
 		membership := models.BoardMembership{
-			Id:        uuid.New(),
-			BoardId:   testBoard.Id,
-			UserId:    testUser.Id,
+			ID:        uuid.New(),
+			BoardID:   testBoard.ID,
+			UserID:    testUser.ID,
 			Role:      models.RoleMember,
 			CreatedAt: time.Now(),
 			UpdatedAt: time.Now(),
@@ -62,18 +62,18 @@ func TestRepository(t *testing.T) {
 		assert.NoError(t, boardRepo.CreateMembership(ctx, membership))
 
 		// Check that member was added to board
-		boardAndUsers, err := boardRepo.GetBoardAndUsers(ctx, testBoard.Id)
+		boardAndUsers, err := boardRepo.GetBoardAndUsers(ctx, testBoard.ID)
 		firstUser := boardAndUsers[0].User
-		assert.Equal(t, testUser.Id, firstUser.Id, "expected user to be added to board")
+		assert.Equal(t, testUser.ID, firstUser.ID, "expected user to be added to board")
 
 		// delete board
-		err = boardRepo.DeleteBoard(context.Background(), testBoard.Id)
+		err = boardRepo.DeleteBoard(context.Background(), testBoard.ID)
 		assert.NoError(t, err)
 	})
 
 	t.Run("List boards by user", func(t *testing.T) {
 		t.Run("user does not have any boards", func(t *testing.T) {
-			boards, err := boardRepo.ListOwnedBoardAndUsers(context.Background(), testUser.Id)
+			boards, err := boardRepo.ListOwnedBoardAndUsers(context.Background(), testUser.ID)
 			assert.NoError(t, err)
 			assert.Equal(t, 0, len(boards))
 		})
@@ -104,8 +104,8 @@ func setUpTestUser(t *testing.T, userRepo user.Repository) models.User {
 	return testUser
 }
 
-func cleanUpTestUser(t *testing.T, userRepo user.Repository, userId uuid.UUID) {
-	err := userRepo.DeleteUser(context.Background(), userId)
+func cleanUpTestUser(t *testing.T, userRepo user.Repository, userID uuid.UUID) {
+	err := userRepo.DeleteUser(context.Background(), userID)
 	if err != nil {
 		assert.FailNow(t, "Could not clean up test user", err)
 	}

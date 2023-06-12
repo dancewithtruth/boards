@@ -12,7 +12,7 @@ import (
 
 type Service interface {
 	CreateUser(ctx context.Context, input CreateUserInput) (models.User, error)
-	GetUser(ctx context.Context, userId string) (models.User, error)
+	GetUser(ctx context.Context, userID string) (models.User, error)
 	ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error)
 }
 
@@ -29,7 +29,7 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 	id := uuid.New()
 	now := time.Now()
 	user := models.User{
-		Id:        id,
+		ID:        id,
 		Name:      input.Name,
 		Email:     input.Email,
 		Password:  input.Password,
@@ -44,12 +44,12 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 	return user, nil
 }
 
-func (s *service) GetUser(ctx context.Context, userId string) (models.User, error) {
-	userIdUUID, err := uuid.Parse(userId)
+func (s *service) GetUser(ctx context.Context, userID string) (models.User, error) {
+	userIDUUID, err := uuid.Parse(userID)
 	if err != nil {
-		return models.User{}, fmt.Errorf("service: issue parsing userId into UUID: %w", err)
+		return models.User{}, fmt.Errorf("service: issue parsing userID into UUID: %w", err)
 	}
-	user, err := s.repo.GetUser(ctx, userIdUUID)
+	user, err := s.repo.GetUser(ctx, userIDUUID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: failed to get user: %w", err)
 	}

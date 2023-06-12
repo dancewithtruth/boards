@@ -16,10 +16,10 @@ var (
 
 type Repository interface {
 	CreatePost(ctx context.Context, post models.Post) error
-	GetPost(ctx context.Context, postId uuid.UUID) (models.Post, error)
-	ListPosts(ctx context.Context, postId uuid.UUID) ([]models.Post, error)
+	GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error)
+	ListPosts(ctx context.Context, postID uuid.UUID) ([]models.Post, error)
 	UpdatePost(ctx context.Context, post models.Post) error
-	DeletePost(ctx context.Context, postId uuid.UUID) error
+	DeletePost(ctx context.Context, postID uuid.UUID) error
 }
 
 type repository struct {
@@ -34,9 +34,9 @@ func NewRepository(conn *db.DB) *repository {
 
 func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 	arg := db.CreatePostParams{
-		ID:        pgtype.UUID{Bytes: post.Id, Valid: true},
-		BoardID:   pgtype.UUID{Bytes: post.BoardId, Valid: true},
-		UserID:    pgtype.UUID{Bytes: post.UserId, Valid: true},
+		ID:        pgtype.UUID{Bytes: post.ID, Valid: true},
+		BoardID:   pgtype.UUID{Bytes: post.BoardID, Valid: true},
+		UserID:    pgtype.UUID{Bytes: post.UserID, Valid: true},
 		Content:   pgtype.Text{String: post.Content, Valid: true},
 		PosX:      pgtype.Int4{Int32: int32(post.PosX), Valid: true},
 		PosY:      pgtype.Int4{Int32: int32(post.PosY), Valid: true},
@@ -49,15 +49,15 @@ func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 	return r.q.CreatePost(ctx, arg)
 }
 
-func (r *repository) GetPost(ctx context.Context, postId uuid.UUID) (models.Post, error) {
-	postDB, err := r.q.GetPost(ctx, pgtype.UUID{Bytes: postId, Valid: true})
+func (r *repository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
+	postDB, err := r.q.GetPost(ctx, pgtype.UUID{Bytes: postID, Valid: true})
 	if err != nil {
 		return models.Post{}, err
 	}
 	post := models.Post{
-		Id:        postDB.ID.Bytes,
-		BoardId:   postDB.BoardID.Bytes,
-		UserId:    postDB.UserID.Bytes,
+		ID:        postDB.ID.Bytes,
+		BoardID:   postDB.BoardID.Bytes,
+		UserID:    postDB.UserID.Bytes,
 		Content:   postDB.Content.String,
 		PosX:      int(postDB.PosX.Int32),
 		PosY:      int(postDB.PosY.Int32),
@@ -70,17 +70,17 @@ func (r *repository) GetPost(ctx context.Context, postId uuid.UUID) (models.Post
 	return post, nil
 }
 
-func (r *repository) ListPosts(ctx context.Context, boardId uuid.UUID) ([]models.Post, error) {
-	postsDB, err := r.q.ListPosts(ctx, pgtype.UUID{Bytes: boardId, Valid: true})
+func (r *repository) ListPosts(ctx context.Context, boardID uuid.UUID) ([]models.Post, error) {
+	postsDB, err := r.q.ListPosts(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
 		return []models.Post{}, err
 	}
 	posts := []models.Post{}
 	for _, postDB := range postsDB {
 		post := models.Post{
-			Id:        postDB.ID.Bytes,
-			BoardId:   postDB.BoardID.Bytes,
-			UserId:    postDB.UserID.Bytes,
+			ID:        postDB.ID.Bytes,
+			BoardID:   postDB.BoardID.Bytes,
+			UserID:    postDB.UserID.Bytes,
 			Content:   postDB.Content.String,
 			PosX:      int(postDB.PosX.Int32),
 			PosY:      int(postDB.PosY.Int32),
@@ -97,9 +97,9 @@ func (r *repository) ListPosts(ctx context.Context, boardId uuid.UUID) ([]models
 
 func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
 	arg := db.UpdatePostParams{
-		ID:        pgtype.UUID{Bytes: post.Id, Valid: true},
-		BoardID:   pgtype.UUID{Bytes: post.BoardId, Valid: true},
-		UserID:    pgtype.UUID{Bytes: post.UserId, Valid: true},
+		ID:        pgtype.UUID{Bytes: post.ID, Valid: true},
+		BoardID:   pgtype.UUID{Bytes: post.BoardID, Valid: true},
+		UserID:    pgtype.UUID{Bytes: post.UserID, Valid: true},
 		Content:   pgtype.Text{String: post.Content, Valid: true},
 		PosX:      pgtype.Int4{Int32: int32(post.PosX), Valid: true},
 		PosY:      pgtype.Int4{Int32: int32(post.PosY), Valid: true},
@@ -112,6 +112,6 @@ func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
 	return r.q.UpdatePost(ctx, arg)
 }
 
-func (r *repository) DeletePost(ctx context.Context, postId uuid.UUID) error {
-	return r.q.DeletePost(ctx, pgtype.UUID{Bytes: postId, Valid: true})
+func (r *repository) DeletePost(ctx context.Context, postID uuid.UUID) error {
+	return r.q.DeletePost(ctx, pgtype.UUID{Bytes: postID, Valid: true})
 }

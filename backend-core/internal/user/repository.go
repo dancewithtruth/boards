@@ -21,9 +21,9 @@ var (
 
 type Repository interface {
 	CreateUser(ctx context.Context, user models.User) error
-	GetUser(ctx context.Context, userId uuid.UUID) (models.User, error)
+	GetUser(ctx context.Context, userID uuid.UUID) (models.User, error)
 	GetUserByLogin(ctx context.Context, email, password string) (models.User, error)
-	DeleteUser(ctx context.Context, userId uuid.UUID) error
+	DeleteUser(ctx context.Context, userID uuid.UUID) error
 	ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error)
 }
 
@@ -42,7 +42,7 @@ func NewRepository(conn *db.DB) *repository {
 
 func (r *repository) CreateUser(ctx context.Context, user models.User) error {
 	sql := "INSERT INTO users (id, name, email, password, is_guest, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)"
-	_, err := r.db.Exec(ctx, sql, user.Id, user.Name, user.Email, user.Password, user.IsGuest, user.CreatedAt, user.UpdatedAt)
+	_, err := r.db.Exec(ctx, sql, user.ID, user.Name, user.Email, user.Password, user.IsGuest, user.CreatedAt, user.UpdatedAt)
 	if err != nil {
 		pgError := &pgconn.PgError{}
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation && pgError.ConstraintName == "users_email_key" {
@@ -53,12 +53,12 @@ func (r *repository) CreateUser(ctx context.Context, user models.User) error {
 	return nil
 }
 
-func (r *repository) GetUser(ctx context.Context, userId uuid.UUID) (models.User, error) {
+func (r *repository) GetUser(ctx context.Context, userID uuid.UUID) (models.User, error) {
 	sql := "SELECT * FROM users WHERE id = $1"
 	user := models.User{}
 	// TODO: make scanning more robust
-	err := r.db.QueryRow(ctx, sql, userId).Scan(
-		&user.Id,
+	err := r.db.QueryRow(ctx, sql, userID).Scan(
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.Password,
@@ -80,7 +80,7 @@ func (r *repository) GetUserByLogin(ctx context.Context, email, password string)
 	user := models.User{}
 	// TODO: make scanning more robust
 	err := r.db.QueryRow(ctx, sql, email, password).Scan(
-		&user.Id,
+		&user.ID,
 		&user.Name,
 		&user.Email,
 		&user.Password,
@@ -97,9 +97,9 @@ func (r *repository) GetUserByLogin(ctx context.Context, email, password string)
 	return user, nil
 }
 
-func (r *repository) DeleteUser(ctx context.Context, userId uuid.UUID) error {
+func (r *repository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	sql := "DELETE from users where id = $1"
-	_, err := r.db.Exec(ctx, sql, userId)
+	_, err := r.db.Exec(ctx, sql, userID)
 	if err != nil {
 		return fmt.Errorf("repository: failed to delete user: %w", err)
 	}
@@ -115,7 +115,7 @@ func (r *repository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([
 	for _, row := range rows {
 		row := row
 		user := models.User{
-			Id:        row.ID.Bytes,
+			ID:        row.ID.Bytes,
 			Name:      row.Name.String,
 			Email:     &row.Email.String,
 			Password:  &row.Password.String,

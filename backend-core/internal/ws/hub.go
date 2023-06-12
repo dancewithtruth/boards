@@ -4,7 +4,7 @@ import "github.com/Wave-95/boards/backend-core/internal/models"
 
 type Hub struct {
 	// Board ID
-	boardId string
+	boardID string
 
 	// Registered clients.
 	clients map[*Client]bool
@@ -22,9 +22,9 @@ type Hub struct {
 	destroy chan<- string
 }
 
-func newHub(boardId string, destroy chan<- string) *Hub {
+func newHub(boardID string, destroy chan<- string) *Hub {
 	return &Hub{
-		boardId:    boardId,
+		boardID:    boardID,
 		broadcast:  make(chan []byte),
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
@@ -44,7 +44,7 @@ func (h *Hub) run() {
 				delete(h.clients, client)
 				close(client.send)
 				if len(h.clients) == 0 {
-					h.destroy <- h.boardId
+					h.destroy <- h.boardID
 					break
 				}
 			}

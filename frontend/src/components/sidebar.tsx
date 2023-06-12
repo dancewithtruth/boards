@@ -58,10 +58,10 @@ function SidebarMember({ user, isConnected }: { user: User; isConnected: boolean
   );
 }
 
-function isConnected(userId: string, connectedUsers: User[]): boolean {
+function isConnected(userID: string, connectedUsers: User[]): boolean {
   let connected = false;
   connectedUsers.some((user) => {
-    if (user.id == userId) {
+    if (user.id == userID) {
       connected = true;
       return;
     }

@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	ErrInvalidLogin = errors.New("Could not login with provided credentials") // Error that gets returned when user cannot be found
-	ErrBadLogin     = errors.New("Could not login with provided credentials") // Error that gets returned when user cannot be found
+	// ErrBadLogin is an error that is used when a user cannot be found with the given credentials
+	ErrBadLogin = errors.New("Could not login with provided credentials")
 )
 
 // Service defines the authentication service interface.
@@ -51,5 +51,5 @@ func (s *service) Login(ctx context.Context, input LoginInput) (token string, er
 		}
 		return "", fmt.Errorf("service: failed to login: %w", err)
 	}
-	return s.jwtService.GenerateToken(user.Id.String())
+	return s.jwtService.GenerateToken(user.ID.String())
 }

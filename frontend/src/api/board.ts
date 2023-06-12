@@ -43,8 +43,8 @@ export async function createBoard(params: CreateBoardParams, token: string): Pro
   return sendPostRequest<BoardResponse>(url, params, token);
 }
 
-export async function getBoard(boardId: string, token: string): Promise<BoardWithMembers> {
-  const url = `${BASE_URL}/boards/${boardId}`;
+export async function getBoard(boardID: string, token: string): Promise<BoardWithMembers> {
+  const url = `${BASE_URL}/boards/${boardID}`;
   return sendGetRequest<BoardWithMembers>(url, token);
 }
 

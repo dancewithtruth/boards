@@ -32,32 +32,32 @@ func TestRequestLogger(t *testing.T) {
 }
 func Test_getOrCreateIDs(t *testing.T) {
 	req := buildRequest("", "")
-	reqId, corrId := getOrCreateIDs(req)
-	assert.NotEqual(t, reqId, "")
-	assert.NotEqual(t, corrId, "")
+	reqID, corrID := getOrCreateIDs(req)
+	assert.NotEqual(t, reqID, "")
+	assert.NotEqual(t, corrID, "")
 }
 
 func Test_getRequestId(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://localhost/", nil)
 	req.Header.Set(HeaderRequestID, "123abc")
-	reqId := getRequestID(req)
-	assert.Equal(t, reqId, "123abc")
+	reqID := getRequestID(req)
+	assert.Equal(t, reqID, "123abc")
 }
 
 func Test_getCorrelationId(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://localhost/", nil)
 	req.Header.Set(HeaderCorrelationID, "123abc")
-	corrId := getCorrelationID(req)
-	assert.Equal(t, corrId, "123abc")
+	corrID := getCorrelationID(req)
+	assert.Equal(t, corrID, "123abc")
 }
 
-func buildRequest(reqId, corrId string) *http.Request {
+func buildRequest(reqID, corrID string) *http.Request {
 	req, _ := http.NewRequest("GET", "http://localhost/", nil)
-	if reqId != "" {
-		req.Header.Set(HeaderRequestID, reqId)
+	if reqID != "" {
+		req.Header.Set(HeaderRequestID, reqID)
 	}
-	if corrId != "" {
-		req.Header.Set(HeaderCorrelationID, corrId)
+	if corrID != "" {
+		req.Header.Set(HeaderCorrelationID, corrID)
 	}
 	return req
 }

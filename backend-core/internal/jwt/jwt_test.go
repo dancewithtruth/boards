@@ -11,14 +11,14 @@ import (
 func TestJwt(t *testing.T) {
 	jwtSecret := "secret"
 	expiration := 1
-	userId := "abc123"
+	userID := "abc123"
 
 	t.Run("valid token", func(t *testing.T) {
 		jwtService := New(jwtSecret, expiration)
 		assert.NotNil(t, jwtService)
 
 		// test valid token
-		tokenString, err := jwtService.GenerateToken(userId)
+		tokenString, err := jwtService.GenerateToken(userID)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tokenString)
 		assert.True(t, isTokenValid(tokenString, jwtSecret), "expected token to be valid but wasn't")
@@ -26,7 +26,7 @@ func TestJwt(t *testing.T) {
 
 	t.Run("expired token", func(t *testing.T) {
 		jwtService := New(jwtSecret, 0) //expiratin set to 0
-		tokenString, err := jwtService.GenerateToken(userId)
+		tokenString, err := jwtService.GenerateToken(userID)
 		assert.NoError(t, err)
 		assert.NotEmpty(t, tokenString)
 

@@ -12,12 +12,12 @@ import (
 func TestAuth(t *testing.T) {
 	jwtSecret := "secret"
 
-	t.Run("valid jwt token sets userId into request context", func(t *testing.T) {
-		userId := "abc123"
+	t.Run("valid jwt token sets userID into request context", func(t *testing.T) {
+		userID := "abc123"
 		expiration := 1
 		jwtService := jwt.New(jwtSecret, expiration)
 
-		token, err := jwtService.GenerateToken(userId)
+		token, err := jwtService.GenerateToken(userID)
 		if err != nil {
 			t.Fatalf("Issue generating test token: %v", err)
 		}
@@ -27,8 +27,8 @@ func TestAuth(t *testing.T) {
 
 		// testHandler is used to check if a user ID was properly set on the request context
 		testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if ctxUserId, ok := r.Context().Value(UserIdKey).(string); ok {
-				assert.Equal(t, userId, ctxUserId, "Expected ctx user id to match jwt user id")
+			if ctxUserID, ok := r.Context().Value(UserIDKey).(string); ok {
+				assert.Equal(t, userID, ctxUserID, "Expected ctx user id to match jwt user id")
 			}
 		})
 		authMiddleware := Auth(jwtService)
