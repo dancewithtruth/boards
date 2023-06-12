@@ -71,7 +71,7 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 
 	// set up services
 	jwtService := jwt.New(cfg.JwtSecret, cfg.JwtExpiration)
-	authService := auth.NewService(userRepo, jwtService)
+	authService := auth.NewService(userRepo, jwtService, v)
 	userService := user.NewService(userRepo, v)
 	boardService := board.NewService(boardRepo, v)
 	postService := post.NewService(postRepo)

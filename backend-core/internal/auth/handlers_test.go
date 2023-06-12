@@ -24,7 +24,7 @@ func TestHandleLogin(t *testing.T) {
 	mockRepo := user.NewMockRepository(make(map[uuid.UUID]models.User))
 	mockRepo.CreateUser(context.Background(), newTestUser())
 	jwtService := jwt.New(jwtSecret, jwtExpiration)
-	service := NewService(mockRepo, jwtService)
+	service := NewService(mockRepo, jwtService, validator)
 	api := NewAPI(service, validator)
 
 	t.Run("handler returns token on valid login", func(t *testing.T) {

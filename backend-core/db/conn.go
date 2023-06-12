@@ -8,10 +8,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// DB represents a DB connection to execute SQL queries
 type DB struct {
 	*pgxpool.Pool
 }
 
+// Connect takes a database config and returns a DB connection
 func Connect(cfg config.DatabaseConfig) (*DB, error) {
 	url := buildConnectionURL(cfg)
 	db, err := pgxpool.New(context.Background(), url)

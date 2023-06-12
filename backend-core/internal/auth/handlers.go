@@ -6,33 +6,36 @@ import (
 	"net/http"
 
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
+	"github.com/Wave-95/boards/backend-core/pkg/logger"
+	"github.com/go-playground/validator/v10"
 )
 
 const (
-	ErrMsgBadLogin       = "User does not exist"
-	ErrMsgInternalServer = "Issue logging in"
+	ErrMsgBadLogin       = "User does not exist" // Error message when user provides bad login credentials
+	ErrMsgInternalServer = "Issue logging in"    // Error message when an unexpected error occurs during login
 )
 
+// HandleLogin handles a user's login request. It returns a token in the response
+// if the login is successful.
 func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
+	logger := logger.FromContext(r.Context())
 	var input LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		endpoint.HandleDecodeErr(w, err)
 		return
 	}
 	defer r.Body.Close()
-
-	if err := api.validator.Struct(input); err != nil {
-		endpoint.WriteValidationErr(w, input, err)
-		return
-	}
-
 	token, err := api.authService.Login(r.Context(), input)
 	if err != nil {
-		if errors.Is(err, ErrBadLogin) {
+		switch {
+		case errors.Is(err, ErrBadLogin):
 			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgBadLogin)
-			return
+		case errors.As(err, &validator.ValidationErrors{}):
+			endpoint.WriteValidationErr(w, input, err)
+		default:
+			logger.Errorf("handler: internal server error when performing login: %v", err)
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
-		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		return
 	}
 	endpoint.WriteWithStatus(w, http.StatusOK, LoginDTO{Token: token})

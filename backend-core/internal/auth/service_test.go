@@ -8,6 +8,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/user"
+	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,7 +16,8 @@ import (
 func TestService(t *testing.T) {
 	userRepo := user.NewMockRepository(make(map[uuid.UUID]models.User))
 	jwtService := jwt.New("abc123", 24)
-	service := NewService(userRepo, jwtService)
+	validator := validator.New()
+	service := NewService(userRepo, jwtService, validator)
 	assert.NotNil(t, service)
 	testUser := newTestUser()
 	input := LoginInput{
