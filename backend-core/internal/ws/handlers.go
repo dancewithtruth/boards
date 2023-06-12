@@ -75,7 +75,7 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 	if err != nil {
 		// Prepare error response
 		msgRes = ResponseUserAuthenticate{
-			Event:        EventBoardConnect,
+			Event:        EventUserAuthenticate,
 			Success:      false,
 			ErrorMessage: ErrMsgInvalidJwt,
 		}

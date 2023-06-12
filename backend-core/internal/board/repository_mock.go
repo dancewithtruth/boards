@@ -37,6 +37,9 @@ func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) er
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+	r.users[board.UserID] = models.User{
+		ID: board.UserID,
+	}
 	return nil
 }
 
@@ -48,10 +51,11 @@ func (r *mockRepository) GetBoard(ctx context.Context, boardID uuid.UUID) (model
 }
 
 func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error) {
-	// TODO: mock this out, return board, board membership, and user
+	// TODO: mock this out, this only returns 1 row every time...
 	board := r.boards[boardID]
 	boardMembership := r.boardMemberships[boardID]
-	return []BoardAndUser{{Board: &board, BoardMembership: &boardMembership}}, nil
+	user := r.users[board.UserID]
+	return []BoardAndUser{{Board: &board, BoardMembership: &boardMembership, User: &user}}, nil
 }
 
 func (r *mockRepository) ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error) {
