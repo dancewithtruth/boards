@@ -19,6 +19,7 @@ services:
       context: ./backend-core
     ports:
       - 8080:8080
+      - 2345:2345
     volumes:
       - ./backend-core:/app/src
     env_file:
