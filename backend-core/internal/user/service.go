@@ -3,6 +3,8 @@ package user
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
@@ -32,11 +34,12 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 	if err := s.validator.Struct(input); err != nil {
 		return models.User{}, err
 	}
+	name := toNameCase(input.Name)
 	id := uuid.New()
 	now := time.Now()
 	user := models.User{
 		ID:        id,
-		Name:      input.Name,
+		Name:      name,
 		Email:     input.Email,
 		Password:  input.Password,
 		IsGuest:   input.IsGuest,
@@ -73,4 +76,11 @@ func (s *service) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]mo
 		user.Password = nil
 	}
 	return users, nil
+}
+
+// toNameCase creates a regular expression to match word boundaries and convert them to name case
+func toNameCase(word string) string {
+	re := regexp.MustCompile(`\b\w`)
+	nameCase := re.ReplaceAllStringFunc(word, strings.ToUpper)
+	return nameCase
 }
