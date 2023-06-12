@@ -1,12 +1,12 @@
 'use client';
 
-import { User, listUsersByFuzzyEmail } from '@/api';
+import { BoardWithMembers, User, listUsersByFuzzyEmail } from '@/api';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import { FiX } from 'react-icons/fi';
 import Avatar from '../avatar';
 
-export default function InviteMemberModal() {
+export default function InviteMemberModal({ board }: { board: BoardWithMembers }) {
   const ID = 'modal_invite_member';
   const [selected, setSelected] = useState<User[]>([]);
 
@@ -42,7 +42,7 @@ export default function InviteMemberModal() {
               </button>
             </div>
             <div className="flex space-x-4">
-              <SearchPanel selected={selected} handleSelect={handleSelect} />
+              <SearchPanel selected={selected} handleSelect={handleSelect} board={board} />
               <SelectedPanel selected={selected} handleSelect={handleSelect} />
             </div>
           </div>
@@ -55,12 +55,14 @@ export default function InviteMemberModal() {
 type SearchPanelProps = {
   selected: User[];
   handleSelect: (user: User) => void;
+  board: BoardWithMembers;
 };
 
-const SearchPanel = ({ selected, handleSelect }: SearchPanelProps) => {
+const SearchPanel = ({ selected, handleSelect, board }: SearchPanelProps) => {
   const [email, setEmail] = useState('');
   const [previousEmail, setPreviousEmail] = useState('');
   const [search, setSearch] = useState<User[]>([]);
+  const memberIDs = board.members.map((member) => member.id);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const newEmail = e.target.value;
@@ -76,7 +78,8 @@ const SearchPanel = ({ selected, handleSelect }: SearchPanelProps) => {
 
   async function fetchAndSetSearchedUsers() {
     const response = await listUsersByFuzzyEmail(email);
-    setSearch(response.result);
+    const filteredResults = response.result.filter((user) => !memberIDs.includes(user.id));
+    setSearch(filteredResults);
   }
 
   return (

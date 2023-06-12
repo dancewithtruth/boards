@@ -24,7 +24,7 @@ export type BoardWithMembers = {
   id: string;
   name: string;
   description: string;
-  user_id: boolean;
+  user_id: string;
   members: User[];
   created_at: string;
   updated_at: string;

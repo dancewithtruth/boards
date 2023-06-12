@@ -38,12 +38,14 @@ func NewService(repo Repository, validator validator.Validate) *service {
 	}
 }
 
+// CreateBoard creates a new board and inserts the owner as the first member to that board. It will
+// set the provided name and description or use defaults if none are provided.
 func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error) {
 	userID, err := uuid.Parse(input.UserID)
 	if err != nil {
 		return models.Board{}, fmt.Errorf("service: failed to parse user ID input into UUID: %w", err)
 	}
-	// create board name if none provided
+	// Create board name if none provided
 	if input.Name == nil {
 		boards, err := s.repo.ListOwnedBoards(ctx, userID)
 		if err != nil {
@@ -54,16 +56,16 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 		input.Name = &boardName
 	}
 
-	// use default board description if none provided
+	// Use default board description if none provided
 	if input.Description == nil {
 		input.Description = &defaultBoardDescription
 	}
 
-	// create new board
-	id := uuid.New()
+	// Create new board
+	boardID := uuid.New()
 	now := time.Now()
 	board := models.Board{
-		ID:          id,
+		ID:          boardID,
 		Name:        input.Name,
 		Description: input.Description,
 		UserID:      userID,
@@ -71,6 +73,17 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 		UpdatedAt:   now,
 	}
 	err = s.repo.CreateBoard(ctx, board)
+
+	// Create corresponding membership
+	membershipID := uuid.New()
+	membership := models.BoardMembership{
+		ID:        membershipID,
+		BoardID:   boardID,
+		UserID:    userID,
+		Role:      models.RoleAdmin,
+		CreatedAt: now,
+		UpdatedAt: now}
+	err = s.repo.CreateMembership(ctx, membership)
 	if err != nil {
 		return models.Board{}, fmt.Errorf("service: failed to create board: %w", err)
 	}

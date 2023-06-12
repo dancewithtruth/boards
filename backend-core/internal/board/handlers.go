@@ -12,23 +12,23 @@ import (
 )
 
 const (
-	// ErrMsgInternalServer is an error message for notifying an internal server error
+	// ErrMsgInternalServer is an error message for notifying an internal server error.
 	ErrMsgInternalServer = "Internal server error"
-	// ErrMsgInvalidToken is an error message for notifying an invalid auth token
+	// ErrMsgInvalidToken is an error message for notifying an invalid auth token.
 	ErrMsgInvalidToken = "Invalid authentication token"
-	// ErrMsgBoardNotFound is an error message for notifying when a board is not found
+	// ErrMsgBoardNotFound is an error message for notifying when a board is not found.
 	ErrMsgBoardNotFound = "Board not found"
-	// ErrMsgInvalidBoardID is an error message for notifying an improper board ID format
+	// ErrMsgInvalidBoardID is an error message for notifying an improper board ID format.
 	ErrMsgInvalidBoardID = "Provided invalid board ID. Please ensure board ID is in UUID format"
 )
 
 // HandleCreateBoard is the handler for creating a single board. It requires a user ID
-// from the request context to assign which user owns the board
+// from the request context to assign which user owns the board.
 func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	// decode input
+	// Decode input
 	var input CreateBoardInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		endpoint.HandleDecodeErr(w, err)
@@ -36,13 +36,13 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// validate input
+	// Validate input
 	if err := api.validator.Struct(input); err != nil {
 		endpoint.WriteValidationErr(w, input, err)
 		return
 	}
 
-	// get userID from context
+	// Get userID from context
 	userID := middleware.UserIDFromContext(ctx)
 	if userID == "" {
 		logger.Error("handler: failed to parse user ID from request context")
@@ -51,7 +51,7 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	}
 	input.UserID = userID
 
-	// create board
+	// Create board
 	board, err := api.boardService.CreateBoard(ctx, input)
 	if err != nil {
 		logger.Errorf("handler: failed to create board: %v", err)
@@ -61,7 +61,7 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	endpoint.WriteWithStatus(w, http.StatusCreated, board)
 }
 
-// HandleGetBoard returns a single board along with a list of associated members
+// HandleGetBoard returns a single board along with a list of associated members.
 func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
@@ -78,7 +78,7 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if requesting user has permission to view board
+	// Check if requesting user has permission to view board.
 	userID := middleware.UserIDFromContext(ctx)
 	if userID != boardWithMembers.UserID.String() && !hasUser(boardWithMembers.Members, userID) {
 		logger.Infof("handler: user requested for a board they do not have access to : %v", err)
@@ -91,7 +91,7 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 
 // HandleGetBoards returns a list of owned and shared boards for a given user.
 // The userID from the auth jwt will be used to query the boards. Each board will
-// be hydrated with associated users and invites
+// be hydrated with associated users and invites.
 func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
@@ -128,7 +128,7 @@ func hasUser(members []MemberDTO, userID string) bool {
 	return false
 }
 
-// UserHasAccess checks if a certain user ID exists in a board as the board owner or board member
+// UserHasAccess checks if a certain user ID exists in a board as the board owner or board member.
 func UserHasAccess(board BoardWithMembersDTO, userID string) bool {
 	if board.UserID.String() == userID {
 		return true

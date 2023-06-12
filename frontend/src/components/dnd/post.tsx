@@ -34,8 +34,8 @@ export const Post: FC<PostProps> = memo(function Post({
   const [textareaHeight, setTextareaHeight] = useState(height);
   const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const allUsers = board.members.concat([user]);
-  const authorName = getName(user_id, allUsers) || 'Unknown';
+  const allMembers = board.members;
+  const authorName = getName(user_id, allMembers) || 'Unknown';
 
   useEffect(() => {
     setTextareaValue(content);
