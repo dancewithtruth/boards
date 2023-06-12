@@ -46,5 +46,14 @@ services:
     volumes:
       - db-core-data:/var/lib/postgresql/data
       - ./backend-core/testdata:/testdata
+  swagger-core:
+    container_name: swagger-core
+    image: swaggerapi/swagger-ui
+    environment:
+      SWAGGER_JSON: "/spec/swagger.json"
+    volumes:
+      - ./backend-core/swagger.json:/spec/swagger.json
+    ports:
+      - 8081:8080
 volumes:
   db-core-data:
