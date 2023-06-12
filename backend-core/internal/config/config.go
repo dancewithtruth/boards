@@ -16,11 +16,43 @@ const (
 	DBUserKey     = "DB_USER"
 	DBPasswordKey = "DB_PASSWORD"
 
+	ServerPortKey    = "SERVER_PORT"
 	JWTSecretKey     = "JWT_SIGNING_KEY"
 	JWTExpirationKey = "JWT_EXPIRATION"
-
-	DockerKey = "DOCKER"
+	DockerKey        = "DOCKER"
 )
+
+type Config struct {
+	ServerPort     string
+	JwtSecret      string
+	JwtExpiration  int
+	DatabaseConfig DatabaseConfig
+}
+
+func Load(file string) (*Config, error) {
+	err := godotenv.Load(file)
+	if err != nil {
+		return nil, fmt.Errorf("error loading .env file: %w", err)
+	}
+	databaseConfig, err := getDatabaseConfig()
+	if err != nil {
+		return nil, err
+	}
+	serverPort := os.Getenv(ServerPortKey)
+	jwtSecret := os.Getenv(JWTSecretKey)
+	jwtExpirationStr := os.Getenv(JWTExpirationKey)
+	jwtExpiration, err := strconv.Atoi(jwtExpirationStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid JWT expiration value: %w", err)
+	}
+
+	return &Config{
+		DatabaseConfig: databaseConfig,
+		ServerPort:     serverPort,
+		JwtSecret:      jwtSecret,
+		JwtExpiration:  jwtExpiration,
+	}, nil
+}
 
 type DatabaseConfig struct {
 	Host     string `validate:"required"`
@@ -36,36 +68,6 @@ func (dbConfig *DatabaseConfig) Validate() error {
 		return fmt.Errorf("missing database env var: %v", err)
 	}
 	return nil
-}
-
-type Config struct {
-	DatabaseConfig DatabaseConfig
-	JwtSecret      string
-	JwtExpiration  int
-}
-
-func Load(file string) (*Config, error) {
-	err := godotenv.Load(file)
-	if err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
-	}
-	databaseConfig, err := getDatabaseConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	jwtSecret := os.Getenv(JWTSecretKey)
-	jwtExpirationStr := os.Getenv(JWTExpirationKey)
-	jwtExpiration, err := strconv.Atoi(jwtExpirationStr)
-	if err != nil {
-		return nil, fmt.Errorf("invalid JWT expiration value: %w", err)
-	}
-
-	return &Config{
-		DatabaseConfig: databaseConfig,
-		JwtSecret:      jwtSecret,
-		JwtExpiration:  jwtExpiration,
-	}, nil
 }
 
 func getDatabaseConfig() (DatabaseConfig, error) {

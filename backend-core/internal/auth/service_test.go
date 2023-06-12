@@ -27,7 +27,10 @@ func TestService(t *testing.T) {
 	t.Run("Login", func(t *testing.T) {
 		t.Run("with valid credentials returns auth token", func(t *testing.T) {
 			ctx := context.Background()
-			userRepo.CreateUser(ctx, testUser)
+			err := userRepo.CreateUser(ctx, testUser)
+			if err != nil {
+				assert.FailNow(t, "Could not create test user")
+			}
 			token, err := service.Login(ctx, input)
 			assert.NotEmpty(t, token, "expected a non-empty auth token")
 			assert.NoError(t, err, "expected no error when calling Login")
@@ -35,9 +38,8 @@ func TestService(t *testing.T) {
 
 		t.Run("with bad credentials returns error", func(t *testing.T) {
 			ctx := context.Background()
-			userRepo.CreateUser(ctx, testUser)
 			badInput := LoginInput{
-				Email:    "bademail123.com",
+				Email:    "bademail123@xyz.com",
 				Password: "badpassword123",
 			}
 			token, err := service.Login(ctx, badInput)
