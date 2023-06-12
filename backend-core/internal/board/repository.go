@@ -13,13 +13,13 @@ import (
 )
 
 var (
-	// ErrBoardDoesNotExist is an error that is used when a board does not exist
+	// ErrBoardDoesNotExist is an error that is used when a board does not exist.
 	ErrBoardDoesNotExist = errors.New("Board does not exist")
-	// ErrTypeNotFound is an error that is used when a type is not found during storage to domain transformation
+	// ErrTypeNotFound is an error that is used when a type is not found during storage to domain transformation.
 	ErrTypeNotFound = errors.New("Type not found when transforming db to domain model")
 )
 
-// Repository is an interface that represesnts all the capabilities for interacting with the database
+// Repository is an interface that represesnts all the capabilities for interacting with the database.
 type Repository interface {
 	CreateBoard(ctx context.Context, board models.Board) error
 	GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error)
@@ -37,15 +37,15 @@ type repository struct {
 	q  *db.Queries
 }
 
-// NewRepository initializes and returns a repository struct with database and query capabilities
+// NewRepository initializes and returns a repository struct with database and query capabilities.
 func NewRepository(conn *db.DB) *repository {
 	q := db.New(conn)
 	return &repository{conn, q}
 }
 
-// CreateBoard creates a single board
+// CreateBoard creates a single board.
 func (r *repository) CreateBoard(ctx context.Context, board models.Board) error {
-	// prepare board for insert
+	// Prepare board for insert
 	arg := db.CreateBoardParams{
 		ID:          pgtype.UUID{Bytes: board.ID, Valid: true},
 		Name:        pgtype.Text{String: *board.Name, Valid: true},
@@ -61,7 +61,7 @@ func (r *repository) CreateBoard(ctx context.Context, board models.Board) error 
 	return nil
 }
 
-// GetBoard returns a single board for a given board ID
+// GetBoard returns a single board for a given board ID.
 func (r *repository) GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error) {
 	row, err := r.q.GetBoard(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
@@ -70,7 +70,7 @@ func (r *repository) GetBoard(ctx context.Context, boardID uuid.UUID) (models.Bo
 		}
 		return models.Board{}, fmt.Errorf("repository: failed to get board by id: %w", err)
 	}
-	// convert storage type to domain type
+	// Convert storage type to domain type.
 	board := models.Board{
 		ID:          row.ID.Bytes,
 		Name:        &row.Name.String,
@@ -82,13 +82,13 @@ func (r *repository) GetBoard(ctx context.Context, boardID uuid.UUID) (models.Bo
 	return board, nil
 }
 
-// GetBoardAndUsers returns a left join query result for a single board and its associated users
+// GetBoardAndUsers returns a left join query result for a single board and its associated users.
 func (r *repository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error) {
 	rows, err := r.q.GetBoardAndUsers(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
 		return []BoardAndUser{}, fmt.Errorf("repository: failed to get board and associated users: %w", err)
 	}
-	// Convert storage types into domain types
+	// Convert storage types into domain types.
 	list := []BoardAndUser{}
 	for _, row := range rows {
 		item := BoardAndUser{
@@ -104,7 +104,7 @@ func (r *repository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([
 	return list, nil
 }
 
-// ListOwnedBoards returns a list of boards that belong to a user
+// ListOwnedBoards returns a list of boards that belong to a user.
 func (r *repository) ListOwnedBoards(ctx context.Context, boardID uuid.UUID) ([]models.Board, error) {
 	rows, err := r.q.ListOwnedBoards(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
@@ -114,7 +114,7 @@ func (r *repository) ListOwnedBoards(ctx context.Context, boardID uuid.UUID) ([]
 		return []models.Board{}, fmt.Errorf("repository: failed to list boards belonging to user ID: %w", err)
 	}
 
-	// convert storage type to domain type
+	// convert storage type to domain type.
 	list := []models.Board{}
 	for _, row := range rows {
 		board := models.Board{
@@ -131,14 +131,14 @@ func (r *repository) ListOwnedBoards(ctx context.Context, boardID uuid.UUID) ([]
 }
 
 // ListOwnedBoardAndUsers returns a list of boards that a user owns along with each board's associated members
-// The SQL query uses a left join so it is possible that a board can have nullable board users
+// The SQL query uses a left join so it is possible that a board can have nullable board users.
 func (r *repository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
 	rows, err := r.q.ListOwnedBoardAndUsers(ctx, pgtype.UUID{Bytes: userID, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("repository: failed to list boards by user ID: %w", err)
 	}
 
-	// Convert db types into domain types
+	// Convert database types into domain types
 	list := []BoardAndUser{}
 	for _, row := range rows {
 		item := BoardAndUser{
@@ -155,14 +155,14 @@ func (r *repository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUI
 }
 
 // ListSharedBoardAndUsers returns a list of boards that a user belongs to along with a list of its associated members
-// The SQL query uses a left join so it is possible that a board can have nullable board users
+// The SQL query uses a left join so it is possible that a board can have nullable board users.
 func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
 	rows, err := r.q.ListSharedBoardAndUsers(ctx, pgtype.UUID{Bytes: userID, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("repository: failed to list boards by user ID: %w", err)
 	}
 
-	// Convert db types into domain types
+	// Convert database types into domain types
 	list := []BoardAndUser{}
 	for _, row := range rows {
 		item := BoardAndUser{
@@ -178,7 +178,7 @@ func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UU
 	return list, nil
 }
 
-// DeleteBoard delets a single board
+// DeleteBoard deletes a single board.
 func (r *repository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
 	err := r.q.DeleteBoard(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
@@ -188,7 +188,7 @@ func (r *repository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
 }
 
 // CreateBoardInvites uses a db tx to insert a list of board invites. It will rollback the tx if
-// any of them fail
+// any of them fail.
 func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
@@ -218,7 +218,7 @@ func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.Bo
 	return tx.Commit(ctx)
 }
 
-// CreateMembership creates a board membership--this is effecitvely adding a user to a board
+// CreateMembership creates a board membership--this is effecitvely adding a user to a board.
 func (r *repository) CreateMembership(ctx context.Context, membership models.BoardMembership) error {
 	// prepare membership for insert
 	arg := db.CreateMembershipParams{
@@ -236,17 +236,13 @@ func (r *repository) CreateMembership(ctx context.Context, membership models.Boa
 	return nil
 }
 
-// Custom repository domain types
-
 // BoardAndUser is a custom domain type to guard against nullable BoardMembership and
-// User values in the case of left joins
+// User values in the case of left joins.
 type BoardAndUser struct {
 	Board           *models.Board
 	BoardMembership *models.BoardMembership
 	User            *models.User
 }
-
-// Mappers from db model to domain model
 
 func toBoard(dbBoard db.Board) *models.Board {
 	if dbBoard.ID.Valid {

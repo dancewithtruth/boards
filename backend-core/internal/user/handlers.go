@@ -9,13 +9,16 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
+	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	v "github.com/go-playground/validator/v10"
 )
 
+// HandleCreateUser creates a user and generates a JWT token using the user ID as a field.
 func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	// decode request
+	// Decode request
 	var input CreateUserInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		logger.Errorf("handler: failed to decode request: %v", err)
@@ -24,17 +27,19 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// validate request
+	// Validate request
 	if err := api.validator.Struct(input); err != nil {
 		logger.Errorf("handler: failed to validate request: %v", err)
 		endpoint.WriteValidationErr(w, input, err)
 		return
 	}
 
-	// create user and handle errors
+	// Create user and handle errors
 	user, err := api.userService.CreateUser(ctx, input)
 	if err != nil {
 		switch {
+		case errors.As(err, &v.ValidationErrors{}):
+			endpoint.WriteWithError(w, http.StatusBadRequest, validator.GetValidationErrMsg(input, err))
 		case errors.Is(err, ErrEmailAlreadyExists):
 			endpoint.WriteWithError(w, http.StatusConflict, ErrEmailAlreadyExists.Error())
 		default:
@@ -47,8 +52,6 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 	}
-
-	// write response
 	endpoint.WriteWithStatus(w, http.StatusCreated, CreateUserDTO{User: user, JwtToken: jwtToken})
 }
 

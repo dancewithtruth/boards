@@ -13,6 +13,7 @@ type mockRepository struct {
 	users            map[uuid.UUID]models.User
 }
 
+// NewMockRepository returns a mock board repository that implements the Repository interface
 func NewMockRepository(boards map[uuid.UUID]models.Board) *mockRepository {
 	boardMemberships := make(map[uuid.UUID]models.BoardMembership)
 	users := make(map[uuid.UUID]models.User)

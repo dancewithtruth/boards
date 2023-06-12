@@ -15,10 +15,13 @@ import (
 )
 
 var (
+	//ErrEmailAlreadyExists is an error that occurs when a user cannot be created due to duplicate email.
 	ErrEmailAlreadyExists = errors.New("User with this email already exists")
-	ErrUserDoesNotExist   = errors.New("User does not exist")
+	//ErrEmailAlreadyExists is an error that occurs when a user cannot be found.
+	ErrUserDoesNotExist = errors.New("User does not exist")
 )
 
+// Repository represents a set of methods to interact with the database for user related functions.
 type Repository interface {
 	CreateUser(ctx context.Context, user models.User) error
 	GetUser(ctx context.Context, userID uuid.UUID) (models.User, error)
@@ -32,6 +35,7 @@ type repository struct {
 	q  *db.Queries
 }
 
+// NewRepository initializes a repository struct with database and query capabilities.
 func NewRepository(conn *db.DB) *repository {
 	q := db.New(conn)
 	return &repository{
@@ -40,6 +44,7 @@ func NewRepository(conn *db.DB) *repository {
 	}
 }
 
+// CreateUser inserts a new user record into the users table.
 func (r *repository) CreateUser(ctx context.Context, user models.User) error {
 	sql := "INSERT INTO users (id, name, email, password, is_guest, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)"
 	_, err := r.db.Exec(ctx, sql, user.ID, user.Name, user.Email, user.Password, user.IsGuest, user.CreatedAt, user.UpdatedAt)
@@ -53,6 +58,7 @@ func (r *repository) CreateUser(ctx context.Context, user models.User) error {
 	return nil
 }
 
+// GetUser queries and returns a single user for a given user ID.
 func (r *repository) GetUser(ctx context.Context, userID uuid.UUID) (models.User, error) {
 	sql := "SELECT * FROM users WHERE id = $1"
 	user := models.User{}
@@ -75,6 +81,7 @@ func (r *repository) GetUser(ctx context.Context, userID uuid.UUID) (models.User
 	return user, nil
 }
 
+// GetuserByLogin returns a single user for a given email and password combination.
 func (r *repository) GetUserByLogin(ctx context.Context, email, password string) (models.User, error) {
 	sql := "SELECT * FROM users WHERE email = $1 and password = $2"
 	user := models.User{}
@@ -97,6 +104,7 @@ func (r *repository) GetUserByLogin(ctx context.Context, email, password string)
 	return user, nil
 }
 
+// DeleteUser deletes a single user for a given user ID.
 func (r *repository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	sql := "DELETE from users where id = $1"
 	_, err := r.db.Exec(ctx, sql, userID)
@@ -106,6 +114,7 @@ func (r *repository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 	return nil
 }
 
+// ListUsersByFuzzyEmail uses a levenshtein query to return the top 10 matches by email.
 func (r *repository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
 	rows, err := r.q.ListUsersByFuzzyEmail(ctx, pgtype.Text{String: email, Valid: true})
 	if err != nil {

@@ -5,8 +5,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 )
 
-// Inputs
-
+// CreateUserInput defines the structure for requests to create a new user.
 type CreateUserInput struct {
 	Name     string  `json:"name" validate:"required,min=2,max=12"`
 	Email    *string `json:"email" validate:"omitempty,email,required"`
@@ -14,6 +13,7 @@ type CreateUserInput struct {
 	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
 }
 
+// ListUsersByFuzzyEmailInput defines the structure for requests to list users by fuzzy email.
 type ListUsersByFuzzyEmailInput struct {
 	Email string `json:"email" validate:"omitempty,email,required"`
 }
@@ -23,8 +23,7 @@ func (input ListUsersByFuzzyEmailInput) Validate() error {
 	return validator.Struct(input)
 }
 
-// DTOs
-
+// CreateUserDTO defines the structure of a successful create user response.
 type CreateUserDTO struct {
 	User     models.User `json:"user"`
 	JwtToken string      `json:"jwt_token"`
