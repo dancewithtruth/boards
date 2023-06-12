@@ -29,12 +29,12 @@ CREATE TABLE IF NOT EXISTS board_memberships (
 
 CREATE TABLE IF NOT EXISTS board_invites (
   id UUID PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
+  sender_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  receiver_id UUID REFERENCES users(id) ON DELETE CASCADE,
   status VARCHAR(20) DEFAULT 'PENDING',
   created_at TIMESTAMP NOT NULL,
-  updated_at TIMESTAMP NOT NULL,
-  CONSTRAINT unique_board_invites UNIQUE (user_id, board_id)
+  updated_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS posts (

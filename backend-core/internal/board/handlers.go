@@ -7,6 +7,7 @@ import (
 
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
+	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/go-chi/chi/v5"
 )
@@ -69,7 +70,7 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 	boardID := chi.URLParam(r, "boardID")
 	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardID)
 	if err != nil {
-		if errors.Is(err, ErrInvalidBoardID) {
+		if errors.Is(err, ErrInvalidID) {
 			endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardID)
 			return
 		}
@@ -119,6 +120,48 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 	}{Owned: ownedBoards, Shared: sharedBoards})
 }
 
+// HandleCreateBoardInvites is the handler for creating board invites. It takes an array of
+// receiver_id's and returns a list of created board invites.
+func (api *API) HandleCreateBoardInvites(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	// Decode input
+	var input CreateBoardInvitesInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		endpoint.HandleDecodeErr(w, err)
+		return
+	}
+	defer r.Body.Close()
+
+	// Prepare input
+	userID := middleware.UserIDFromContext(ctx)
+	if userID == "" {
+		logger.Error("handler: failed to parse user ID from request context")
+		endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
+		return
+	}
+	boardID := chi.URLParam(r, "boardID")
+	input.SenderID = userID
+	input.BoardID = boardID
+
+	// Create board invites
+	invites, err := api.boardService.CreateBoardInvites(ctx, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUnauthorized):
+			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrUnauthorized.Error())
+		case errors.Is(err, ErrInvalidID):
+			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrInvalidID.Error())
+		default:
+			logger.Errorf("handler: failed to create board invites: %v", err)
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusCreated, invites)
+}
+
 func hasUser(members []MemberDTO, userID string) bool {
 	for _, member := range members {
 		if member.ID.String() == userID {
@@ -130,11 +173,18 @@ func hasUser(members []MemberDTO, userID string) bool {
 
 // UserHasAccess checks if a certain user ID exists in a board as the board owner or board member.
 func UserHasAccess(board BoardWithMembersDTO, userID string) bool {
-	if board.UserID.String() == userID {
-		return true
-	}
 	for _, member := range board.Members {
 		if member.ID.String() == userID {
+			return true
+		}
+	}
+	return false
+}
+
+// UserIsAdmin checks if a certain user ID has admin privileges on a board.
+func UserIsAdmin(board BoardWithMembersDTO, userID string) bool {
+	for _, member := range board.Members {
+		if member.ID.String() == userID && member.Membership.Role == string(models.RoleAdmin) {
 			return true
 		}
 	}

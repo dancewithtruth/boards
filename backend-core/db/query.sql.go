@@ -40,24 +40,26 @@ func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) error 
 
 const createBoardInvite = `-- name: CreateBoardInvite :exec
 INSERT INTO board_invites
-(id, user_id, board_id, status, created_at, updated_at) 
-VALUES ($1, $2, $3, $4, $5, $6)
+(id, board_id, sender_id, receiver_id, status, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
 type CreateBoardInviteParams struct {
-	ID        pgtype.UUID
-	UserID    pgtype.UUID
-	BoardID   pgtype.UUID
-	Status    pgtype.Text
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	ID         pgtype.UUID
+	BoardID    pgtype.UUID
+	SenderID   pgtype.UUID
+	ReceiverID pgtype.UUID
+	Status     pgtype.Text
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
 }
 
 func (q *Queries) CreateBoardInvite(ctx context.Context, arg CreateBoardInviteParams) error {
 	_, err := q.db.Exec(ctx, createBoardInvite,
 		arg.ID,
-		arg.UserID,
 		arg.BoardID,
+		arg.SenderID,
+		arg.ReceiverID,
 		arg.Status,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -242,6 +244,154 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const listInvitesByBoard = `-- name: ListInvitesByBoard :many
+SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+WHERE board_invites.board_id = $1
+ORDER BY board_invites.updated_at DESC
+`
+
+func (q *Queries) ListInvitesByBoard(ctx context.Context, boardID pgtype.UUID) ([]BoardInvite, error) {
+	rows, err := q.db.Query(ctx, listInvitesByBoard, boardID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BoardInvite
+	for rows.Next() {
+		var i BoardInvite
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.SenderID,
+			&i.ReceiverID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listInvitesByBoardFilterStatus = `-- name: ListInvitesByBoardFilterStatus :many
+SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+WHERE board_invites.board_id = $1
+AND board_invites.status = $2
+ORDER BY board_invites.updated_at DESC
+`
+
+type ListInvitesByBoardFilterStatusParams struct {
+	BoardID pgtype.UUID
+	Status  pgtype.Text
+}
+
+func (q *Queries) ListInvitesByBoardFilterStatus(ctx context.Context, arg ListInvitesByBoardFilterStatusParams) ([]BoardInvite, error) {
+	rows, err := q.db.Query(ctx, listInvitesByBoardFilterStatus, arg.BoardID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BoardInvite
+	for rows.Next() {
+		var i BoardInvite
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.SenderID,
+			&i.ReceiverID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listInvitesByReceiver = `-- name: ListInvitesByReceiver :many
+SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+WHERE board_invites.receiver_id = $1
+ORDER BY board_invites.updated_at DESC
+`
+
+func (q *Queries) ListInvitesByReceiver(ctx context.Context, receiverID pgtype.UUID) ([]BoardInvite, error) {
+	rows, err := q.db.Query(ctx, listInvitesByReceiver, receiverID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BoardInvite
+	for rows.Next() {
+		var i BoardInvite
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.SenderID,
+			&i.ReceiverID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listInvitesByReceiverFilterStatus = `-- name: ListInvitesByReceiverFilterStatus :many
+SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+WHERE board_invites.receiver_id = $1
+AND board_invites.status = $2
+ORDER BY board_invites.updated_at DESC
+`
+
+type ListInvitesByReceiverFilterStatusParams struct {
+	ReceiverID pgtype.UUID
+	Status     pgtype.Text
+}
+
+func (q *Queries) ListInvitesByReceiverFilterStatus(ctx context.Context, arg ListInvitesByReceiverFilterStatusParams) ([]BoardInvite, error) {
+	rows, err := q.db.Query(ctx, listInvitesByReceiverFilterStatus, arg.ReceiverID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BoardInvite
+	for rows.Next() {
+		var i BoardInvite
+		if err := rows.Scan(
+			&i.ID,
+			&i.BoardID,
+			&i.SenderID,
+			&i.ReceiverID,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listOwnedBoardAndUsers = `-- name: ListOwnedBoardAndUsers :many
@@ -453,6 +603,35 @@ func (q *Queries) ListUsersByFuzzyEmail(ctx context.Context, levenshtein interfa
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateBoardInvite = `-- name: UpdateBoardInvite :exec
+UPDATE board_invites SET
+(id, board_id, sender_id, receiver_id, status, created_at, updated_at) =
+($1, $2, $3, $4, $5, $6, $7) WHERE id = $1
+`
+
+type UpdateBoardInviteParams struct {
+	ID         pgtype.UUID
+	BoardID    pgtype.UUID
+	SenderID   pgtype.UUID
+	ReceiverID pgtype.UUID
+	Status     pgtype.Text
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
+}
+
+func (q *Queries) UpdateBoardInvite(ctx context.Context, arg UpdateBoardInviteParams) error {
+	_, err := q.db.Exec(ctx, updateBoardInvite,
+		arg.ID,
+		arg.BoardID,
+		arg.SenderID,
+		arg.ReceiverID,
+		arg.Status,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	return err
 }
 
 const updatePost = `-- name: UpdatePost :exec

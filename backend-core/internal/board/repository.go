@@ -29,6 +29,7 @@ type Repository interface {
 	ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
 	CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error
 	CreateMembership(ctx context.Context, membership models.BoardMembership) error
+	ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error)
 	DeleteBoard(ctx context.Context, boardID uuid.UUID) error
 }
 
@@ -203,12 +204,13 @@ func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.Bo
 	for _, invite := range invites {
 		// prepare invite for insert
 		arg := db.CreateBoardInviteParams{
-			ID:        pgtype.UUID{Bytes: invite.ID, Valid: true},
-			UserID:    pgtype.UUID{Bytes: invite.UserID, Valid: true},
-			BoardID:   pgtype.UUID{Bytes: invite.BoardID, Valid: true},
-			Status:    pgtype.Text{String: string(invite.Status), Valid: true},
-			CreatedAt: pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
-			UpdatedAt: pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
+			ID:         pgtype.UUID{Bytes: invite.ID, Valid: true},
+			BoardID:    pgtype.UUID{Bytes: invite.BoardID, Valid: true},
+			SenderID:   pgtype.UUID{Bytes: invite.SenderID, Valid: true},
+			ReceiverID: pgtype.UUID{Bytes: invite.ReceiverID, Valid: true},
+			Status:     pgtype.Text{String: string(invite.Status), Valid: true},
+			CreatedAt:  pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
+			UpdatedAt:  pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
 		}
 		err = qtx.CreateBoardInvite(ctx, arg)
 		if err != nil {
@@ -216,6 +218,38 @@ func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.Bo
 		}
 	}
 	return tx.Commit(ctx)
+}
+
+// ListBoardInvitesFilterStatus returns a list of board invites for a given board ID and status filter
+func (r *repository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error) {
+	arg := db.ListInvitesByBoardFilterStatusParams{
+		BoardID: pgtype.UUID{
+			Bytes: boardID,
+			Valid: true,
+		},
+		Status: pgtype.Text{
+			String: string(status),
+			Valid:  true,
+		},
+	}
+	rows, err := r.q.ListInvitesByBoardFilterStatus(ctx, arg)
+	if err != nil {
+		return []models.BoardInvite{}, fmt.Errorf("repository: failed to list board invites: %w", err)
+	}
+	invites := []models.BoardInvite{}
+	for _, row := range rows {
+		invite := models.BoardInvite{
+			ID:         row.ID.Bytes,
+			BoardID:    row.BoardID.Bytes,
+			SenderID:   row.SenderID.Bytes,
+			ReceiverID: row.ReceiverID.Bytes,
+			Status:     models.BoardInviteStatus(row.Status.String),
+			CreatedAt:  row.CreatedAt.Time,
+			UpdatedAt:  row.UpdatedAt.Time,
+		}
+		invites = append(invites, invite)
+	}
+	return invites, nil
 }
 
 // CreateMembership creates a board membership--this is effecitvely adding a user to a board.

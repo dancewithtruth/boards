@@ -6,11 +6,21 @@ import (
 	"github.com/google/uuid"
 )
 
-// Inputs
+// CreateBoardInput defines the data structure for a create board request
+
 type CreateBoardInput struct {
 	Name        *string `json:"name" validate:"omitempty,required,min=3,max=20"`
 	Description *string `json:"description" validate:"omitempty,required,min=3,max=100"`
 	UserID      string
+}
+
+// CreateBoardInvitesInput defines the data structure for a create board invites request
+type CreateBoardInvitesInput struct {
+	BoardID  string
+	SenderID string
+	Invites  []struct {
+		ReceiverId string `json:"receiver_id"`
+	} `json:"invites"`
 }
 
 // DTOs

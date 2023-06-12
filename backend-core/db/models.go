@@ -18,12 +18,13 @@ type Board struct {
 }
 
 type BoardInvite struct {
-	ID        pgtype.UUID
-	UserID    pgtype.UUID
-	BoardID   pgtype.UUID
-	Status    pgtype.Text
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	ID         pgtype.UUID
+	BoardID    pgtype.UUID
+	SenderID   pgtype.UUID
+	ReceiverID pgtype.UUID
+	Status     pgtype.Text
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
 }
 
 type BoardMembership struct {

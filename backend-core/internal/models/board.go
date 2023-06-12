@@ -50,10 +50,11 @@ const (
 
 // BoardInvite defines the domain model for a board invite entity.
 type BoardInvite struct {
-	ID        uuid.UUID         `json:"id"`
-	BoardID   uuid.UUID         `json:"board_id"`
-	UserID    uuid.UUID         `json:"user_id"`
-	Status    BoardInviteStatus `json:"status"`
-	CreatedAt time.Time         `json:"created_at"`
-	UpdatedAt time.Time         `json:"updated_at"`
+	ID         uuid.UUID         `json:"id"`
+	BoardID    uuid.UUID         `json:"board_id"`
+	SenderID   uuid.UUID         `json:"sender_id"`
+	ReceiverID uuid.UUID         `json:"receiver_id"`
+	Status     BoardInviteStatus `json:"status"`
+	CreatedAt  time.Time         `json:"created_at"`
+	UpdatedAt  time.Time         `json:"updated_at"`
 }

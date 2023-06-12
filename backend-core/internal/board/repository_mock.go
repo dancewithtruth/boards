@@ -2,6 +2,7 @@ package board
 
 import (
 	"context"
+	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/google/uuid"
@@ -27,6 +28,15 @@ func (r *mockRepository) AddUser(user models.User) {
 
 func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) error {
 	r.boards[board.ID] = board
+	now := time.Now()
+	r.boardMemberships[board.ID] = models.BoardMembership{
+		ID:        uuid.New(),
+		BoardID:   board.ID,
+		UserID:    board.UserID,
+		Role:      models.RoleAdmin,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 	return nil
 }
 
@@ -40,7 +50,8 @@ func (r *mockRepository) GetBoard(ctx context.Context, boardID uuid.UUID) (model
 func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error) {
 	// TODO: mock this out, return board, board membership, and user
 	board := r.boards[boardID]
-	return []BoardAndUser{{Board: &board}}, nil
+	boardMembership := r.boardMemberships[boardID]
+	return []BoardAndUser{{Board: &board, BoardMembership: &boardMembership}}, nil
 }
 
 func (r *mockRepository) ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error) {
@@ -74,4 +85,9 @@ func (r *mockRepository) CreateMembership(ctx context.Context, membership models
 func (r *mockRepository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
 	delete(r.boards, boardID)
 	return nil
+}
+
+func (r *mockRepository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error) {
+	// TODO: mock this out
+	return nil, nil
 }

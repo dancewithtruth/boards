@@ -59,6 +59,29 @@ func TestService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Greater(t, len(boards), 0)
 	})
+
+	// t.Run("Create board invites", func(t *testing.T) {
+	// 	receiver1 := test.NewUser()
+	// 	receiver2 := test.NewUser()
+
+	// 	createBoardInput := CreateBoardInput{
+	// 		UserID: testUser.ID.String(),
+	// 	}
+	// 	board, err := boardService.CreateBoard(context.Background(), createBoardInput)
+
+	// 	if err != nil {
+	// 		assert.FailNow(t, "Failed to create test board")
+	// 	}
+
+	// 	createBoardInvitesInput := CreateBoardInvitesInput{
+	// 		BoardID:     board.ID.String(),
+	// 		SenderID:    testUser.ID.String(),
+	// 		ReceiverIDs: []string{receiver1.ID.String(), receiver2.ID.String()},
+	// 	}
+	// 	invites, err := boardService.CreateBoardInvites(context.Background(), createBoardInvitesInput)
+	// 	assert.NoError(t, err)
+	// 	assert.Equal(t, 2, len(invites), "Expected an invites slice of length 2 to be returned, got ", len(invites))
+	// })
 }
 
 func getFirstBoard(m map[uuid.UUID]models.Board) (models.Board, bool) {
