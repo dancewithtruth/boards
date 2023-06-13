@@ -50,9 +50,9 @@ services:
     container_name: swagger-core
     image: swaggerapi/swagger-ui
     environment:
-      SWAGGER_JSON: "/spec/swagger.json"
+      SWAGGER_JSON: "/spec/swagger.yaml"
     volumes:
-      - ./backend-core/swagger.json:/spec/swagger.json
+      - ./backend-core/swagger.yaml:/spec/swagger.yaml
     ports:
       - 8081:8080
 volumes:
