@@ -3,63 +3,72 @@ package auth
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/models"
+	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/internal/user"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	v "github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService(t *testing.T) {
-	userRepo := user.NewMockRepository()
-	jwtService := jwt.New("abc123", 24)
-	validator := validator.New()
-	service := NewService(userRepo, jwtService, validator)
-	assert.NotNil(t, service)
-	testUser := newTestUser()
-	input := LoginInput{
-		Email:    *testUser.Email,
-		Password: *testUser.Password,
-	}
+	userRepo, jwtService, validator := getServiceDeps()
+	authService := NewService(userRepo, jwtService, validator)
+	assert.NotNil(t, authService)
 	t.Run("Login", func(t *testing.T) {
-		t.Run("with valid credentials returns auth token", func(t *testing.T) {
-			ctx := context.Background()
-			err := userRepo.CreateUser(ctx, testUser)
-			if err != nil {
-				assert.FailNow(t, "Could not create test user")
+		t.Run("using invalid input will return a validation error", func(t *testing.T) {
+			invalidInput := LoginInput{
+				Email:    "invalidemail",
+				Password: "bad",
 			}
-			token, err := service.Login(ctx, input)
-			assert.NotEmpty(t, token, "expected a non-empty auth token")
-			assert.NoError(t, err, "expected no error when calling Login")
+			token, err := authService.Login(context.Background(), invalidInput)
+			assert.ErrorAs(t, err, &v.ValidationErrors{}, "Expected a validation error", err)
+			assert.Empty(t, token, "Expected an empty token to be returned")
 		})
 
-		t.Run("with bad credentials returns error", func(t *testing.T) {
-			ctx := context.Background()
+		t.Run("using credentials that exist will return a JWT token", func(t *testing.T) {
+			user := setupUser(t, userRepo)
+			defer cleanupUser(userRepo, user.ID)
+			input := LoginInput{
+				Email:    *user.Email,
+				Password: *user.Password,
+			}
+			token, err := authService.Login(context.Background(), input)
+			assert.NoError(t, err, "Expected no error when calling Login", err)
+			assert.NotEmpty(t, token, "Expected a non-empty token to be returned")
+		})
+
+		t.Run("using credentials that do not exist will return a ErrBadLogin error", func(t *testing.T) {
 			badInput := LoginInput{
 				Email:    "bademail123@xyz.com",
 				Password: "badpassword123",
 			}
-			token, err := service.Login(ctx, badInput)
-			assert.Empty(t, token, "expected an empty auth token")
-			assert.ErrorIs(t, err, ErrBadLogin, "expected an ErrUserDoesNotExist when calling Login")
+			token, err := authService.Login(context.Background(), badInput)
+			assert.ErrorIs(t, err, ErrBadLogin, "Expected an ErrBadLogin error", err)
+			assert.Empty(t, token, "Expected an empty token to be returned")
 		})
 	})
 }
 
-func newTestUser() models.User {
-	email := "johndoe@gmail.com"
-	password := "password123"
-	user := models.User{
-		ID:        uuid.New(),
-		Name:      "testname",
-		Email:     &email,
-		Password:  &password,
-		IsGuest:   false,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
+func getServiceDeps() (user.Repository, jwt.Service, validator.Validate) {
+	userRepo := user.NewMockRepository()
+	jwtService := test.NewJWTService()
+	validator := validator.New()
+	return userRepo, jwtService, validator
+}
+
+func setupUser(t *testing.T, userRepo user.Repository) models.User {
+	user := test.NewUser()
+	err := userRepo.CreateUser(context.Background(), user)
+	if err != nil {
+		assert.FailNow(t, "Failed to create test user.")
 	}
 	return user
+}
+
+func cleanupUser(userRepo user.Repository, userID uuid.UUID) {
+	userRepo.DeleteUser(context.Background(), userID)
 }

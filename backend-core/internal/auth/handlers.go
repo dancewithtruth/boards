@@ -11,10 +11,10 @@ import (
 )
 
 const (
-	// ErrMsgBadLogin is a message displayed when a user provides bad login credentials
-	ErrMsgBadLogin = "User does not exist"
+	// ErrMsgUserDoesNotExist is a message displayed when a user provides login credentials for a user that does not exist
+	ErrMsgUserDoesNotExist = "User does not exist."
 	// ErrMsgInternalServer is a message displayed when an unexpected error occurs
-	ErrMsgInternalServer = "Internal server error"
+	ErrMsgInternalServer = "Internal server error."
 )
 
 // HandleLogin handles a user's login request. It returns a token in the response
@@ -31,11 +31,11 @@ func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrBadLogin):
-			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgBadLogin)
+			endpoint.WriteWithError(w, http.StatusNotFound, ErrMsgUserDoesNotExist)
 		case errors.As(err, &validator.ValidationErrors{}):
 			endpoint.WriteValidationErr(w, input, err)
 		default:
-			logger.Errorf("handler: internal server error when performing login: %v", err)
+			logger.Errorf("HandleLogin: Failed to login user due to internal server error > %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
 		return

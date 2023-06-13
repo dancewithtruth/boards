@@ -5,7 +5,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-// API encapsulates dependencies needed to perform auth-related duties
+// API encapsulates dependencies needed to perform auth-related duties.
 type API struct {
 	authService Service
 	validator   validator.Validate
@@ -19,7 +19,7 @@ func NewAPI(authService Service, validator validator.Validate) API {
 	}
 }
 
-// RegisterHandlers registers the API's request handlers
+// RegisterHandlers registers the API's request handlers.
 func (api *API) RegisterHandlers(r chi.Router) {
 	r.Route("/auth", func(r chi.Router) {
 		r.Post("/login", api.HandleLogin)

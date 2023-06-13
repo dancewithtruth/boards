@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	// ErrBadLogin is an error that is used when a user cannot be found with the given credentials
+	// ErrBadLogin is an error that is used when a user cannot be found with the given credentials.
 	ErrBadLogin = errors.New("Could not login with provided credentials")
 )
 
@@ -39,14 +39,14 @@ func NewService(userRepo u.Repository, jwtService jwt.Service, validator validat
 // It retrieves the user from the user repository and generates a JWT token.
 // If successful, it returns the generated token.
 // If the user cannot be found, it returns ErrBadLogin.
-// If there is any other error, it returns a formatted error message.
+// If there is any other error, it returns a wrapped error.
 func (s *service) Login(ctx context.Context, input LoginInput) (token string, err error) {
 	if err := s.validator.Struct(input); err != nil {
 		return "", err
 	}
 	user, err := s.userRepo.GetUserByLogin(ctx, input.Email, input.Password)
 	if err != nil {
-		if errors.Is(err, u.ErrUserDoesNotExist) {
+		if errors.Is(err, u.ErrUserNotFound) {
 			return "", ErrBadLogin
 		}
 		return "", fmt.Errorf("service: failed to login: %w", err)
