@@ -16,17 +16,17 @@ import (
 type Service interface {
 	CreateUser(ctx context.Context, input CreateUserInput) (models.User, error)
 	GetUser(ctx context.Context, userID string) (models.User, error)
-	ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error)
+	ListUsersByEmail(ctx context.Context, email string) ([]models.User, error)
 }
 
 type service struct {
-	repo      Repository
+	userRepo  Repository
 	validator validator.Validate
 }
 
 // NewService initializes a service struct with dependencies
 func NewService(repo Repository, validator validator.Validate) *service {
-	return &service{repo: repo, validator: validator}
+	return &service{userRepo: repo, validator: validator}
 }
 
 // CreateUser creates and returns a new user
@@ -46,7 +46,7 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
-	err := s.repo.CreateUser(ctx, user)
+	err := s.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: failed to create user: %w", err)
 	}
@@ -59,16 +59,16 @@ func (s *service) GetUser(ctx context.Context, userID string) (models.User, erro
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: issue parsing userID into UUID: %w", err)
 	}
-	user, err := s.repo.GetUser(ctx, userIDUUID)
+	user, err := s.userRepo.GetUser(ctx, userIDUUID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: failed to get user: %w", err)
 	}
 	return user, nil
 }
 
-// ListUsersByFuzzyEmail returns a list of the top 10 users ranked by email similarity
-func (s *service) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
-	users, err := s.repo.ListUsersByFuzzyEmail(ctx, email)
+// ListUsersByEmail returns a list of the top 10 users ranked by email similarity
+func (s *service) ListUsersByEmail(ctx context.Context, email string) ([]models.User, error) {
+	users, err := s.userRepo.ListUsersByEmail(ctx, email)
 	if err != nil {
 		return []models.User{}, fmt.Errorf("service: failed to list users by fuzzy email: %w", err)
 	}

@@ -43,7 +43,7 @@ func (r *mockRepository) DeleteUser(ctx context.Context, userID uuid.UUID) error
 	return nil
 }
 
-func (r *mockRepository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
+func (r *mockRepository) ListUsersByEmail(ctx context.Context, email string) ([]models.User, error) {
 	// TODO: Mock out
 	return []models.User{}, nil
 }

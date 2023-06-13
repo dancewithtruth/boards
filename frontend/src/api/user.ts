@@ -22,7 +22,7 @@ export type CreateUserResponse = {
   jwt_token: string;
 };
 
-export type ListUsersByFuzzyEmailResponse = {
+export type ListUsersByEmailResponse = {
   result: User[];
 };
 
@@ -36,7 +36,7 @@ export async function createUser(params: CreateUserParams): Promise<CreateUserRe
   return sendPostRequest<CreateUserResponse>(url, params);
 }
 
-export async function listUsersByFuzzyEmail(email: string): Promise<ListUsersByFuzzyEmailResponse> {
+export async function listUsersByFuzzyEmail(email: string): Promise<ListUsersByEmailResponse> {
   const url = `${BASE_URL}/users/search?email=${email}`;
-  return sendGetRequest<ListUsersByFuzzyEmailResponse>(url);
+  return sendGetRequest<ListUsersByEmailResponse>(url);
 }

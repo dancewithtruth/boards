@@ -80,9 +80,9 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	endpoint.WriteWithStatus(w, http.StatusCreated, CreateUserDTO{User: user, JwtToken: jwtToken})
 }
 
-// HandleGetUserMe is protected with an authHandler and expects the userID to be present
-// on the request context
-func (api *API) HandleGetUserMe(w http.ResponseWriter, r *http.Request) {
+// HandleGetMe is protected with an authHandler and expects the user ID to be present
+// on the request context. It uses the user ID to get the user details.
+func (api *API) HandleGetMe(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userID := middleware.UserIDFromContext(ctx)
 	user, err := api.userService.GetUser(ctx, userID)
@@ -108,7 +108,7 @@ func (api *API) HandleListUsersBySearch(w http.ResponseWriter, r *http.Request) 
 		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidSearchParam)
 		return
 	}
-	users, err := api.userService.ListUsersByFuzzyEmail(ctx, email)
+	users, err := api.userService.ListUsersByEmail(ctx, email)
 	if err != nil {
 		logger.Errorf("handler: failed to list users by search: %w", err)
 		switch {
@@ -129,7 +129,7 @@ func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) ht
 		r.Get("/search", api.HandleListUsersBySearch)
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
-			r.Get("/me", api.HandleGetUserMe)
+			r.Get("/me", api.HandleGetMe)
 		})
 	})
 }

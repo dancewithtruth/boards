@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHandleCreateBoard(t *testing.T) {
+func TestAPI(t *testing.T) {
 	// Setup test
 	validator := validator.New()
 	testUser := test.NewUser()

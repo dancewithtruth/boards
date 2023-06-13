@@ -4,31 +4,44 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Wave-95/boards/backend-core/internal/models"
+	"github.com/Wave-95/boards/backend-core/internal/jwt"
+	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
-	"github.com/google/uuid"
+	v "github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService(t *testing.T) {
-	validator := validator.New()
-	mockRepo := &mockRepository{make(map[uuid.UUID]models.User)}
-	service := NewService(mockRepo, validator)
-	assert.NotNil(t, service)
-
-	email := "testemail@gmail.com"
-	password := "password123!"
-	input := CreateUserInput{
-		Name:     "Name",
-		Email:    &email,
-		Password: &password,
-		IsGuest:  false,
-	}
-	t.Run("Create user", func(t *testing.T) {
-		t.Run("with a valid user", func(t *testing.T) {
-			user, err := service.CreateUser(context.Background(), input)
+	userRepo, _, validator := getServiceDeps()
+	userService := NewService(userRepo, validator)
+	assert.NotNil(t, userService)
+	t.Run("Create and get user", func(t *testing.T) {
+		t.Run("using valid user input", func(t *testing.T) {
+			// Create
+			input := CreateUserInput{
+				Name:    "john doe",
+				IsGuest: true,
+			}
+			newUser, err := userService.CreateUser(context.Background(), input)
 			assert.NoError(t, err)
-			assert.Equal(t, input.Name, user.Name)
+			assert.Equal(t, "John Doe", newUser.Name, "Expected first letter of each word in name to be capitalized.")
+			// Get
+			user, err := userService.GetUser(context.Background(), newUser.ID.String())
+			assert.NoError(t, err)
+			assert.Equal(t, newUser.ID, user.ID)
+		})
+
+		t.Run("using invalid user input", func(t *testing.T) {
+			input := CreateUserInput{}
+			_, err := userService.CreateUser(context.Background(), input)
+			assert.ErrorAs(t, err, &v.ValidationErrors{}, "Expected error to be a validation error")
 		})
 	})
+}
+
+func getServiceDeps() (Repository, jwt.Service, validator.Validate) {
+	userRepo := NewMockRepository()
+	jwtService := test.NewJWTService()
+	validator := validator.New()
+	return userRepo, jwtService, validator
 }

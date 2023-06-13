@@ -65,6 +65,77 @@ paths:
                     example: User does not exist.
   /users:
     post:
+      tags:
+        - users
+      summary: Create a user
+      description: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                is_guest:
+                  type: boolean
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+              required:
+                - name
+                - is_guest
+      responses:
+        '201':
+          description: Successfully created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/me:
+    get:
+      tags:
+        - users
+      summary: Get user
+      description: Get user details using auth bearer token
+      responses:
+        '200':
+          description: Successfully retrieved user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - bearerAuth: []
+  /users/search:
+    get:
+      tags:
+        - users
+      summary: Lists users
+      description: Retrieve a list of top 10 users based on query parameter
+      parameters:
+        - name: email
+          in: query
+          description: Search for users using email
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
   /boards/{boardID}/invites:
     post:
       tags:
@@ -164,6 +235,11 @@ paths:
                     items:
                       $ref: '#/components/schemas/BoardInvite'
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     User:
       type: object
@@ -198,13 +274,6 @@ components:
           type: string
           format: date-time
           description: Timestamp indicating the last update date
-      required:
-        - id
-        - name
-        - email
-        - password
-        - created_at
-        - updated_at
       example:
         id: a5f4c43f-9ae3-4e6d-9682-97351cbb864e
         name: John Doe
@@ -260,8 +329,3 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/User'
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT

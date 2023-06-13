@@ -11,50 +11,72 @@ import (
 
 func TestRepository(t *testing.T) {
 	db := test.DB(t)
-	repo := NewRepository(db)
+	userRepo := NewRepository(db)
+	assert.NotNil(t, userRepo)
 
-	testUser := test.NewUser()
-
-	t.Run("Create user", func(t *testing.T) {
-		err := repo.CreateUser(context.Background(), testUser)
+	t.Run("Create, get, and delete user", func(t *testing.T) {
+		// Create
+		user := test.NewUser()
+		err := userRepo.CreateUser(context.Background(), user)
 		assert.NoError(t, err)
+
+		// Get
+		newUser, err := userRepo.GetUser(context.Background(), user.ID)
+		assert.NoError(t, err)
+		assert.Equal(t, user.ID, newUser.ID)
+
+		// Delete
+		err = userRepo.DeleteUser(context.Background(), newUser.ID)
+		assert.NoError(t, err)
+		_, err = userRepo.GetUser(context.Background(), newUser.ID)
+		assert.ErrorIs(t, err, ErrUserNotFound, "Expected error to be returned when user is not found")
 	})
 
-	t.Run("Create user with non-unique email", func(t *testing.T) {
-		testUserBadEmail := testUser
-		testUserBadEmail.ID = uuid.New()
-		err := repo.CreateUser(context.Background(), testUserBadEmail)
-		assert.ErrorIs(t, err, ErrEmailAlreadyExists)
+	t.Run("Create user with non-unique email results in error", func(t *testing.T) {
+		// Create first user
+		user := test.NewUser()
+		err := userRepo.CreateUser(context.Background(), user)
+		if err != nil {
+			assert.FailNow(t, "Failed to create test user", err)
+		}
+		defer userRepo.DeleteUser(context.Background(), user.ID)
+
+		// Create second user using non-unique email
+		userWithBadEmail := test.NewUser()
+		userWithBadEmail.Email = user.Email
+		err = userRepo.CreateUser(context.Background(), userWithBadEmail)
+		assert.ErrorIs(t, err, ErrEmailAlreadyExists, "Expected error to be returned when user created with non-unique email")
 	})
 
 	t.Run("Get user by email and password", func(t *testing.T) {
-		t.Run("email and password exist", func(t *testing.T) {
-			user, err := repo.GetUserByLogin(context.Background(), *testUser.Email, *testUser.Password)
+		user := test.NewUser()
+		err := userRepo.CreateUser(context.Background(), user)
+		if err != nil {
+			assert.FailNow(t, "Failed to create test user", err)
+		}
+		defer userRepo.DeleteUser(context.Background(), user.ID)
+		t.Run("credentials exist", func(t *testing.T) {
+			newUser, err := userRepo.GetUserByLogin(context.Background(), *user.Email, *user.Password)
 			assert.NoError(t, err)
-			assert.Equal(t, testUser.Email, user.Email)
+			assert.Equal(t, user.Email, newUser.Email)
 		})
 
-		t.Run("email and password do not exist", func(t *testing.T) {
-			emailNotFound := "abc123@gmail.com"
-			passwordNotFound := "password1111"
-			user, err := repo.GetUserByLogin(context.Background(), emailNotFound, passwordNotFound)
+		t.Run("credientials do not exist", func(t *testing.T) {
+			email := "doesnotexist@gmail.com"
+			password := "doesnotexist"
+			user, err := userRepo.GetUserByLogin(context.Background(), email, password)
 			assert.Empty(t, user)
 			assert.ErrorIs(t, err, ErrUserNotFound)
 		})
 
 	})
 
-	t.Run("Delete user", func(t *testing.T) {
-		err := repo.DeleteUser(context.Background(), testUser.ID)
-		assert.NoError(t, err)
-	})
-
-	t.Run("List users by fuzzy email", func(t *testing.T) {
+	t.Run("List users by email", func(t *testing.T) {
 		testEmails := []string{"Georgia@gmail.com", "George@gmail.com", "Georgina@gmail.com"}
 		testIds := []uuid.UUID{}
 		for _, email := range testEmails {
 			testUser := test.NewUser(test.WithEmail(email))
-			err := repo.CreateUser(context.Background(), testUser)
+			err := userRepo.CreateUser(context.Background(), testUser)
 			if err != nil {
 				assert.FailNow(t, "Issue creating test users for fuzzy search", err)
 			}
@@ -63,11 +85,11 @@ func TestRepository(t *testing.T) {
 
 		defer func() {
 			for _, userID := range testIds {
-				repo.DeleteUser(context.Background(), userID)
+				userRepo.DeleteUser(context.Background(), userID)
 			}
 		}()
 
-		users, err := repo.ListUsersByFuzzyEmail(context.Background(), "George@gmail.com")
+		users, err := userRepo.ListUsersByEmail(context.Background(), "George@gmail.com")
 		assert.NoError(t, err)
 		assert.GreaterOrEqual(t, len(users), 3, "Expected at least 3 users to be returned")
 		assert.Equal(t, testEmails[1], *users[0].Email, "Expected George@gmail.com to be first result")

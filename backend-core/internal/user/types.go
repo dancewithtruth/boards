@@ -13,13 +13,13 @@ type CreateUserInput struct {
 	IsGuest  bool    `json:"is_guest" validate:"omitempty,required"`
 }
 
-// ListUsersByFuzzyEmailInput defines the structure for requests to list users by fuzzy email.
-type ListUsersByFuzzyEmailInput struct {
+// ListUsersByEmailInput defines the structure for requests to list users by fuzzy email.
+type ListUsersByEmailInput struct {
 	Email string `json:"email" validate:"email,required"`
 }
 
 // Validate validates the iput for listing users by fuzzy email search.
-func (input ListUsersByFuzzyEmailInput) Validate() error {
+func (input ListUsersByEmailInput) Validate() error {
 	validator := validator.New()
 	return validator.Struct(input)
 }

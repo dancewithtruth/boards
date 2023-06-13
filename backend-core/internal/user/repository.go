@@ -28,7 +28,7 @@ type Repository interface {
 	GetUser(ctx context.Context, userID uuid.UUID) (models.User, error)
 	GetUserByLogin(ctx context.Context, email, password string) (models.User, error)
 
-	ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error)
+	ListUsersByEmail(ctx context.Context, email string) ([]models.User, error)
 
 	DeleteUser(ctx context.Context, userID uuid.UUID) error
 }
@@ -107,9 +107,9 @@ func (r *repository) GetUserByLogin(ctx context.Context, email, password string)
 	return user, nil
 }
 
-// ListUsersByFuzzyEmail uses a levenshtein query to return the top 10 matches by email.
-func (r *repository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
-	rows, err := r.q.ListUsersByFuzzyEmail(ctx, pgtype.Text{String: email, Valid: true})
+// ListUsersByEmail uses a levenshtein query to return the top 10 matches by email.
+func (r *repository) ListUsersByEmail(ctx context.Context, email string) ([]models.User, error) {
+	rows, err := r.q.ListUsersByEmail(ctx, pgtype.Text{String: email, Valid: true})
 	if err != nil {
 		return []models.User{}, fmt.Errorf("repository: failed to list users by fuzzy email: %w", err)
 	}

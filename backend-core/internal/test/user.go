@@ -9,12 +9,14 @@ import (
 
 type NewUserOpt func(user *models.User)
 
+// WithEmail is an optional closure function to be passed into NewUser
 func WithEmail(email string) NewUserOpt {
 	return func(user *models.User) {
 		user.Email = &email
 	}
 }
 
+// NewUser generates a test user model
 func NewUser(opts ...NewUserOpt) models.User {
 	email := uuid.New().String() + "@example.com"
 	password := "password123"

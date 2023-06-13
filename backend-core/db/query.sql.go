@@ -573,13 +573,13 @@ func (q *Queries) ListSharedBoardAndUsers(ctx context.Context, userID pgtype.UUI
 	return items, nil
 }
 
-const listUsersByFuzzyEmail = `-- name: ListUsersByFuzzyEmail :many
+const listUsersByEmail = `-- name: ListUsersByEmail :many
 SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
 ORDER BY levenshtein(users.email, $1) LIMIT 10
 `
 
-func (q *Queries) ListUsersByFuzzyEmail(ctx context.Context, levenshtein interface{}) ([]User, error) {
-	rows, err := q.db.Query(ctx, listUsersByFuzzyEmail, levenshtein)
+func (q *Queries) ListUsersByEmail(ctx context.Context, levenshtein interface{}) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsersByEmail, levenshtein)
 	if err != nil {
 		return nil, err
 	}

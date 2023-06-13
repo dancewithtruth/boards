@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func TestHandleLogin(t *testing.T) {
+func TestAPI(t *testing.T) {
 	userRepo, jwtService, validator := getServiceDeps()
 	authService := NewService(userRepo, jwtService, validator)
 	api := NewAPI(authService, validator)
