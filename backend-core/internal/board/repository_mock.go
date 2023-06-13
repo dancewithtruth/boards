@@ -12,25 +12,29 @@ type mockRepository struct {
 	boards           map[uuid.UUID]models.Board
 	boardMemberships map[uuid.UUID]models.BoardMembership
 	users            map[uuid.UUID]models.User
+	invites          map[uuid.UUID]models.BoardInvite
 }
 
-// NewMockRepository returns a mock board repository that implements the Repository interface
+// NewMockRepository returns a mock board repository that implements the Repository interface.
 func NewMockRepository() *mockRepository {
 	boards := make(map[uuid.UUID]models.Board)
 	boardMemberships := make(map[uuid.UUID]models.BoardMembership)
 	users := make(map[uuid.UUID]models.User)
+	invites := make(map[uuid.UUID]models.BoardInvite)
 	return &mockRepository{
 		boards,
 		boardMemberships,
 		users,
+		invites,
 	}
 }
 
-// AddUser is a mock specific function to help join the relation between users and boards
+// AddUser is a mock specific function to help join the relation between users and boards.
 func (r *mockRepository) AddUser(user models.User) {
 	r.users[user.ID] = user
 }
 
+// CreateBoard creates a mock board
 func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) error {
 	r.boards[board.ID] = board
 	now := time.Now()
@@ -48,6 +52,7 @@ func (r *mockRepository) CreateBoard(ctx context.Context, board models.Board) er
 	return nil
 }
 
+// GetBoard returns a single mock board.
 func (r *mockRepository) GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error) {
 	if board, ok := r.boards[boardID]; ok {
 		return board, nil
@@ -55,48 +60,119 @@ func (r *mockRepository) GetBoard(ctx context.Context, boardID uuid.UUID) (model
 	return models.Board{}, ErrBoardDoesNotExist
 }
 
+// GetBoardAndUsers returns a flat structure of mock BoardAndUser domain types.
 func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error) {
-	// TODO: mock this out, this only returns 1 row every time...
-	board := r.boards[boardID]
-	boardMembership := r.boardMemberships[boardID]
-	user := r.users[board.UserID]
-	return []BoardAndUser{{Board: &board, BoardMembership: &boardMembership, User: &user}}, nil
+	boardAndUsers := []BoardAndUser{}
+	for _, boardMembership := range r.boardMemberships {
+		if boardMembership.BoardID == boardID {
+			board := r.boards[boardID]
+			user := r.users[boardMembership.UserID]
+			boardAndUser := BoardAndUser{
+				Board:           &board,
+				BoardMembership: &boardMembership,
+				User:            &user,
+			}
+			boardAndUsers = append(boardAndUsers, boardAndUser)
+		}
+	}
+	return boardAndUsers, nil
 }
 
+// ListOwnedBoards returns a list of mock boards belonging to a mock user.
 func (r *mockRepository) ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error) {
 	list := []models.Board{}
 	for _, board := range r.boards {
-		list = append(list, board)
+		if board.UserID == userID {
+			list = append(list, board)
+		}
 	}
 	return list, nil
 }
 
+// ListOwnedBoardAndUsers returns a list of mock owned boards and associated mock members for a given mock user.
 func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
-	// TODO: mock this out
-	return nil, nil
+	ownedBoardIDs := []uuid.UUID{}
+	boardAndUsers := []BoardAndUser{}
+	for _, board := range r.boards {
+		if board.UserID == userID {
+			ownedBoardIDs = append(ownedBoardIDs, board.ID)
+		}
+	}
+	for _, boardMembership := range r.boardMemberships {
+		if boardInList(boardMembership.BoardID, ownedBoardIDs) {
+			board := r.boards[boardMembership.BoardID]
+			user := r.users[boardMembership.UserID]
+			boardAndUser := BoardAndUser{
+				Board:           &board,
+				BoardMembership: &boardMembership,
+				User:            &user,
+			}
+			boardAndUsers = append(boardAndUsers, boardAndUser)
+		}
+	}
+	return boardAndUsers, nil
 }
 
+// ListSharedBoardAndUsers returns a list of mock shared boards and associated mock members for a given mock user.
 func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
-	// TODO: mock this out
-	return nil, nil
+	sharedBoardIDs := []uuid.UUID{}
+	boardAndUsers := []BoardAndUser{}
+	for _, boardMembership := range r.boardMemberships {
+		if boardMembership.UserID == userID && boardMembership.Role == models.RoleMember {
+			sharedBoardIDs = append(sharedBoardIDs, boardMembership.BoardID)
+		}
+	}
+	for _, boardMembership := range r.boardMemberships {
+		if boardInList(boardMembership.BoardID, sharedBoardIDs) {
+			board := r.boards[boardMembership.BoardID]
+			user := r.users[boardMembership.UserID]
+			boardAndUser := BoardAndUser{
+				Board:           &board,
+				BoardMembership: &boardMembership,
+				User:            &user,
+			}
+			boardAndUsers = append(boardAndUsers, boardAndUser)
+		}
+	}
+	return boardAndUsers, nil
 }
 
-func (r *mockRepository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
-	// TODO: mock this out
-	return nil
-}
-
+// CreateMembership creates a mock membership.
 func (r *mockRepository) CreateMembership(ctx context.Context, membership models.BoardMembership) error {
 	r.boardMemberships[membership.ID] = membership
 	return nil
 }
 
+// DeleteBoard deletes a mock board.
 func (r *mockRepository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
 	delete(r.boards, boardID)
 	return nil
 }
 
+// CreateBoardInvites create mock invites.
+func (r *mockRepository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
+	for _, invite := range invites {
+		r.invites[invite.ID] = invite
+	}
+	return nil
+}
+
+// ListBoardInvitesFilterStatus returns a list of mock board invites for a given board ID and status.
 func (r *mockRepository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error) {
-	// TODO: mock this out
-	return nil, nil
+	invites := []models.BoardInvite{}
+	for _, invite := range r.invites {
+		if invite.Status == status && invite.BoardID == boardID {
+			invites = append(invites, invite)
+		}
+	}
+	return invites, nil
+}
+
+func boardInList(boardID uuid.UUID, list []uuid.UUID) bool {
+	for _, ID := range list {
+		if ID == boardID {
+			return true
+		}
+	}
+	return false
 }

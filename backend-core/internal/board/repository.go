@@ -22,14 +22,17 @@ var (
 // Repository is an interface that represesnts all the capabilities for interacting with the database.
 type Repository interface {
 	CreateBoard(ctx context.Context, board models.Board) error
+	CreateMembership(ctx context.Context, membership models.BoardMembership) error
+	CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error
+
 	GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error)
 	GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error)
+
 	ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
 	ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
-	CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error
-	CreateMembership(ctx context.Context, membership models.BoardMembership) error
 	ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error)
+
 	DeleteBoard(ctx context.Context, boardID uuid.UUID) error
 }
 
@@ -60,6 +63,56 @@ func (r *repository) CreateBoard(ctx context.Context, board models.Board) error 
 		return fmt.Errorf("repository: failed to create board: %w", err)
 	}
 	return nil
+}
+
+// CreateMembership creates a board membership--this is effecitvely adding a user to a board.
+func (r *repository) CreateMembership(ctx context.Context, membership models.BoardMembership) error {
+	// prepare membership for insert
+	arg := db.CreateMembershipParams{
+		ID:        pgtype.UUID{Bytes: membership.ID, Valid: true},
+		UserID:    pgtype.UUID{Bytes: membership.UserID, Valid: true},
+		BoardID:   pgtype.UUID{Bytes: membership.BoardID, Valid: true},
+		Role:      pgtype.Text{String: string(membership.Role), Valid: true},
+		CreatedAt: pgtype.Timestamp{Time: membership.CreatedAt, Valid: true},
+		UpdatedAt: pgtype.Timestamp{Time: membership.UpdatedAt, Valid: true},
+	}
+	err := r.q.CreateMembership(ctx, arg)
+	if err != nil {
+		return fmt.Errorf("repository: failed to insert user: %w", err)
+	}
+	return nil
+}
+
+// CreateBoardInvites uses a db tx to insert a list of board invites. It will rollback the tx if
+// any of them fail.
+func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if err != nil {
+			tx.Rollback(ctx)
+		}
+	}()
+	qtx := r.q.WithTx(tx)
+	for _, invite := range invites {
+		// prepare invite for insert
+		arg := db.CreateBoardInviteParams{
+			ID:         pgtype.UUID{Bytes: invite.ID, Valid: true},
+			BoardID:    pgtype.UUID{Bytes: invite.BoardID, Valid: true},
+			SenderID:   pgtype.UUID{Bytes: invite.SenderID, Valid: true},
+			ReceiverID: pgtype.UUID{Bytes: invite.ReceiverID, Valid: true},
+			Status:     pgtype.Text{String: string(invite.Status), Valid: true},
+			CreatedAt:  pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
+			UpdatedAt:  pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
+		}
+		err = qtx.CreateBoardInvite(ctx, arg)
+		if err != nil {
+			return err
+		}
+	}
+	return tx.Commit(ctx)
 }
 
 // GetBoard returns a single board for a given board ID.
@@ -179,47 +232,6 @@ func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UU
 	return list, nil
 }
 
-// DeleteBoard deletes a single board.
-func (r *repository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
-	err := r.q.DeleteBoard(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
-	if err != nil {
-		return fmt.Errorf("repository: failed to delete board: %w", err)
-	}
-	return nil
-}
-
-// CreateBoardInvites uses a db tx to insert a list of board invites. It will rollback the tx if
-// any of them fail.
-func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
-	tx, err := r.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() {
-		if err != nil {
-			tx.Rollback(ctx)
-		}
-	}()
-	qtx := r.q.WithTx(tx)
-	for _, invite := range invites {
-		// prepare invite for insert
-		arg := db.CreateBoardInviteParams{
-			ID:         pgtype.UUID{Bytes: invite.ID, Valid: true},
-			BoardID:    pgtype.UUID{Bytes: invite.BoardID, Valid: true},
-			SenderID:   pgtype.UUID{Bytes: invite.SenderID, Valid: true},
-			ReceiverID: pgtype.UUID{Bytes: invite.ReceiverID, Valid: true},
-			Status:     pgtype.Text{String: string(invite.Status), Valid: true},
-			CreatedAt:  pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
-			UpdatedAt:  pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
-		}
-		err = qtx.CreateBoardInvite(ctx, arg)
-		if err != nil {
-			return err
-		}
-	}
-	return tx.Commit(ctx)
-}
-
 // ListBoardInvitesFilterStatus returns a list of board invites for a given board ID and status filter
 func (r *repository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error) {
 	arg := db.ListInvitesByBoardFilterStatusParams{
@@ -252,20 +264,11 @@ func (r *repository) ListBoardInvitesFilterStatus(ctx context.Context, boardID u
 	return invites, nil
 }
 
-// CreateMembership creates a board membership--this is effecitvely adding a user to a board.
-func (r *repository) CreateMembership(ctx context.Context, membership models.BoardMembership) error {
-	// prepare membership for insert
-	arg := db.CreateMembershipParams{
-		ID:        pgtype.UUID{Bytes: membership.ID, Valid: true},
-		UserID:    pgtype.UUID{Bytes: membership.UserID, Valid: true},
-		BoardID:   pgtype.UUID{Bytes: membership.BoardID, Valid: true},
-		Role:      pgtype.Text{String: string(membership.Role), Valid: true},
-		CreatedAt: pgtype.Timestamp{Time: membership.CreatedAt, Valid: true},
-		UpdatedAt: pgtype.Timestamp{Time: membership.UpdatedAt, Valid: true},
-	}
-	err := r.q.CreateMembership(ctx, arg)
+// DeleteBoard deletes a single board.
+func (r *repository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
+	err := r.q.DeleteBoard(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
-		return fmt.Errorf("repository: failed to insert user: %w", err)
+		return fmt.Errorf("repository: failed to delete board: %w", err)
 	}
 	return nil
 }

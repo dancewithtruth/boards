@@ -31,6 +31,7 @@ SELECT sqlc.embed(boards), sqlc.embed(users), sqlc.embed(board_memberships) FROM
 INNER JOIN board_memberships on board_memberships.board_id = boards.id
 INNER JOIN users on board_memberships.user_id = users.id
 WHERE board_memberships.user_id = $1
+AND board_memberships.role = 'MEMBER'
 ORDER BY board_memberships.created_at DESC;
 
 -- name: CreateMembership :exec
