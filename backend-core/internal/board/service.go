@@ -25,7 +25,7 @@ type Service interface {
 	GetBoardWithMembers(ctx context.Context, boardID string) (BoardWithMembersDTO, error)
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
-	CreateBoardInvites(ctx context.Context, input CreateBoardInvitesInput) ([]models.BoardInvite, error)
+	CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.BoardInvite, error)
 }
 
 type service struct {
@@ -167,8 +167,8 @@ func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userID string
 	return list, nil
 }
 
-// CreateBoardInvites creates board invites
-func (s *service) CreateBoardInvites(ctx context.Context, input CreateBoardInvitesInput) ([]models.BoardInvite, error) {
+// CreateInvites creates board invites
+func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.BoardInvite, error) {
 	// Parse IDs into UUIDs
 	boardIDUUID, err := uuid.Parse(input.BoardID)
 	if err != nil {
@@ -222,7 +222,7 @@ func (s *service) CreateBoardInvites(ctx context.Context, input CreateBoardInvit
 		invitesToInsert = append(invitesToInsert, invite)
 	}
 
-	err = s.repo.CreateBoardInvites(ctx, invitesToInsert)
+	err = s.repo.CreateInvites(ctx, invitesToInsert)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to create board invites: %w", err)
 	}

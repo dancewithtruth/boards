@@ -149,8 +149,8 @@ func (r *mockRepository) DeleteBoard(ctx context.Context, boardID uuid.UUID) err
 	return nil
 }
 
-// CreateBoardInvites create mock invites.
-func (r *mockRepository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
+// CreateInvites create mock invites.
+func (r *mockRepository) CreateInvites(ctx context.Context, invites []models.BoardInvite) error {
 	for _, invite := range invites {
 		r.invites[invite.ID] = invite
 	}

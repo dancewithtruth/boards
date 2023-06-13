@@ -120,14 +120,14 @@ func (api *API) HandleGetBoards(w http.ResponseWriter, r *http.Request) {
 	}{Owned: ownedBoards, Shared: sharedBoards})
 }
 
-// HandleCreateBoardInvites is the handler for creating board invites. It takes an array of
+// HandleCreateInvites is the handler for creating board invites. It takes an array of
 // receiver_id's and returns a list of created board invites.
-func (api *API) HandleCreateBoardInvites(w http.ResponseWriter, r *http.Request) {
+func (api *API) HandleCreateInvites(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
 	// Decode input
-	var input CreateBoardInvitesInput
+	var input CreateInvitesInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		endpoint.HandleDecodeErr(w, err)
 		return
@@ -146,7 +146,7 @@ func (api *API) HandleCreateBoardInvites(w http.ResponseWriter, r *http.Request)
 	input.BoardID = boardID
 
 	// Create board invites
-	invites, err := api.boardService.CreateBoardInvites(ctx, input)
+	invites, err := api.boardService.CreateInvites(ctx, input)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrUnauthorized):

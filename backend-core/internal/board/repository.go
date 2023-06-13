@@ -23,7 +23,7 @@ var (
 type Repository interface {
 	CreateBoard(ctx context.Context, board models.Board) error
 	CreateMembership(ctx context.Context, membership models.BoardMembership) error
-	CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error
+	CreateInvites(ctx context.Context, invites []models.BoardInvite) error
 
 	GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error)
 	GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error)
@@ -83,9 +83,9 @@ func (r *repository) CreateMembership(ctx context.Context, membership models.Boa
 	return nil
 }
 
-// CreateBoardInvites uses a db tx to insert a list of board invites. It will rollback the tx if
+// CreateInvites uses a db tx to insert a list of board invites. It will rollback the tx if
 // any of them fail.
-func (r *repository) CreateBoardInvites(ctx context.Context, invites []models.BoardInvite) error {
+func (r *repository) CreateInvites(ctx context.Context, invites []models.BoardInvite) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err

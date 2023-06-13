@@ -14,8 +14,8 @@ type CreateBoardInput struct {
 	UserID      string
 }
 
-// CreateBoardInvitesInput defines the data structure for a create board invites request
-type CreateBoardInvitesInput struct {
+// CreateInvitesInput defines the data structure for a create board invites request
+type CreateInvitesInput struct {
 	BoardID  string
 	SenderID string
 	Invites  []struct {

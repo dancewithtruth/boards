@@ -73,14 +73,14 @@ func TestService(t *testing.T) {
 			assert.FailNow(t, "Failed to create test board")
 		}
 
-		createBoardInvitesInput := CreateBoardInvitesInput{
+		createBoardInvitesInput := CreateInvitesInput{
 			BoardID:  board.ID.String(),
 			SenderID: testUser.ID.String(),
 			Invites: []struct {
 				ReceiverId string `json:"receiver_id"`
 			}{{ReceiverId: receiver1.ID.String()}, {ReceiverId: receiver2.ID.String()}},
 		}
-		invites, err := boardService.CreateBoardInvites(context.Background(), createBoardInvitesInput)
+		invites, err := boardService.CreateInvites(context.Background(), createBoardInvitesInput)
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(invites), "Expected an invites slice of length 2 to be returned, got ", len(invites))
 	})

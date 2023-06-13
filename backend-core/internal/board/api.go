@@ -31,7 +31,7 @@ func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) ht
 
 			r.Route("/{boardID}", func(r chi.Router) {
 				r.Get("/", api.HandleGetBoard)
-				r.Post("/invites", api.HandleCreateBoardInvites)
+				r.Post("/invites", api.HandleCreateInvites)
 			})
 		})
 	})
