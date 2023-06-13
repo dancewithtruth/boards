@@ -26,7 +26,7 @@ func (r *mockRepository) GetUser(ctx context.Context, userID uuid.UUID) (models.
 	if user, ok := r.users[userID]; ok {
 		return user, nil
 	}
-	return models.User{}, ErrUserDoesNotExist
+	return models.User{}, ErrUserNotFound
 }
 
 func (r *mockRepository) GetUserByLogin(ctx context.Context, email, password string) (models.User, error) {
@@ -35,7 +35,7 @@ func (r *mockRepository) GetUserByLogin(ctx context.Context, email, password str
 			return user, nil
 		}
 	}
-	return models.User{}, ErrUserDoesNotExist
+	return models.User{}, ErrUserNotFound
 }
 
 func (r *mockRepository) DeleteUser(ctx context.Context, userID uuid.UUID) error {

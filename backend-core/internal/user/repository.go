@@ -17,17 +17,20 @@ import (
 var (
 	//ErrEmailAlreadyExists is an error that occurs when a user cannot be created due to duplicate email.
 	ErrEmailAlreadyExists = errors.New("User with this email already exists")
-	//ErrEmailAlreadyExists is an error that occurs when a user cannot be found.
-	ErrUserDoesNotExist = errors.New("User does not exist")
+	//ErrUserNotFound is an error that occurs when a user cannot be found.
+	ErrUserNotFound = errors.New("User does not exist")
 )
 
-// Repository represents a set of methods to interact with the database for user related functions.
+// Repository represents a set of methods to interact with the database for user related responsibilities.
 type Repository interface {
 	CreateUser(ctx context.Context, user models.User) error
+
 	GetUser(ctx context.Context, userID uuid.UUID) (models.User, error)
 	GetUserByLogin(ctx context.Context, email, password string) (models.User, error)
-	DeleteUser(ctx context.Context, userID uuid.UUID) error
+
 	ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error)
+
+	DeleteUser(ctx context.Context, userID uuid.UUID) error
 }
 
 type repository struct {
@@ -74,7 +77,7 @@ func (r *repository) GetUser(ctx context.Context, userID uuid.UUID) (models.User
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.User{}, ErrUserDoesNotExist
+			return models.User{}, ErrUserNotFound
 		}
 		return models.User{}, fmt.Errorf("repository: failed to get user by id: %w", err)
 	}
@@ -97,21 +100,11 @@ func (r *repository) GetUserByLogin(ctx context.Context, email, password string)
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.User{}, ErrUserDoesNotExist
+			return models.User{}, ErrUserNotFound
 		}
 		return models.User{}, fmt.Errorf("repository: failed to get user by login credentials: %w", err)
 	}
 	return user, nil
-}
-
-// DeleteUser deletes a single user for a given user ID.
-func (r *repository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
-	sql := "DELETE from users where id = $1"
-	_, err := r.db.Exec(ctx, sql, userID)
-	if err != nil {
-		return fmt.Errorf("repository: failed to delete user: %w", err)
-	}
-	return nil
 }
 
 // ListUsersByFuzzyEmail uses a levenshtein query to return the top 10 matches by email.
@@ -135,4 +128,14 @@ func (r *repository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([
 		users = append(users, user)
 	}
 	return users, nil
+}
+
+// DeleteUser deletes a single user for a given user ID.
+func (r *repository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	sql := "DELETE from users where id = $1"
+	_, err := r.db.Exec(ctx, sql, userID)
+	if err != nil {
+		return fmt.Errorf("repository: failed to delete user: %w", err)
+	}
+	return nil
 }

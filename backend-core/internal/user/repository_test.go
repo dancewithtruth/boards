@@ -39,7 +39,7 @@ func TestRepository(t *testing.T) {
 			passwordNotFound := "password1111"
 			user, err := repo.GetUserByLogin(context.Background(), emailNotFound, passwordNotFound)
 			assert.Empty(t, user)
-			assert.ErrorIs(t, err, ErrUserDoesNotExist)
+			assert.ErrorIs(t, err, ErrUserNotFound)
 		})
 
 	})

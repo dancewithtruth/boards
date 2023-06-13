@@ -15,9 +15,10 @@ type CreateUserInput struct {
 
 // ListUsersByFuzzyEmailInput defines the structure for requests to list users by fuzzy email.
 type ListUsersByFuzzyEmailInput struct {
-	Email string `json:"email" validate:"omitempty,email,required"`
+	Email string `json:"email" validate:"email,required"`
 }
 
+// Validate validates the iput for listing users by fuzzy email search.
 func (input ListUsersByFuzzyEmailInput) Validate() error {
 	validator := validator.New()
 	return validator.Struct(input)
