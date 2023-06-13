@@ -8,15 +8,12 @@ import (
 )
 
 func TestConnect(t *testing.T) {
-	// load env vars into config
 	cfg, err := config.Load("../.env")
 	if err != nil {
-		t.Fatalf("Error loading config: %v", err)
+		assert.FailNow(t, "Failed to load config which is needed to test Connect.", err)
 	}
-
 	db, err := Connect(cfg.DatabaseConfig)
 	defer db.Close()
-
 	assert.NotNil(t, db)
 	assert.NoError(t, err)
 }

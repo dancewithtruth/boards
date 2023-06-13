@@ -13,14 +13,14 @@ type DB struct {
 	*pgxpool.Pool
 }
 
-// Connect takes a database config and returns a DB connection
+// Connect uses a database config and returns a DB connection
 func Connect(cfg config.DatabaseConfig) (*DB, error) {
 	url := buildConnectionURL(cfg)
 	db, err := pgxpool.New(context.Background(), url)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Connected to database")
+	fmt.Println("Connected to database.")
 	return &DB{db}, nil
 }
 
