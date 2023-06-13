@@ -45,7 +45,7 @@ services:
       retries: 5
     volumes:
       - db-core-data:/var/lib/postgresql/data
-      - ./backend-core/testdata:/testdata
+      - ./backend-core/db/testdata:/db/testdata
   swagger-core:
     container_name: swagger-core
     image: swaggerapi/swagger-ui

@@ -20,7 +20,7 @@ testdata:
 	@${MIGRATE} drop
 	@${MIGRATE} up
 	@echo "Inserting testdata..."
-	@for file in testdata/*.sql; do \
+	@for file in db/testdata/*.sql; do \
         echo "Executing SQL file: $$file"; \
         docker exec -it ${CONTAINER_NAME_DB} psql "${DSN}" -f $$file; \
     done
