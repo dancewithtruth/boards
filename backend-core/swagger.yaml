@@ -1,224 +1,267 @@
-openapi: '3.0.2'
+openapi: 3.0.2
 info:
-  title: 'Boards API'
-  description: 'This is the Boards public API documentation.'
-  termsOfService: 'http://swagger.io/terms/'
+  title: Boards API
+  description: This is the Boards public API documentation.
+  termsOfService: http://swagger.io/terms/
   contact:
-    email: 'apiteam@swagger.io'
+    email: apiteam@swagger.io
   license:
-    name: 'Apache 2.0'
-    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
-  version: '1.0.17'
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.17
 externalDocs:
-  description: 'Find out more about Swagger'
-  url: 'http://swagger.io'
+  description: Find out more about Swagger
+  url: http://swagger.io
 tags:
-  - name: 'auth'
-    description: 'Manage user authentication such as login'
-  - name: 'users'
-    description: 'Operations about users'
-  - name: 'boards'
-    description: 'Operations about boards'
+  - name: auth
+    description: Manage user authentication such as login
+  - name: users
+    description: Operations about users
+  - name: boards
+    description: Operations about boards
 paths:
-  '/users':
-    post: {}
-  '/boards/{boardID}/invites':
+  /auth/login:
     post:
       tags:
-        - 'boards'
-      summary: 'Creates board invites'
-      description: 'Create invitations for a specific board'
-      operationId: 'createBoardInvites'
-      parameters:
-        - name: 'boardID'
-          in: 'path'
-          description: 'ID of the board'
-          required: true
-          schema:
-            type: 'string'
-            format: 'uuid'
+        - auth
+      summary: Login a user
+      description: Login authenticates a user using email and password
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: 'object'
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTQzODY5MDAsInVzZXJJRCI6ImQwODY1ODQzLTg0OTQtNGQ2YS1iOWJlLTVjOGY3ZDBlNTY4ZiJ9.L9a9yoZiAQGv4vgnz02ald_NeCNm8IhLFQqUfbkoqs8
+        '404':
+          description: Unsuccessful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 404
+                  message:
+                    type: string
+                    example: User does not exist.
+  /users:
+    post:
+  /boards/{boardID}/invites:
+    post:
+      tags:
+        - boards
+      summary: Creates board invites
+      description: Create invitations for a specific board
+      operationId: createBoardInvites
+      parameters:
+        - name: boardID
+          in: path
+          description: ID of the board
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
               properties:
                 invites:
-                  type: 'array'
+                  type: array
                   items:
                     $ref: '#/components/schemas/CreateInviteObject'
       responses:
         '201':
-          description: 'successful operation'
+          description: successful operation
           content:
             application/json:
               schema:
-                type: 'object'
+                type: object
                 properties:
                   result:
-                    type: 'array'
+                    type: array
                     items:
                       $ref: '#/components/schemas/BoardInvite'
         '400':
-          description: 'Invalid ID supplied'
+          description: Invalid ID supplied
       security:
         - bearerAuth: []
     get:
       tags:
-        - 'boards'
-      summary: 'List invites that belong to a board'
-      description: 'Returns a list of board invites'
-      operationId: 'listInvitesByBoardID'
+        - boards
+      summary: List invites that belong to a board
+      description: Returns a list of board invites
+      operationId: listInvitesByBoardID
       parameters:
-        - name: 'boardID'
-          in: 'path'
-          description: 'ID of board'
+        - name: boardID
+          in: path
+          description: ID of board
           required: true
           schema:
-            type: 'string'
-            format: 'uuid'
+            type: string
+            format: uuid
       responses:
         '200':
-          description: 'successful operation'
+          description: successful operation
           content:
             application/json:
               schema:
-                type: 'object'
+                type: object
                 properties:
                   result:
-                    type: 'array'
+                    type: array
                     items:
                       $ref: '#/components/schemas/BoardInvite'
         '400':
-          description: 'Invalid ID supplied'
+          description: Invalid ID supplied
       security:
         - bearerAuth: []
-  '/invites':
+  /invites:
     get:
       tags:
-        - 'invites'
-      summary: 'List board invites for authenticated user'
-      description: 'Retrieve a list of board invitations.'
+        - invites
+      summary: List board invites for authenticated user
+      description: Retrieve a list of board invitations.
       parameters:
-        - name: 'status'
-          in: 'query'
-          description: 'Filter by invitation status'
+        - name: status
+          in: query
+          description: Filter by invitation status
           required: false
           schema:
-            type: 'string'
-            enum: ['ACCEPTED', 'PENDING', 'IGNORED']
+            type: string
+            enum: [ACCEPTED, PENDING, IGNORED]
       responses:
         '200':
-          description: 'successful operation'
+          description: successful operation
           content:
             application/json:
               schema:
-                type: 'object'
+                type: object
                 properties:
                   result:
-                    type: 'array'
+                    type: array
                     items:
                       $ref: '#/components/schemas/BoardInvite'
 components:
   schemas:
     User:
-      type: 'object'
+      type: object
       properties:
         id:
-          type: 'string'
-          format: 'uuid'
-          description: 'ID of the user'
+          type: string
+          format: uuid
+          description: ID of the user
         name:
-          type: 'string'
+          type: string
           maxLength: 255
-          description: 'Name of the user'
+          description: Name of the user
         email:
-          type: 'string'
-          format: 'email'
+          type: string
+          format: email
           maxLength: 255
           uniqueItems: true
-          description: 'Email of the user'
+          description: Email of the user
         password:
-          type: 'string'
+          type: string
           maxLength: 255
-          description: 'Password of the user'
+          description: Password of the user
         is_guest:
-          type: 'boolean'
+          type: boolean
           default: false
-          description: 'Flag indicating if the user is a guest'
+          description: Flag indicating if the user is a guest
         created_at:
-          type: 'string'
-          format: 'date-time'
-          description: 'Timestamp indicating the creation date'
+          type: string
+          format: date-time
+          description: Timestamp indicating the creation date
         updated_at:
-          type: 'string'
-          format: 'date-time'
-          description: 'Timestamp indicating the last update date'
+          type: string
+          format: date-time
+          description: Timestamp indicating the last update date
       required:
-        - 'id'
-        - 'name'
-        - 'email'
-        - 'password'
-        - 'created_at'
-        - 'updated_at'
+        - id
+        - name
+        - email
+        - password
+        - created_at
+        - updated_at
       example:
-        id: 'a5f4c43f-9ae3-4e6d-9682-97351cbb864e'
-        name: 'John Doe'
-        email: 'johndoe@example.com'
-        password: 'password123'
+        id: a5f4c43f-9ae3-4e6d-9682-97351cbb864e
+        name: John Doe
+        email: johndoe@example.com
+        password: password123
         is_guest: false
         created_at: '2023-06-12T10:00:00Z'
         updated_at: '2023-06-12T10:00:00Z'
     CreateInviteObject:
-      type: 'object'
+      type: object
       required:
-        - 'receiver_id'
+        - receiver_id
       properties:
         receiver_id:
-          type: 'string'
-          description: 'ID of the user to be invited'
+          type: string
+          description: ID of the user to be invited
     BoardInvite:
-      type: 'object'
+      type: object
       properties:
         id:
-          type: 'string'
-          format: 'uuid'
-          example: 'cc143c5c-3a10-46b1-b734-8e2049b719ff'
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
         board_id:
-          type: 'string'
-          format: 'uuid'
-          example: 'b9e95ae4-9c3f-412f-8b3b-201bd7083fc1'
+          type: string
+          format: uuid
+          example: b9e95ae4-9c3f-412f-8b3b-201bd7083fc1
         sender_id:
-          type: 'string'
-          format: 'uuid'
-          example: 'd0865843-8494-4d6a-b9be-5c8f7d0e568f'
+          type: string
+          format: uuid
+          example: d0865843-8494-4d6a-b9be-5c8f7d0e568f
         receiver_id:
-          type: 'string'
-          format: 'uuid'
-          example: '3c85c78d-d6a2-48c1-aec0-7fe2a9e2d8db'
+          type: string
+          format: uuid
+          example: 3c85c78d-d6a2-48c1-aec0-7fe2a9e2d8db
         status:
-          type: 'string'
-          description: 'status of board invite'
-          enum: ['ACCEPTED', 'PENDING', 'IGNORED']
-          example: 'PENDING'
+          type: string
+          description: status of board invite
+          enum: [ACCEPTED, PENDING, IGNORED]
+          example: PENDING
         created_at:
-          type: 'string'
-          format: 'date-time'
+          type: string
+          format: date-time
         updated_at:
-          type: 'string'
-          format: 'date-time'
+          type: string
+          format: date-time
   requestBodies:
     UserArray:
-      description: 'List of user object'
+      description: List of user object
       content:
         application/json:
           schema:
-            type: 'array'
+            type: array
             items:
               $ref: '#/components/schemas/User'
   securitySchemes:
     bearerAuth:
-      type: 'http'
-      scheme: 'bearer'
-      bearerFormat: 'JWT'
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
