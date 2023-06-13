@@ -396,8 +396,8 @@ func (q *Queries) ListInvitesByReceiverFilterStatus(ctx context.Context, arg Lis
 
 const listOwnedBoardAndUsers = `-- name: ListOwnedBoardAndUsers :many
 SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
-LEFT JOIN board_memberships on board_memberships.board_id = boards.id
-LEFT JOIN users on board_memberships.user_id = users.id
+INNER JOIN board_memberships on board_memberships.board_id = boards.id
+INNER JOIN users on board_memberships.user_id = users.id
 WHERE boards.user_id = $1
 ORDER BY boards.created_at DESC
 `

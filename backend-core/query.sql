@@ -9,8 +9,8 @@ WHERE boards.id = $1;
 
 -- name: GetBoardAndUsers :many
 SELECT sqlc.embed(boards), sqlc.embed(users), sqlc.embed(board_memberships) FROM boards
-LEFT JOIN board_memberships on board_memberships.board_id = boards.id
-LEFT JOIN users on board_memberships.user_id = users.id
+INNER JOIN board_memberships on board_memberships.board_id = boards.id
+INNER JOIN users on board_memberships.user_id = users.id
 WHERE boards.id = $1
 ORDER BY boards.created_at DESC;
 
@@ -21,15 +21,15 @@ ORDER BY boards.created_at DESC;
 
 -- name: ListOwnedBoardAndUsers :many
 SELECT sqlc.embed(boards), sqlc.embed(users), sqlc.embed(board_memberships) FROM boards
-LEFT JOIN board_memberships on board_memberships.board_id = boards.id
-LEFT JOIN users on board_memberships.user_id = users.id
+INNER JOIN board_memberships on board_memberships.board_id = boards.id
+INNER JOIN users on board_memberships.user_id = users.id
 WHERE boards.user_id = $1
 ORDER BY boards.created_at DESC;
 
 -- name: ListSharedBoardAndUsers :many
 SELECT sqlc.embed(boards), sqlc.embed(users), sqlc.embed(board_memberships) FROM boards
-LEFT JOIN board_memberships on board_memberships.board_id = boards.id
-LEFT JOIN users on board_memberships.user_id = users.id
+INNER JOIN board_memberships on board_memberships.board_id = boards.id
+INNER JOIN users on board_memberships.user_id = users.id
 WHERE board_memberships.user_id = $1
 ORDER BY board_memberships.created_at DESC;
 

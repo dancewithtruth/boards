@@ -11,6 +11,12 @@ type mockRepository struct {
 	users map[uuid.UUID]models.User
 }
 
+// NewMockRepository returns a mock user repository with initialized fields
+func NewMockRepository() *mockRepository {
+	users := make(map[uuid.UUID]models.User)
+	return &mockRepository{users}
+}
+
 func (r *mockRepository) CreateUser(ctx context.Context, user models.User) error {
 	r.users[user.ID] = user
 	return nil
@@ -40,8 +46,4 @@ func (r *mockRepository) DeleteUser(ctx context.Context, userID uuid.UUID) error
 func (r *mockRepository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
 	// TODO: Mock out
 	return []models.User{}, nil
-}
-
-func NewMockRepository(users map[uuid.UUID]models.User) Repository {
-	return &mockRepository{users}
 }

@@ -10,10 +10,8 @@ import (
 
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
-	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/user"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
-	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +19,7 @@ func TestHandleLogin(t *testing.T) {
 	jwtSecret := "abc123"
 	jwtExpiration := 24
 	validator := validator.New()
-	mockRepo := user.NewMockRepository(make(map[uuid.UUID]models.User))
+	mockRepo := user.NewMockRepository()
 	mockRepo.CreateUser(context.Background(), newTestUser())
 	jwtService := jwt.New(jwtSecret, jwtExpiration)
 	service := NewService(mockRepo, jwtService, validator)

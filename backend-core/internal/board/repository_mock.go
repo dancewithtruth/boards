@@ -15,10 +15,15 @@ type mockRepository struct {
 }
 
 // NewMockRepository returns a mock board repository that implements the Repository interface
-func NewMockRepository(boards map[uuid.UUID]models.Board) *mockRepository {
+func NewMockRepository() *mockRepository {
+	boards := make(map[uuid.UUID]models.Board)
 	boardMemberships := make(map[uuid.UUID]models.BoardMembership)
 	users := make(map[uuid.UUID]models.User)
-	return &mockRepository{boards, boardMemberships, users}
+	return &mockRepository{
+		boards,
+		boardMemberships,
+		users,
+	}
 }
 
 // AddUser is a mock specific function to help join the relation between users and boards

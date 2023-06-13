@@ -22,8 +22,8 @@ import (
 
 func TestHandleWebSocket(t *testing.T) {
 	// Set up mock repositories
-	mockUserRepo := user.NewMockRepository(make(map[uuid.UUID]models.User))
-	mockBoardRepo := board.NewMockRepository(make(map[uuid.UUID]models.Board))
+	mockUserRepo := user.NewMockRepository()
+	mockBoardRepo := board.NewMockRepository()
 	mockPostRepo := post.NewMockRepository()
 
 	// Set up mock services
@@ -193,13 +193,13 @@ func TestHandleWebSocket(t *testing.T) {
 
 func setupServer(t *testing.T, testUser models.User, testBoard models.Board, jwtService jwt.Service) *httptest.Server {
 	// Set up mock user repo
-	mockUserRepo := user.NewMockRepository(make(map[uuid.UUID]models.User))
+	mockUserRepo := user.NewMockRepository()
 	err := mockUserRepo.CreateUser(context.Background(), testUser)
 	if err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
 	// Set up mock board repo
-	mockBoardRepo := board.NewMockRepository(make(map[uuid.UUID]models.Board))
+	mockBoardRepo := board.NewMockRepository()
 	err = mockBoardRepo.CreateBoard(context.Background(), testBoard)
 	if err != nil {
 		t.Fatalf("Failed to create test board: %v", err)

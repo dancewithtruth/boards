@@ -231,14 +231,12 @@ func (s *service) CreateBoardInvites(ctx context.Context, input CreateBoardInvit
 
 // toBoardWithMembersDTO transforms the BoardAndUser rows into a nested DTO struct
 func toBoardWithMembersDTO(rows []BoardAndUser) []BoardWithMembersDTO {
-	list := []BoardWithMembersDTO{}
-	boardIDToListIndex := make(map[uuid.UUID]int)
+	nestedList := []BoardWithMembersDTO{}
+	boardIndex := make(map[uuid.UUID]int)
 	for _, row := range rows {
-		_, exists := boardIDToListIndex[row.Board.ID]
-		if !exists {
-			// If board does not exist in slice, then append board into slice. Before append,
-			// must convert sqlc storage type into domain type
-			boardIDToListIndex[row.Board.ID] = len(list)
+		// If board does not exist, add it to the list
+		if _, exists := boardIndex[row.Board.ID]; !exists {
+			// Convert board domain model to DTO
 			newItem := BoardWithMembersDTO{
 				ID:          row.Board.ID,
 				Name:        row.Board.Name,
@@ -248,29 +246,28 @@ func toBoardWithMembersDTO(rows []BoardAndUser) []BoardWithMembersDTO {
 				CreatedAt:   row.Board.CreatedAt,
 				UpdatedAt:   row.Board.UpdatedAt,
 			}
-			list = append(list, newItem)
+			boardIndex[row.Board.ID] = len(nestedList)
+			nestedList = append(nestedList, newItem)
 		}
-		// If user and board membership record exists, append to board members field
-		if row.BoardMembership != nil && row.User != nil {
-			newBoardMember := MemberDTO{
-				ID:    row.User.ID,
-				Name:  row.User.Name,
-				Email: row.User.Email,
-				Membership: MembershipDTO{
-					Role:      string(row.BoardMembership.Role),
-					CreatedAt: row.BoardMembership.CreatedAt,
-					UpdatedAt: row.BoardMembership.UpdatedAt,
-				},
-				CreatedAt: row.User.CreatedAt,
-				UpdatedAt: row.User.UpdatedAt,
-			}
-			sliceIndex := boardIDToListIndex[row.Board.ID]
-			itemWithNewMember := list[sliceIndex]
-			itemWithNewMember.Members = append(itemWithNewMember.Members, newBoardMember)
-			list[sliceIndex] = itemWithNewMember
+		// Nest member/user details into board
+		member := MemberDTO{
+			ID:    row.User.ID,
+			Name:  row.User.Name,
+			Email: row.User.Email,
+			Membership: MembershipDTO{
+				Role:      string(row.BoardMembership.Role),
+				CreatedAt: row.BoardMembership.CreatedAt,
+				UpdatedAt: row.BoardMembership.UpdatedAt,
+			},
+			CreatedAt: row.User.CreatedAt,
+			UpdatedAt: row.User.UpdatedAt,
 		}
+		sliceIndex := boardIndex[row.Board.ID]
+		board := nestedList[sliceIndex]
+		board.Members = append(board.Members, member)
+		nestedList[sliceIndex] = board
 	}
-	return list
+	return nestedList
 }
 
 func hasPendingInvite(receiverID uuid.UUID, pendingInvites []models.BoardInvite) (bool, models.BoardInvite) {

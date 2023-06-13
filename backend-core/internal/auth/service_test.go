@@ -14,7 +14,7 @@ import (
 )
 
 func TestService(t *testing.T) {
-	userRepo := user.NewMockRepository(make(map[uuid.UUID]models.User))
+	userRepo := user.NewMockRepository()
 	jwtService := jwt.New("abc123", 24)
 	validator := validator.New()
 	service := NewService(userRepo, jwtService, validator)
