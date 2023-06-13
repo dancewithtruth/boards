@@ -46,11 +46,13 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 
 	// Decode input
 	var input CreateBoardInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		endpoint.HandleDecodeErr(w, err)
-		return
+	if r.ContentLength != 0 {
+		if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+			endpoint.HandleDecodeErr(w, err)
+			return
+		}
+		defer r.Body.Close()
 	}
-	defer r.Body.Close()
 
 	// Validate input
 	if err := api.validator.Struct(input); err != nil {

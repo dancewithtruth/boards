@@ -38,12 +38,12 @@ func (r *mockRepository) GetUserByLogin(ctx context.Context, email, password str
 	return models.User{}, ErrUserNotFound
 }
 
-func (r *mockRepository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
-	delete(r.users, userID)
-	return nil
-}
-
 func (r *mockRepository) ListUsersByEmail(ctx context.Context, email string) ([]models.User, error) {
 	// TODO: Mock out
 	return []models.User{}, nil
+}
+
+func (r *mockRepository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
+	delete(r.users, userID)
+	return nil
 }

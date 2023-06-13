@@ -16,7 +16,7 @@ var (
 	ErrInvalidID            = errors.New("ID not in UUID format.")
 	ErrBoardNotFound        = errors.New("Board not found.")
 	ErrUnauthorized         = errors.New("User is not authorized.")
-	defaultBoardDescription = "This is a default description for the board. Feel free to customize it and add relevant information about your board."
+	defaultBoardDescription = "My default board description."
 )
 
 type Service interface {

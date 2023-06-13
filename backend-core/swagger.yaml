@@ -136,6 +136,67 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/User'
+  /boards:
+    post:
+      tags:
+        - boards
+      summary: Creates a board
+      description: Creates a board
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBoardObject'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+      security:
+        - bearerAuth: []
+    get:
+      tags:
+        - boards
+      summary: List owned and shared boards
+      description: List boards that a user created and boards the user is a member of
+      responses:
+        '200':
+          description: Successfully listed boards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  owned:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardWithUsers'
+                  shared:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardWithUsers'
+        '400':
+          description: Invalid ID supplied
+      security:
+        - bearerAuth: []
+  /boards/{boardID}:
+    get:
+      tags:
+        - boards
+      summary: Get board and associated members
+      description: Get board and associated members
+      responses:
+        '200':
+          description: Successfully retrieved board with members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardWithUsers'
+      security:
+        - bearerAuth: []
   /boards/{boardID}/invites:
     post:
       tags:
@@ -282,6 +343,125 @@ components:
         is_guest: false
         created_at: '2023-06-12T10:00:00Z'
         updated_at: '2023-06-12T10:00:00Z'
+    CreateBoardObject:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the board
+        description:
+          type: string
+          description: Description of the board
+    Board:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        name:
+          type: string
+          description: Name of the board
+          example: My first board
+        description:
+          type: string
+          description: Description of the board
+          example: Isn't this board neat?
+        user_id:
+          type: string
+          format: uuid
+          example: d0865843-8494-4d6a-b9be-5c8f7d0e568f
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    BoardWithUsers:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        name:
+          type: string
+          description: Name of the board
+          example: My first board
+        description:
+          type: string
+          description: Description of the board
+          example: Isn't this board neat?
+        user_id:
+          type: string
+          format: uuid
+          example: d0865843-8494-4d6a-b9be-5c8f7d0e568f
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWithMembership'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UserWithMembership:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the user
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the user
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          uniqueItems: true
+          description: Email of the user
+        membership:
+          schema:
+            $ref: '#/components/schemas/Membership'
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the creation date
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the last update date
+      example:
+        id: a5f4c43f-9ae3-4e6d-9682-97351cbb864e
+        name: John Doe
+        email: johndoe@example.com
+        membership:
+          role: MEMBER
+          added_at: '2023-06-12T10:00:00Z'
+          updated_at: '2023-06-12T10:00:00Z'
+        created_at: '2023-06-12T10:00:00Z'
+        updated_at: '2023-06-12T10:00:00Z'
+    Membership:
+      type: object
+      properties:
+        role:
+          type: string
+          description: Type of membership
+        added_at:
+          type: string
+          format: date-time
+          description: Timestamp when user was added to board
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the last update date
+      example:
+        role: MEMBER
+        added_at: '2023-05-29T11:30:00Z'
+        updated_at: '2023-05-29T11:30:00Z'
     CreateInviteObject:
       type: object
       required:

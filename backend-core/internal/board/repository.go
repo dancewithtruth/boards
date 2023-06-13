@@ -136,7 +136,8 @@ func (r *repository) GetBoard(ctx context.Context, boardID uuid.UUID) (models.Bo
 	return board, nil
 }
 
-// GetBoardAndUsers returns a left join query result for a single board and its associated users.
+// GetBoardAndUsers returns a flat structure list of board and users. A BoardAndUser encapsulates Board,
+// User, and Membership domain models.
 func (r *repository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error) {
 	rows, err := r.q.GetBoardAndUsers(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
