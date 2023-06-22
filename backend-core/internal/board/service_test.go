@@ -61,18 +61,20 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("Create board invites", func(t *testing.T) {
+		// Setup test receivers
 		receiver1 := test.NewUser()
 		receiver2 := test.NewUser()
 
+		// Setup test board
 		createBoardInput := CreateBoardInput{
 			UserID: testUser.ID.String(),
 		}
 		board, err := boardService.CreateBoard(context.Background(), createBoardInput)
-
 		if err != nil {
 			assert.FailNow(t, "Failed to create test board")
 		}
 
+		// Prepare board invites payload
 		createBoardInvitesInput := CreateInvitesInput{
 			BoardID:  board.ID.String(),
 			SenderID: testUser.ID.String(),

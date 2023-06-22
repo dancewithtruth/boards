@@ -202,10 +202,16 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 	}
 
 	invitesToInsert := []models.BoardInvite{}
-	duplicateInvites := []models.BoardInvite{}
 	now := time.Now()
-	// Prepare invites to insert. Do not insert invite if invite already exists.
+	// Prepare invites to insert
 	for _, receiverIDUUID := range receiverIDsUUID {
+		// If invite already exists, update the updated_at timestamp
+		if existingInvite, ok := hasPendingInvite(receiverIDUUID, pendingInvites); ok {
+			existingInvite.UpdatedAt = now
+			invitesToInsert = append(invitesToInsert, existingInvite)
+			continue
+		}
+		// Build new invite
 		invite := models.BoardInvite{
 			ID:         uuid.New(),
 			BoardID:    boardIDUUID,
@@ -215,10 +221,6 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 			CreatedAt:  now,
 			UpdatedAt:  now,
 		}
-		if ok, invite := hasPendingInvite(receiverIDUUID, pendingInvites); ok {
-			duplicateInvites = append(duplicateInvites, invite)
-			continue
-		}
 		invitesToInsert = append(invitesToInsert, invite)
 	}
 
@@ -226,7 +228,7 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to create board invites: %w", err)
 	}
-	return append(invitesToInsert, duplicateInvites...), nil
+	return invitesToInsert, nil
 }
 
 // toBoardWithMembersDTO transforms the BoardAndUser rows into a nested DTO struct
@@ -270,11 +272,11 @@ func toBoardWithMembersDTO(rows []BoardAndUser) []BoardWithMembersDTO {
 	return nestedList
 }
 
-func hasPendingInvite(receiverID uuid.UUID, pendingInvites []models.BoardInvite) (bool, models.BoardInvite) {
+func hasPendingInvite(receiverID uuid.UUID, pendingInvites []models.BoardInvite) (models.BoardInvite, bool) {
 	for _, invite := range pendingInvites {
 		if invite.ReceiverID == receiverID {
-			return true, invite
+			return invite, true
 		}
 	}
-	return false, models.BoardInvite{}
+	return models.BoardInvite{}, false
 }
