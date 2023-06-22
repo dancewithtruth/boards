@@ -24,7 +24,7 @@ paths:
     post:
       tags:
         - auth
-      summary: Login a user
+      summary: Login user
       description: Login authenticates a user using email and password
       requestBody:
         required: true
@@ -67,7 +67,7 @@ paths:
     post:
       tags:
         - users
-      summary: Create a user
+      summary: Create user
       description: Create a user
       requestBody:
         required: true
@@ -115,7 +115,7 @@ paths:
     get:
       tags:
         - users
-      summary: Lists users
+      summary: List users
       description: Retrieve a list of top 10 users based on query parameter
       parameters:
         - name: email
@@ -140,8 +140,8 @@ paths:
     post:
       tags:
         - boards
-      summary: Creates a board
-      description: Creates a board
+      summary: Create board
+      description: Create board
       requestBody:
         required: false
         content:
@@ -201,7 +201,7 @@ paths:
     post:
       tags:
         - boards
-      summary: Creates board invites
+      summary: Create board invites
       description: Create invitations for a specific board
       operationId: createBoardInvites
       parameters:
@@ -273,7 +273,7 @@ paths:
     get:
       tags:
         - invites
-      summary: List board invites for authenticated user
+      summary: List board invites that belong to a user
       description: Retrieve a list of board invitations.
       parameters:
         - name: status
