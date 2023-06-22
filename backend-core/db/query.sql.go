@@ -38,13 +38,13 @@ func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) error 
 	return err
 }
 
-const createBoardInvite = `-- name: CreateBoardInvite :exec
+const createInvite = `-- name: CreateInvite :exec
 INSERT INTO board_invites
 (id, board_id, sender_id, receiver_id, status, created_at, updated_at) 
 VALUES ($1, $2, $3, $4, $5, $6, $7)
 `
 
-type CreateBoardInviteParams struct {
+type CreateInviteParams struct {
 	ID         pgtype.UUID
 	BoardID    pgtype.UUID
 	SenderID   pgtype.UUID
@@ -54,8 +54,8 @@ type CreateBoardInviteParams struct {
 	UpdatedAt  pgtype.Timestamp
 }
 
-func (q *Queries) CreateBoardInvite(ctx context.Context, arg CreateBoardInviteParams) error {
-	_, err := q.db.Exec(ctx, createBoardInvite,
+func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) error {
+	_, err := q.db.Exec(ctx, createInvite,
 		arg.ID,
 		arg.BoardID,
 		arg.SenderID,
@@ -606,13 +606,13 @@ func (q *Queries) ListUsersByEmail(ctx context.Context, levenshtein interface{})
 	return items, nil
 }
 
-const updateBoardInvite = `-- name: UpdateBoardInvite :exec
+const updateInvite = `-- name: UpdateInvite :exec
 UPDATE board_invites SET
 (id, board_id, sender_id, receiver_id, status, created_at, updated_at) =
 ($1, $2, $3, $4, $5, $6, $7) WHERE id = $1
 `
 
-type UpdateBoardInviteParams struct {
+type UpdateInviteParams struct {
 	ID         pgtype.UUID
 	BoardID    pgtype.UUID
 	SenderID   pgtype.UUID
@@ -622,8 +622,8 @@ type UpdateBoardInviteParams struct {
 	UpdatedAt  pgtype.Timestamp
 }
 
-func (q *Queries) UpdateBoardInvite(ctx context.Context, arg UpdateBoardInviteParams) error {
-	_, err := q.db.Exec(ctx, updateBoardInvite,
+func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) error {
+	_, err := q.db.Exec(ctx, updateInvite,
 		arg.ID,
 		arg.BoardID,
 		arg.SenderID,

@@ -36,25 +36,27 @@ type BoardMembership struct {
 	UpdatedAt time.Time           `json:"updated_at"`
 }
 
-// BoardInviteStatus is a custom string type to represent invite statuses.
-type BoardInviteStatus string
+// InviteStatus is a custom string type to represent invite statuses.
+type InviteStatus string
 
 const (
-	// BoardInviteStatusPending represents an invite in the pending state.
-	BoardInviteStatusPending BoardInviteStatus = "PENDING"
-	// BoardInviteStatusAccepted represents an invite in the accepted state.
-	BoardInviteStatusAccepted BoardInviteStatus = "ACCEPTED"
-	// BoardInviteStatusIgnored represents an invite in the ignored state.
-	BoardInviteStatusIgnored BoardInviteStatus = "IGNORED"
+	// InviteStatusPending represents an invite in the pending state.
+	InviteStatusPending InviteStatus = "PENDING"
+	// InviteStatusAccepted represents an invite in the accepted state.
+	InviteStatusAccepted InviteStatus = "ACCEPTED"
+	// InviteStatusIgnored represents an invite in the ignored state.
+	InviteStatusIgnored InviteStatus = "IGNORED"
+	// InviteStatusCancelled represents an invite in the ignored state.
+	InviteStatusCancelled InviteStatus = "CANCELLED"
 )
 
-// BoardInvite defines the domain model for a board invite entity.
-type BoardInvite struct {
-	ID         uuid.UUID         `json:"id"`
-	BoardID    uuid.UUID         `json:"board_id"`
-	SenderID   uuid.UUID         `json:"sender_id"`
-	ReceiverID uuid.UUID         `json:"receiver_id"`
-	Status     BoardInviteStatus `json:"status"`
-	CreatedAt  time.Time         `json:"created_at"`
-	UpdatedAt  time.Time         `json:"updated_at"`
+// Invite defines the domain model for a board invite entity.
+type Invite struct {
+	ID         uuid.UUID    `json:"id"`
+	BoardID    uuid.UUID    `json:"board_id"`
+	SenderID   uuid.UUID    `json:"sender_id"`
+	ReceiverID uuid.UUID    `json:"receiver_id"`
+	Status     InviteStatus `json:"status"`
+	CreatedAt  time.Time    `json:"created_at"`
+	UpdatedAt  time.Time    `json:"updated_at"`
 }

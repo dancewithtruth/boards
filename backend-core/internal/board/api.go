@@ -177,7 +177,7 @@ func (api *API) HandleCreateInvites(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
-		Result []models.BoardInvite `json:"result"`
+		Result []models.Invite `json:"result"`
 	}{Result: invites})
 }
 

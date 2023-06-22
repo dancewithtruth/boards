@@ -25,7 +25,7 @@ type Service interface {
 	GetBoardWithMembers(ctx context.Context, boardID string) (BoardWithMembersDTO, error)
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
-	CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.BoardInvite, error)
+	CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.Invite, error)
 }
 
 type service struct {
@@ -168,7 +168,7 @@ func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userID string
 }
 
 // CreateInvites creates board invites
-func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.BoardInvite, error) {
+func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.Invite, error) {
 	// Parse IDs into UUIDs
 	boardIDUUID, err := uuid.Parse(input.BoardID)
 	if err != nil {
@@ -196,12 +196,12 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 		return nil, ErrUnauthorized
 	}
 
-	pendingInvites, err := s.repo.ListBoardInvitesFilterStatus(ctx, boardIDUUID, models.BoardInviteStatusPending)
+	pendingInvites, err := s.repo.ListBoardInvitesFilterStatus(ctx, boardIDUUID, models.InviteStatusPending)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get pending invites: %w", err)
 	}
 
-	invitesToInsert := []models.BoardInvite{}
+	invitesToInsert := []models.Invite{}
 	now := time.Now()
 	// Prepare invites to insert
 	for _, receiverIDUUID := range receiverIDsUUID {
@@ -212,12 +212,12 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 			continue
 		}
 		// Build new invite
-		invite := models.BoardInvite{
+		invite := models.Invite{
 			ID:         uuid.New(),
 			BoardID:    boardIDUUID,
 			SenderID:   senderIDUUID,
 			ReceiverID: receiverIDUUID,
-			Status:     models.BoardInviteStatusPending,
+			Status:     models.InviteStatusPending,
 			CreatedAt:  now,
 			UpdatedAt:  now,
 		}
@@ -272,11 +272,11 @@ func toBoardWithMembersDTO(rows []BoardAndUser) []BoardWithMembersDTO {
 	return nestedList
 }
 
-func hasPendingInvite(receiverID uuid.UUID, pendingInvites []models.BoardInvite) (models.BoardInvite, bool) {
+func hasPendingInvite(receiverID uuid.UUID, pendingInvites []models.Invite) (models.Invite, bool) {
 	for _, invite := range pendingInvites {
 		if invite.ReceiverID == receiverID {
 			return invite, true
 		}
 	}
-	return models.BoardInvite{}, false
+	return models.Invite{}, false
 }

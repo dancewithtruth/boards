@@ -15,6 +15,8 @@ import (
 var (
 	// ErrBoardDoesNotExist is an error that is used when a board does not exist.
 	ErrBoardDoesNotExist = errors.New("Board does not exist")
+	// ErrInviteDoesNotExist is an error that is used when an invite does not exist.
+	ErrInviteDoesNotExist = errors.New("Invite does not exist")
 	// ErrTypeNotFound is an error that is used when a type is not found during storage to domain transformation.
 	ErrTypeNotFound = errors.New("Type not found when transforming db to domain model")
 )
@@ -23,7 +25,7 @@ var (
 type Repository interface {
 	CreateBoard(ctx context.Context, board models.Board) error
 	CreateMembership(ctx context.Context, membership models.BoardMembership) error
-	CreateInvites(ctx context.Context, invites []models.BoardInvite) error
+	CreateInvites(ctx context.Context, invites []models.Invite) error
 
 	GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error)
 	GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error)
@@ -31,7 +33,9 @@ type Repository interface {
 	ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
 	ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
-	ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error)
+	ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.InviteStatus) ([]models.Invite, error)
+
+	UpdateInvite(ctx context.Context, invite models.Invite) error
 
 	DeleteBoard(ctx context.Context, boardID uuid.UUID) error
 }
@@ -85,7 +89,7 @@ func (r *repository) CreateMembership(ctx context.Context, membership models.Boa
 
 // CreateInvites uses a db tx to insert a list of board invites. It will rollback the tx if
 // any of them fail.
-func (r *repository) CreateInvites(ctx context.Context, invites []models.BoardInvite) error {
+func (r *repository) CreateInvites(ctx context.Context, invites []models.Invite) error {
 	tx, err := r.db.Begin(ctx)
 	if err != nil {
 		return err
@@ -98,16 +102,8 @@ func (r *repository) CreateInvites(ctx context.Context, invites []models.BoardIn
 	qtx := r.q.WithTx(tx)
 	for _, invite := range invites {
 		// prepare invite for insert
-		arg := db.CreateBoardInviteParams{
-			ID:         pgtype.UUID{Bytes: invite.ID, Valid: true},
-			BoardID:    pgtype.UUID{Bytes: invite.BoardID, Valid: true},
-			SenderID:   pgtype.UUID{Bytes: invite.SenderID, Valid: true},
-			ReceiverID: pgtype.UUID{Bytes: invite.ReceiverID, Valid: true},
-			Status:     pgtype.Text{String: string(invite.Status), Valid: true},
-			CreatedAt:  pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
-			UpdatedAt:  pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
-		}
-		err = qtx.CreateBoardInvite(ctx, arg)
+		arg := db.CreateInviteParams(toInviteDB(invite))
+		err = qtx.CreateInvite(ctx, arg)
 		if err != nil {
 			return err
 		}
@@ -234,7 +230,7 @@ func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UU
 }
 
 // ListBoardInvitesFilterStatus returns a list of board invites for a given board ID and status filter
-func (r *repository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error) {
+func (r *repository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.InviteStatus) ([]models.Invite, error) {
 	arg := db.ListInvitesByBoardFilterStatusParams{
 		BoardID: pgtype.UUID{
 			Bytes: boardID,
@@ -247,22 +243,35 @@ func (r *repository) ListBoardInvitesFilterStatus(ctx context.Context, boardID u
 	}
 	rows, err := r.q.ListInvitesByBoardFilterStatus(ctx, arg)
 	if err != nil {
-		return []models.BoardInvite{}, fmt.Errorf("repository: failed to list board invites: %w", err)
+		return []models.Invite{}, fmt.Errorf("repository: failed to list board invites: %w", err)
 	}
-	invites := []models.BoardInvite{}
+	invites := []models.Invite{}
 	for _, row := range rows {
-		invite := models.BoardInvite{
+		invite := models.Invite{
 			ID:         row.ID.Bytes,
 			BoardID:    row.BoardID.Bytes,
 			SenderID:   row.SenderID.Bytes,
 			ReceiverID: row.ReceiverID.Bytes,
-			Status:     models.BoardInviteStatus(row.Status.String),
+			Status:     models.InviteStatus(row.Status.String),
 			CreatedAt:  row.CreatedAt.Time,
 			UpdatedAt:  row.UpdatedAt.Time,
 		}
 		invites = append(invites, invite)
 	}
 	return invites, nil
+}
+
+// UpdateInvite updates an invite.
+func (r *repository) UpdateInvite(ctx context.Context, invite models.Invite) error {
+	arg := db.UpdateInviteParams(toInviteDB(invite))
+	err := r.q.UpdateInvite(ctx, arg)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrInviteDoesNotExist
+		}
+		return fmt.Errorf("repository: failed to update invite: %w", err)
+	}
+	return nil
 }
 
 // DeleteBoard deletes a single board.
@@ -323,4 +332,16 @@ func toBoardMembership(dbBoardMembership db.BoardMembership) *models.BoardMember
 		}
 	}
 	return nil
+}
+
+func toInviteDB(invite models.Invite) db.BoardInvite {
+	return db.BoardInvite{
+		ID:         pgtype.UUID{Bytes: invite.ID, Valid: true},
+		BoardID:    pgtype.UUID{Bytes: invite.BoardID, Valid: true},
+		SenderID:   pgtype.UUID{Bytes: invite.SenderID, Valid: true},
+		ReceiverID: pgtype.UUID{Bytes: invite.ReceiverID, Valid: true},
+		Status:     pgtype.Text{String: string(invite.Status), Valid: true},
+		CreatedAt:  pgtype.Timestamp{Time: invite.CreatedAt, Valid: true},
+		UpdatedAt:  pgtype.Timestamp{Time: invite.UpdatedAt, Valid: true},
+	}
 }

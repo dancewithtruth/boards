@@ -12,7 +12,7 @@ type mockRepository struct {
 	boards           map[uuid.UUID]models.Board
 	boardMemberships map[uuid.UUID]models.BoardMembership
 	users            map[uuid.UUID]models.User
-	invites          map[uuid.UUID]models.BoardInvite
+	invites          map[uuid.UUID]models.Invite
 }
 
 // NewMockRepository returns a mock board repository that implements the Repository interface.
@@ -20,7 +20,7 @@ func NewMockRepository() *mockRepository {
 	boards := make(map[uuid.UUID]models.Board)
 	boardMemberships := make(map[uuid.UUID]models.BoardMembership)
 	users := make(map[uuid.UUID]models.User)
-	invites := make(map[uuid.UUID]models.BoardInvite)
+	invites := make(map[uuid.UUID]models.Invite)
 	return &mockRepository{
 		boards,
 		boardMemberships,
@@ -150,16 +150,25 @@ func (r *mockRepository) DeleteBoard(ctx context.Context, boardID uuid.UUID) err
 }
 
 // CreateInvites create mock invites.
-func (r *mockRepository) CreateInvites(ctx context.Context, invites []models.BoardInvite) error {
+func (r *mockRepository) CreateInvites(ctx context.Context, invites []models.Invite) error {
 	for _, invite := range invites {
 		r.invites[invite.ID] = invite
 	}
 	return nil
 }
 
+// CreateInvites create mock invites.
+func (r *mockRepository) UpdateInvite(ctx context.Context, invite models.Invite) error {
+	if _, ok := r.invites[invite.ID]; ok {
+		r.invites[invite.ID] = invite
+		return nil
+	}
+	return ErrInviteDoesNotExist
+}
+
 // ListBoardInvitesFilterStatus returns a list of mock board invites for a given board ID and status.
-func (r *mockRepository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.BoardInviteStatus) ([]models.BoardInvite, error) {
-	invites := []models.BoardInvite{}
+func (r *mockRepository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.InviteStatus) ([]models.Invite, error) {
+	invites := []models.Invite{}
 	for _, invite := range r.invites {
 		if invite.Status == status && invite.BoardID == boardID {
 			invites = append(invites, invite)

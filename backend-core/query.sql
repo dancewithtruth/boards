@@ -67,12 +67,12 @@ DELETE from posts WHERE id = $1;
 SELECT * FROM users
 ORDER BY levenshtein(users.email, $1) LIMIT 10;
 
--- name: CreateBoardInvite :exec
+-- name: CreateInvite :exec
 INSERT INTO board_invites
 (id, board_id, sender_id, receiver_id, status, created_at, updated_at) 
 VALUES ($1, $2, $3, $4, $5, $6, $7);
 
--- name: UpdateBoardInvite :exec
+-- name: UpdateInvite :exec
 UPDATE board_invites SET
 (id, board_id, sender_id, receiver_id, status, created_at, updated_at) =
 ($1, $2, $3, $4, $5, $6, $7) WHERE id = $1;

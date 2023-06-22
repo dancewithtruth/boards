@@ -295,6 +295,31 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/BoardInvite'
+  /invites/{inviteID}:
+    patch:
+      tags:
+        - invites
+      summary: Update board invitation
+      description: Update board invitation belonging to a receiver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - ACCEPTED
+                    - IGNORED
+                    - CANCELLED
+      responses:
+        '204':
+          description: Successfully updated board invite
+      security:
+        - bearerAuth: []
+
 components:
   securitySchemes:
     bearerAuth:
