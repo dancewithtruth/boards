@@ -176,7 +176,9 @@ func (api *API) HandleCreateInvites(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	endpoint.WriteWithStatus(w, http.StatusCreated, invites)
+	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
+		Result []models.BoardInvite `json:"result"`
+	}{Result: invites})
 }
 
 func hasUser(members []MemberDTO, userID string) bool {

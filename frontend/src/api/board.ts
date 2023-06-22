@@ -30,11 +30,32 @@ export type BoardWithMembers = {
   updated_at: string;
 };
 
+
 export type Membership = {
   role: string;
   added_at: string;
   updated_at: string;
 };
+
+export type BoardInvite = {
+  id: string;
+  board_id: string;
+  sender_id: string;
+  receiver_id: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type CreateInvitesParams = {
+  board_id: string;
+  sender_id: string;
+  invites: {receiver_id: string}[]
+}
+
+export type CreateInvitesResponse = {
+  result: BoardInvite[]
+}
 
 export type BoardsResponse = Array<BoardResponse>;
 
@@ -51,4 +72,9 @@ export async function getBoard(boardID: string, token: string): Promise<BoardWit
 export async function getBoards(token: string): Promise<GetBoardsResponse> {
   const url = `${BASE_URL}/boards`;
   return sendGetRequest<GetBoardsResponse>(url, token);
+}
+
+export async function createInvites(params: CreateInvitesParams, token: string): Promise<CreateInvitesResponse> {
+  const url = `${BASE_URL}/boards/${params.board_id}/invites`;
+  return sendPostRequest<CreateInvitesResponse>(url, params, token);
 }

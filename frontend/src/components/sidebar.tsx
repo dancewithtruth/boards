@@ -35,7 +35,7 @@ const Sidebar = ({ width, board, user, connectedUsers }: SidebarProps) => {
               ))}
             </div>
           </div>
-          <InviteMemberModal board={board} />
+          <InviteMemberModal board={board} user={user} />
           <div className="divider" />
         </div>
         <div className="flex flex-col justify-center items-center space-y-1">

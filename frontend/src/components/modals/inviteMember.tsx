@@ -1,14 +1,18 @@
 'use client';
 
-import { BoardWithMembers, User, listUsersByFuzzyEmail } from '@/api';
+import { BoardWithMembers, User, createInvites, listUsersByFuzzyEmail } from '@/api';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import { FiX } from 'react-icons/fi';
 import Avatar from '../avatar';
+import Cookies from 'universal-cookie';
+import { COOKIE_NAME_JWT_TOKEN } from '@/constants';
+import { toast } from 'react-toastify';
 
-export default function InviteMemberModal({ board }: { board: BoardWithMembers }) {
+export default function InviteMemberModal({ board, user }: { board: BoardWithMembers; user: User }) {
   const ID = 'modal_invite_member';
   const [selected, setSelected] = useState<User[]>([]);
+  const cookies = new Cookies();
 
   const handleClose = () => {
     setSelected([]);
@@ -24,6 +28,20 @@ export default function InviteMemberModal({ board }: { board: BoardWithMembers }
       //add it in
       setSelected([...selected, user]);
     }
+  };
+
+  const handleSendInvites = async () => {
+    const invites = selected.map((user) => ({
+      receiver_id: user.id,
+    }));
+    const params = {
+      board_id: board.id,
+      sender_id: user.id,
+      invites,
+    };
+    const token = cookies.get(COOKIE_NAME_JWT_TOKEN);
+    await createInvites(params, token);
+    toast.success('Invites sent.');
   };
 
   return (
@@ -44,6 +62,11 @@ export default function InviteMemberModal({ board }: { board: BoardWithMembers }
             <div className="flex space-x-4">
               <SearchPanel selected={selected} handleSelect={handleSelect} board={board} />
               <SelectedPanel selected={selected} handleSelect={handleSelect} />
+            </div>
+            <div className="flex justify-end">
+              <button className="btn btn-primary btn-sm" disabled={selected.length == 0} onClick={handleSendInvites}>
+                Send Invites
+              </button>
             </div>
           </div>
         </div>
