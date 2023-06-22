@@ -68,9 +68,9 @@ func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID
 			board := r.boards[boardID]
 			user := r.users[boardMembership.UserID]
 			boardAndUser := BoardAndUser{
-				Board:           &board,
-				BoardMembership: &boardMembership,
-				User:            &user,
+				Board:           board,
+				BoardMembership: boardMembership,
+				User:            user,
 			}
 			boardAndUsers = append(boardAndUsers, boardAndUser)
 		}
@@ -103,9 +103,9 @@ func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid
 			board := r.boards[boardMembership.BoardID]
 			user := r.users[boardMembership.UserID]
 			boardAndUser := BoardAndUser{
-				Board:           &board,
-				BoardMembership: &boardMembership,
-				User:            &user,
+				Board:           board,
+				BoardMembership: boardMembership,
+				User:            user,
 			}
 			boardAndUsers = append(boardAndUsers, boardAndUser)
 		}
@@ -127,9 +127,9 @@ func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userID uui
 			board := r.boards[boardMembership.BoardID]
 			user := r.users[boardMembership.UserID]
 			boardAndUser := BoardAndUser{
-				Board:           &board,
-				BoardMembership: &boardMembership,
-				User:            &user,
+				Board:           board,
+				BoardMembership: boardMembership,
+				User:            user,
 			}
 			boardAndUsers = append(boardAndUsers, boardAndUser)
 		}
@@ -166,15 +166,28 @@ func (r *mockRepository) UpdateInvite(ctx context.Context, invite models.Invite)
 	return ErrInviteDoesNotExist
 }
 
-// ListBoardInvitesFilterStatus returns a list of mock board invites for a given board ID and status.
-func (r *mockRepository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.InviteStatus) ([]models.Invite, error) {
+// ListInvitesByBoard returns a list of mock board invites for a given board ID and status.
+func (r *mockRepository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID) ([]models.Invite, error) {
 	invites := []models.Invite{}
 	for _, invite := range r.invites {
-		if invite.Status == status && invite.BoardID == boardID {
+		if invite.BoardID == boardID {
 			invites = append(invites, invite)
 		}
 	}
 	return invites, nil
+}
+
+// ListInvitesByReceiver returns a list of mock board invites for a given board ID and status.
+func (r *mockRepository) ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID) ([]InviteBoardSender, error) {
+	inviteBoardSender := []InviteBoardSender{}
+	for _, invite := range r.invites {
+		if invite.ReceiverID == receiverID {
+			board := r.boards[invite.BoardID]
+			sender := r.users[invite.SenderID]
+			inviteBoardSender = append(inviteBoardSender, InviteBoardSender{invite, board, sender})
+		}
+	}
+	return inviteBoardSender, nil
 }
 
 func boardInList(boardID uuid.UUID, list []uuid.UUID) bool {

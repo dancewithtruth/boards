@@ -33,7 +33,8 @@ type Repository interface {
 	ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
 	ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
-	ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.InviteStatus) ([]models.Invite, error)
+	ListInvitesByBoard(ctx context.Context, boardID uuid.UUID) ([]models.Invite, error)
+	ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID) ([]InviteBoardSender, error)
 
 	UpdateInvite(ctx context.Context, invite models.Invite) error
 
@@ -229,36 +230,34 @@ func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UU
 	return list, nil
 }
 
-// ListBoardInvitesFilterStatus returns a list of board invites for a given board ID and status filter
-func (r *repository) ListBoardInvitesFilterStatus(ctx context.Context, boardID uuid.UUID, status models.InviteStatus) ([]models.Invite, error) {
-	arg := db.ListInvitesByBoardFilterStatusParams{
-		BoardID: pgtype.UUID{
-			Bytes: boardID,
-			Valid: true,
-		},
-		Status: pgtype.Text{
-			String: string(status),
-			Valid:  true,
-		},
-	}
-	rows, err := r.q.ListInvitesByBoardFilterStatus(ctx, arg)
+// ListInvitesByBoard returns a list of board invites for a given board.
+func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID) ([]models.Invite, error) {
+	rows, err := r.q.ListInvitesByBoard(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
 		return []models.Invite{}, fmt.Errorf("repository: failed to list board invites: %w", err)
 	}
 	invites := []models.Invite{}
 	for _, row := range rows {
-		invite := models.Invite{
-			ID:         row.ID.Bytes,
-			BoardID:    row.BoardID.Bytes,
-			SenderID:   row.SenderID.Bytes,
-			ReceiverID: row.ReceiverID.Bytes,
-			Status:     models.InviteStatus(row.Status.String),
-			CreatedAt:  row.CreatedAt.Time,
-			UpdatedAt:  row.UpdatedAt.Time,
-		}
+		invite := toInvite(row)
 		invites = append(invites, invite)
 	}
 	return invites, nil
+}
+
+// ListInvitesByReceiver returns a list of board invites along with board and sender details.
+func (r *repository) ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID) ([]InviteBoardSender, error) {
+	rows, err := r.q.ListInvitesByReceiver(ctx, pgtype.UUID{Bytes: receiverID, Valid: true})
+	if err != nil {
+		return []InviteBoardSender{}, fmt.Errorf("repository: failed to list board invites: %w", err)
+	}
+	inviteBoardSenders := []InviteBoardSender{}
+	for _, row := range rows {
+		invite := toInvite(row.BoardInvite)
+		board := toBoard(row.Board)
+		user := toUser(row.User)
+		inviteBoardSenders = append(inviteBoardSenders, InviteBoardSender{invite, board, user})
+	}
+	return inviteBoardSenders, nil
 }
 
 // UpdateInvite updates an invite.
@@ -286,52 +285,61 @@ func (r *repository) DeleteBoard(ctx context.Context, boardID uuid.UUID) error {
 // BoardAndUser is a custom domain type to guard against nullable BoardMembership and
 // User values in the case of left joins.
 type BoardAndUser struct {
-	Board           *models.Board
-	BoardMembership *models.BoardMembership
-	User            *models.User
+	Board           models.Board
+	BoardMembership models.BoardMembership
+	User            models.User
 }
 
-func toBoard(dbBoard db.Board) *models.Board {
-	if dbBoard.ID.Valid {
-		return &models.Board{
-			ID:          dbBoard.ID.Bytes,
-			Name:        &dbBoard.Name.String,
-			Description: &dbBoard.Description.String,
-			UserID:      dbBoard.UserID.Bytes,
-			CreatedAt:   dbBoard.CreatedAt.Time,
-			UpdatedAt:   dbBoard.UpdatedAt.Time,
-		}
+func toBoard(dbBoard db.Board) models.Board {
+	return models.Board{
+		ID:          dbBoard.ID.Bytes,
+		Name:        &dbBoard.Name.String,
+		Description: &dbBoard.Description.String,
+		UserID:      dbBoard.UserID.Bytes,
+		CreatedAt:   dbBoard.CreatedAt.Time,
+		UpdatedAt:   dbBoard.UpdatedAt.Time,
 	}
-	return nil
 }
 
-func toUser(dbUser db.User) *models.User {
-	if dbUser.ID.Valid {
-		return &models.User{
-			ID:        dbUser.ID.Bytes,
-			Name:      dbUser.Name.String,
-			Email:     &dbUser.Email.String,
-			Password:  &dbUser.Password.String,
-			IsGuest:   dbUser.IsGuest.Bool,
-			CreatedAt: dbUser.CreatedAt.Time,
-			UpdatedAt: dbUser.UpdatedAt.Time,
-		}
+func toUser(dbUser db.User) models.User {
+	return models.User{
+		ID:        dbUser.ID.Bytes,
+		Name:      dbUser.Name.String,
+		Email:     &dbUser.Email.String,
+		Password:  &dbUser.Password.String,
+		IsGuest:   dbUser.IsGuest.Bool,
+		CreatedAt: dbUser.CreatedAt.Time,
+		UpdatedAt: dbUser.UpdatedAt.Time,
 	}
-	return nil
 }
 
-func toBoardMembership(dbBoardMembership db.BoardMembership) *models.BoardMembership {
-	if dbBoardMembership.ID.Valid {
-		return &models.BoardMembership{
-			ID:        dbBoardMembership.ID.Bytes,
-			BoardID:   dbBoardMembership.UserID.Bytes,
-			UserID:    dbBoardMembership.UserID.Bytes,
-			Role:      models.BoardMembershipRole(dbBoardMembership.Role.String),
-			CreatedAt: dbBoardMembership.CreatedAt.Time,
-			UpdatedAt: dbBoardMembership.UpdatedAt.Time,
-		}
+func toBoardMembership(dbBoardMembership db.BoardMembership) models.BoardMembership {
+	return models.BoardMembership{
+		ID:        dbBoardMembership.ID.Bytes,
+		BoardID:   dbBoardMembership.UserID.Bytes,
+		UserID:    dbBoardMembership.UserID.Bytes,
+		Role:      models.BoardMembershipRole(dbBoardMembership.Role.String),
+		CreatedAt: dbBoardMembership.CreatedAt.Time,
+		UpdatedAt: dbBoardMembership.UpdatedAt.Time,
 	}
-	return nil
+}
+
+type InviteBoardSender struct {
+	Invite models.Invite
+	Board  models.Board
+	Sender models.User
+}
+
+func toInvite(row db.BoardInvite) models.Invite {
+	return models.Invite{
+		ID:         row.ID.Bytes,
+		BoardID:    row.BoardID.Bytes,
+		SenderID:   row.SenderID.Bytes,
+		ReceiverID: row.ReceiverID.Bytes,
+		Status:     models.InviteStatus(row.Status.String),
+		CreatedAt:  row.CreatedAt.Time,
+		UpdatedAt:  row.UpdatedAt.Time,
+	}
 }
 
 func toInviteDB(invite models.Invite) db.BoardInvite {

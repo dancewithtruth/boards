@@ -10,6 +10,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
 
 var (
@@ -21,11 +22,14 @@ var (
 
 type Service interface {
 	CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error)
+	CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.Invite, error)
+
 	GetBoard(ctx context.Context, boardID string) (models.Board, error)
 	GetBoardWithMembers(ctx context.Context, boardID string) (BoardWithMembersDTO, error)
+
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
-	CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.Invite, error)
+	ListInvites(ctx context.Context, boardID string) ([]models.Invite, error)
 }
 
 type service struct {
@@ -92,6 +96,70 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 	return board, nil
 }
 
+// CreateInvites creates board invites
+func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.Invite, error) {
+	// Parse IDs into UUIDs
+	boardIDUUID, err := uuid.Parse(input.BoardID)
+	if err != nil {
+		return nil, ErrInvalidID
+	}
+	senderIDUUID, err := uuid.Parse(input.SenderID)
+	if err != nil {
+		return nil, ErrInvalidID
+	}
+	receiverIDsUUID := []uuid.UUID{}
+	for _, inviteReq := range input.Invites {
+		receiverIDUUID, err := uuid.Parse(inviteReq.ReceiverId)
+		if err != nil {
+			return nil, ErrInvalidID
+		}
+		receiverIDsUUID = append(receiverIDsUUID, receiverIDUUID)
+	}
+
+	boardWithMembers, err := s.GetBoardWithMembers(ctx, input.BoardID)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to get board when creating board invites: %w", err)
+	}
+
+	if !UserIsAdmin(boardWithMembers, input.SenderID) {
+		return nil, ErrUnauthorized
+	}
+
+	existingInvites, err := s.repo.ListInvitesByBoard(ctx, boardIDUUID)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to get pending invites: %w", err)
+	}
+
+	invitesToInsert := []models.Invite{}
+	now := time.Now()
+	// Prepare invites to insert
+	for _, receiverIDUUID := range receiverIDsUUID {
+		// If invite already exists, update the updated_at timestamp
+		if existingInvite, ok := hasPendingInvite(receiverIDUUID, existingInvites); ok {
+			existingInvite.UpdatedAt = now
+			invitesToInsert = append(invitesToInsert, existingInvite)
+			continue
+		}
+		// Build new invite
+		invite := models.Invite{
+			ID:         uuid.New(),
+			BoardID:    boardIDUUID,
+			SenderID:   senderIDUUID,
+			ReceiverID: receiverIDUUID,
+			Status:     models.InviteStatusPending,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		}
+		invitesToInsert = append(invitesToInsert, invite)
+	}
+
+	err = s.repo.CreateInvites(ctx, invitesToInsert)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to create board invites: %w", err)
+	}
+	return invitesToInsert, nil
+}
+
 // GetBoard returns a single board for a given board ID
 func (s *service) GetBoard(ctx context.Context, boardID string) (models.Board, error) {
 	boardIDUUID, err := uuid.Parse(boardID)
@@ -100,6 +168,9 @@ func (s *service) GetBoard(ctx context.Context, boardID string) (models.Board, e
 	}
 	board, err := s.repo.GetBoard(ctx, boardIDUUID)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Board{}, ErrBoardNotFound
+		}
 		return models.Board{}, fmt.Errorf("service: failed to get board: %w", err)
 	}
 	return board, nil
@@ -167,68 +238,13 @@ func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userID string
 	return list, nil
 }
 
-// CreateInvites creates board invites
-func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.Invite, error) {
-	// Parse IDs into UUIDs
-	boardIDUUID, err := uuid.Parse(input.BoardID)
+// ListInvites returns a list of invites belonging to a board.
+func (s *service) ListInvites(ctx context.Context, boardID string) ([]models.Invite, error) {
+	boardIDUUID, err := uuid.Parse(boardID)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	senderIDUUID, err := uuid.Parse(input.SenderID)
-	if err != nil {
-		return nil, ErrInvalidID
-	}
-	receiverIDsUUID := []uuid.UUID{}
-	for _, inviteReq := range input.Invites {
-		receiverIDUUID, err := uuid.Parse(inviteReq.ReceiverId)
-		if err != nil {
-			return nil, ErrInvalidID
-		}
-		receiverIDsUUID = append(receiverIDsUUID, receiverIDUUID)
-	}
-
-	boardWithMembers, err := s.GetBoardWithMembers(ctx, input.BoardID)
-	if err != nil {
-		return nil, fmt.Errorf("service: failed to get board when creating board invites: %w", err)
-	}
-
-	if !UserIsAdmin(boardWithMembers, input.SenderID) {
-		return nil, ErrUnauthorized
-	}
-
-	pendingInvites, err := s.repo.ListBoardInvitesFilterStatus(ctx, boardIDUUID, models.InviteStatusPending)
-	if err != nil {
-		return nil, fmt.Errorf("service: failed to get pending invites: %w", err)
-	}
-
-	invitesToInsert := []models.Invite{}
-	now := time.Now()
-	// Prepare invites to insert
-	for _, receiverIDUUID := range receiverIDsUUID {
-		// If invite already exists, update the updated_at timestamp
-		if existingInvite, ok := hasPendingInvite(receiverIDUUID, pendingInvites); ok {
-			existingInvite.UpdatedAt = now
-			invitesToInsert = append(invitesToInsert, existingInvite)
-			continue
-		}
-		// Build new invite
-		invite := models.Invite{
-			ID:         uuid.New(),
-			BoardID:    boardIDUUID,
-			SenderID:   senderIDUUID,
-			ReceiverID: receiverIDUUID,
-			Status:     models.InviteStatusPending,
-			CreatedAt:  now,
-			UpdatedAt:  now,
-		}
-		invitesToInsert = append(invitesToInsert, invite)
-	}
-
-	err = s.repo.CreateInvites(ctx, invitesToInsert)
-	if err != nil {
-		return nil, fmt.Errorf("service: failed to create board invites: %w", err)
-	}
-	return invitesToInsert, nil
+	return s.repo.ListInvitesByBoard(ctx, boardIDUUID)
 }
 
 // toBoardWithMembersDTO transforms the BoardAndUser rows into a nested DTO struct
@@ -272,9 +288,9 @@ func toBoardWithMembersDTO(rows []BoardAndUser) []BoardWithMembersDTO {
 	return nestedList
 }
 
-func hasPendingInvite(receiverID uuid.UUID, pendingInvites []models.Invite) (models.Invite, bool) {
-	for _, invite := range pendingInvites {
-		if invite.ReceiverID == receiverID {
+func hasPendingInvite(receiverID uuid.UUID, pexistingInvites []models.Invite) (models.Invite, bool) {
+	for _, invite := range pexistingInvites {
+		if invite.ReceiverID == receiverID && invite.Status == models.InviteStatusPending {
 			return invite, true
 		}
 	}

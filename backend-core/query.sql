@@ -82,19 +82,9 @@ SELECT * FROM board_invites
 WHERE board_invites.board_id = $1
 ORDER BY board_invites.updated_at DESC;
 
--- name: ListInvitesByBoardFilterStatus :many
-SELECT * FROM board_invites
-WHERE board_invites.board_id = $1
-AND board_invites.status = $2
-ORDER BY board_invites.updated_at DESC;
-
 -- name: ListInvitesByReceiver :many
-SELECT * FROM board_invites
+SELECT sqlc.embed(board_invites), sqlc.embed(users), sqlc.embed(boards) FROM board_invites
+INNER JOIN boards on boards.id = board_invites.board_id
+INNER JOIN users on users.id = board_invites.user_id 
 WHERE board_invites.receiver_id = $1
-ORDER BY board_invites.updated_at DESC;
-
--- name: ListInvitesByReceiverFilterStatus :many
-SELECT * FROM board_invites
-WHERE board_invites.receiver_id = $1
-AND board_invites.status = $2
 ORDER BY board_invites.updated_at DESC;

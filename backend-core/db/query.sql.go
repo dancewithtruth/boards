@@ -280,109 +280,50 @@ func (q *Queries) ListInvitesByBoard(ctx context.Context, boardID pgtype.UUID) (
 	return items, nil
 }
 
-const listInvitesByBoardFilterStatus = `-- name: ListInvitesByBoardFilterStatus :many
-SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
-WHERE board_invites.board_id = $1
-AND board_invites.status = $2
-ORDER BY board_invites.updated_at DESC
-`
-
-type ListInvitesByBoardFilterStatusParams struct {
-	BoardID pgtype.UUID
-	Status  pgtype.Text
-}
-
-func (q *Queries) ListInvitesByBoardFilterStatus(ctx context.Context, arg ListInvitesByBoardFilterStatusParams) ([]BoardInvite, error) {
-	rows, err := q.db.Query(ctx, listInvitesByBoardFilterStatus, arg.BoardID, arg.Status)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []BoardInvite
-	for rows.Next() {
-		var i BoardInvite
-		if err := rows.Scan(
-			&i.ID,
-			&i.BoardID,
-			&i.SenderID,
-			&i.ReceiverID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listInvitesByReceiver = `-- name: ListInvitesByReceiver :many
-SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at FROM board_invites
+INNER JOIN boards on boards.id = board_invites.board_id
+INNER JOIN users on users.id = board_invites.user_id 
 WHERE board_invites.receiver_id = $1
 ORDER BY board_invites.updated_at DESC
 `
 
-func (q *Queries) ListInvitesByReceiver(ctx context.Context, receiverID pgtype.UUID) ([]BoardInvite, error) {
+type ListInvitesByReceiverRow struct {
+	BoardInvite BoardInvite
+	User        User
+	Board       Board
+}
+
+func (q *Queries) ListInvitesByReceiver(ctx context.Context, receiverID pgtype.UUID) ([]ListInvitesByReceiverRow, error) {
 	rows, err := q.db.Query(ctx, listInvitesByReceiver, receiverID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []BoardInvite
+	var items []ListInvitesByReceiverRow
 	for rows.Next() {
-		var i BoardInvite
+		var i ListInvitesByReceiverRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.BoardID,
-			&i.SenderID,
-			&i.ReceiverID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listInvitesByReceiverFilterStatus = `-- name: ListInvitesByReceiverFilterStatus :many
-SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
-WHERE board_invites.receiver_id = $1
-AND board_invites.status = $2
-ORDER BY board_invites.updated_at DESC
-`
-
-type ListInvitesByReceiverFilterStatusParams struct {
-	ReceiverID pgtype.UUID
-	Status     pgtype.Text
-}
-
-func (q *Queries) ListInvitesByReceiverFilterStatus(ctx context.Context, arg ListInvitesByReceiverFilterStatusParams) ([]BoardInvite, error) {
-	rows, err := q.db.Query(ctx, listInvitesByReceiverFilterStatus, arg.ReceiverID, arg.Status)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []BoardInvite
-	for rows.Next() {
-		var i BoardInvite
-		if err := rows.Scan(
-			&i.ID,
-			&i.BoardID,
-			&i.SenderID,
-			&i.ReceiverID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.BoardInvite.ID,
+			&i.BoardInvite.BoardID,
+			&i.BoardInvite.SenderID,
+			&i.BoardInvite.ReceiverID,
+			&i.BoardInvite.Status,
+			&i.BoardInvite.CreatedAt,
+			&i.BoardInvite.UpdatedAt,
+			&i.User.ID,
+			&i.User.Name,
+			&i.User.Email,
+			&i.User.Password,
+			&i.User.IsGuest,
+			&i.User.CreatedAt,
+			&i.User.UpdatedAt,
+			&i.Board.ID,
+			&i.Board.Name,
+			&i.Board.Description,
+			&i.Board.UserID,
+			&i.Board.CreatedAt,
+			&i.Board.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
