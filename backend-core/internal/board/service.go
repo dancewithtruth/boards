@@ -19,6 +19,7 @@ var (
 	ErrInviteNotFound          = errors.New("Invite not found.")
 	ErrUnauthorized            = errors.New("User is not authorized.")
 	ErrUnsupportedInviteUpdate = errors.New("Invite update status is not supported.")
+	ErrInvalidStatusFilter     = errors.New("Invalid status filter.")
 	defaultBoardDescription    = "My default board description."
 )
 
@@ -32,7 +33,7 @@ type Service interface {
 
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
-	ListInvitesByBoard(ctx context.Context, userID string, boardID string) ([]models.Invite, error)
+	ListInvitesByBoard(ctx context.Context, userID string, boardID string, status string) ([]models.Invite, error)
 	ListInvitesByReceiver(ctx context.Context, receiverID string) ([]InviteWithBoardAndSenderDTO, error)
 
 	UpdateInvite(ctx context.Context, input UpdateInviteInput) error
@@ -131,7 +132,7 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 		return nil, ErrUnauthorized
 	}
 
-	existingInvites, err := s.repo.ListInvitesByBoard(ctx, boardUUID)
+	existingInvites, err := s.repo.ListInvitesByBoard(ctx, boardUUID, "")
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get pending invites: %w", err)
 	}
@@ -262,10 +263,13 @@ func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userID string
 
 // ListInvitesByBoard returns a list of invites belonging to a board. The user ID that is passed in should already
 // be authenticated.
-func (s *service) ListInvitesByBoard(ctx context.Context, userID string, boardID string) ([]models.Invite, error) {
+func (s *service) ListInvitesByBoard(ctx context.Context, userID string, boardID string, status string) ([]models.Invite, error) {
 	boardUUID, err := uuid.Parse(boardID)
 	if err != nil {
 		return nil, ErrInvalidID
+	}
+	if !models.ValidInviteStatusFilter(status) {
+		return []models.Invite{}, ErrInvalidStatusFilter
 	}
 	board, err := s.GetBoardWithMembers(ctx, boardID)
 	if err != nil {
@@ -274,7 +278,7 @@ func (s *service) ListInvitesByBoard(ctx context.Context, userID string, boardID
 	if !UserHasAccess(board, userID) {
 		return []models.Invite{}, ErrUnauthorized
 	}
-	return s.repo.ListInvitesByBoard(ctx, boardUUID)
+	return s.repo.ListInvitesByBoard(ctx, boardUUID, status)
 }
 
 // ListInvitesByReceiver returns a list of board invites for a given receiver. Each board invite element is augmented with

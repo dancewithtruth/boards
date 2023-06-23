@@ -167,7 +167,7 @@ func (api *API) HandleCreateInvites(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrUnauthorized):
-			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrUnauthorized.Error())
+			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
 		case errors.Is(err, ErrInvalidID):
 			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidID.Error())
 		default:
@@ -181,48 +181,39 @@ func (api *API) HandleCreateInvites(w http.ResponseWriter, r *http.Request) {
 	}{Result: invites})
 }
 
-// HandleListInvites is the handler for returning a list of invites belonging to a board. The handler
+// HandleListInvitesByBoard is the handler for returning a list of invites belonging to a board. The handler
 // can filter for invites using an optional status query parameter.
-func (api *API) HandleListInvites(w http.ResponseWriter, r *http.Request) {
+func (api *API) HandleListInvitesByBoard(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	// Get user ID
+	// Get user and board IDs
 	userID := middleware.UserIDFromContext(ctx)
 	if userID == "" {
 		logger.Error("handler: failed to parse user ID from request context")
 		endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
 		return
 	}
-
-	// Get board
 	boardID := chi.URLParam(r, "boardID")
-	board, err := api.boardService.GetBoardWithMembers(ctx, boardID)
-	if err != nil {
-		if errors.Is(err, ErrBoardNotFound) {
-			endpoint.WriteWithError(w, http.StatusNotFound, ErrMsgBoardNotFound)
-			return
-		}
-		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
-	}
-	if !UserHasAccess(board, userID) {
-		endpoint.WriteWithError(w, http.StatusNotFound, ErrMsgBoardNotFound)
-		return
-	}
-
+	queryParams := r.URL.Query()
+	status := queryParams.Get("status")
 	// List board invites
-	invites, err := api.boardService.ListInvitesByBoard(ctx, userID, boardID)
+	invites, err := api.boardService.ListInvitesByBoard(ctx, userID, boardID, status)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidID):
 			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidID.Error())
+		case errors.Is(err, ErrUnauthorized):
+			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
+		case errors.Is(err, ErrInvalidStatusFilter):
+			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidStatusFilter.Error())
 		default:
 			logger.Errorf("handler: failed to list board invites: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
 		return
 	}
-	endpoint.WriteWithStatus(w, http.StatusCreated, struct {
+	endpoint.WriteWithStatus(w, http.StatusOK, struct {
 		Result []models.Invite `json:"result"`
 	}{Result: invites})
 }
@@ -267,7 +258,7 @@ func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) ht
 			r.Route("/{boardID}", func(r chi.Router) {
 				r.Get("/", api.HandleGetBoard)
 				r.Post("/invites", api.HandleCreateInvites)
-				r.Get("/invites", api.HandleListInvites)
+				r.Get("/invites", api.HandleListInvitesByBoard)
 			})
 		})
 	})

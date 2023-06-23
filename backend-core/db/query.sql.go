@@ -268,12 +268,18 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 
 const listInvitesByBoard = `-- name: ListInvitesByBoard :many
 SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
-WHERE board_invites.board_id = $1
+WHERE board_invites.board_id = $1 AND
+(status = $2 OR $2 IS NULL)
 ORDER BY board_invites.updated_at DESC
 `
 
-func (q *Queries) ListInvitesByBoard(ctx context.Context, boardID pgtype.UUID) ([]BoardInvite, error) {
-	rows, err := q.db.Query(ctx, listInvitesByBoard, boardID)
+type ListInvitesByBoardParams struct {
+	BoardID pgtype.UUID
+	Status  pgtype.Text
+}
+
+func (q *Queries) ListInvitesByBoard(ctx context.Context, arg ListInvitesByBoardParams) ([]BoardInvite, error) {
+	rows, err := q.db.Query(ctx, listInvitesByBoard, arg.BoardID, arg.Status)
 	if err != nil {
 		return nil, err
 	}

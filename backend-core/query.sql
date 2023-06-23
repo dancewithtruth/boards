@@ -83,7 +83,8 @@ UPDATE board_invites SET
 
 -- name: ListInvitesByBoard :many
 SELECT * FROM board_invites
-WHERE board_invites.board_id = $1
+WHERE board_invites.board_id = sqlc.arg('board_id') AND
+(status = sqlc.narg('status') OR sqlc.narg('status') IS NULL)
 ORDER BY board_invites.updated_at DESC;
 
 -- name: ListInvitesByReceiver :many

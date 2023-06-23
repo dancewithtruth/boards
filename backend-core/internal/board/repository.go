@@ -34,7 +34,7 @@ type Repository interface {
 	ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
 	ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
-	ListInvitesByBoard(ctx context.Context, boardID uuid.UUID) ([]models.Invite, error)
+	ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, status string) ([]models.Invite, error)
 	ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID) ([]InviteBoardSender, error)
 
 	UpdateInvite(ctx context.Context, invite models.Invite) error
@@ -254,8 +254,14 @@ func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UU
 }
 
 // ListInvitesByBoard returns a list of board invites for a given board.
-func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID) ([]models.Invite, error) {
-	rows, err := r.q.ListInvitesByBoard(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
+func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, status string) ([]models.Invite, error) {
+	arg := db.ListInvitesByBoardParams{
+		BoardID: pgtype.UUID{Bytes: boardID, Valid: true},
+	}
+	if status != "" {
+		arg.Status = pgtype.Text{String: string(status), Valid: true}
+	}
+	rows, err := r.q.ListInvitesByBoard(ctx, arg)
 	if err != nil {
 		return []models.Invite{}, fmt.Errorf("repository: failed to list board invites: %w", err)
 	}

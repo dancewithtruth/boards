@@ -175,9 +175,15 @@ func (r *mockRepository) UpdateInvite(ctx context.Context, invite models.Invite)
 }
 
 // ListInvitesByBoard returns a list of mock board invites for a given board ID and status.
-func (r *mockRepository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID) ([]models.Invite, error) {
+func (r *mockRepository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, status string) ([]models.Invite, error) {
 	invites := []models.Invite{}
 	for _, invite := range r.invites {
+		if status != "" {
+			if invite.BoardID == boardID && string(invite.Status) == status {
+				invites = append(invites, invite)
+				continue
+			}
+		}
 		if invite.BoardID == boardID {
 			invites = append(invites, invite)
 		}
