@@ -90,6 +90,7 @@ ORDER BY board_invites.updated_at DESC;
 -- name: ListInvitesByReceiver :many
 SELECT sqlc.embed(board_invites), sqlc.embed(users), sqlc.embed(boards) FROM board_invites
 INNER JOIN boards on boards.id = board_invites.board_id
-INNER JOIN users on users.id = board_invites.user_id 
-WHERE board_invites.receiver_id = $1
+INNER JOIN users on users.id = board_invites.receiver_id 
+WHERE board_invites.receiver_id = sqlc.arg('receiver_id') AND
+(status = sqlc.narg('status') OR sqlc.narg('status') IS NULL)
 ORDER BY board_invites.updated_at DESC;

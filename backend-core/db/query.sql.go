@@ -309,10 +309,16 @@ func (q *Queries) ListInvitesByBoard(ctx context.Context, arg ListInvitesByBoard
 const listInvitesByReceiver = `-- name: ListInvitesByReceiver :many
 SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at FROM board_invites
 INNER JOIN boards on boards.id = board_invites.board_id
-INNER JOIN users on users.id = board_invites.user_id 
-WHERE board_invites.receiver_id = $1
+INNER JOIN users on users.id = board_invites.receiver_id 
+WHERE board_invites.receiver_id = $1 AND
+(status = $2 OR $2 IS NULL)
 ORDER BY board_invites.updated_at DESC
 `
+
+type ListInvitesByReceiverParams struct {
+	ReceiverID pgtype.UUID
+	Status     pgtype.Text
+}
 
 type ListInvitesByReceiverRow struct {
 	BoardInvite BoardInvite
@@ -320,8 +326,8 @@ type ListInvitesByReceiverRow struct {
 	Board       Board
 }
 
-func (q *Queries) ListInvitesByReceiver(ctx context.Context, receiverID pgtype.UUID) ([]ListInvitesByReceiverRow, error) {
-	rows, err := q.db.Query(ctx, listInvitesByReceiver, receiverID)
+func (q *Queries) ListInvitesByReceiver(ctx context.Context, arg ListInvitesByReceiverParams) ([]ListInvitesByReceiverRow, error) {
+	rows, err := q.db.Query(ctx, listInvitesByReceiver, arg.ReceiverID, arg.Status)
 	if err != nil {
 		return nil, err
 	}

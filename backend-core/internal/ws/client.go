@@ -32,7 +32,7 @@ var (
 	space   = []byte{' '}
 )
 
-// Very thin wrapper that encapsulates Board data for a given client
+// A thin wrapper that encapsulates write permissions for a client.
 type Board struct {
 	canWrite bool
 }
@@ -41,7 +41,7 @@ type Board struct {
 type Client struct {
 	user *models.User
 
-	// A map of board IDs to Board, a thin wrapper containing write permission and hub location.
+	// A map of board IDs to Board.
 	boards map[string]Board
 
 	// Websocket dependencies.

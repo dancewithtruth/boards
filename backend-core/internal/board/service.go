@@ -19,6 +19,7 @@ var (
 	ErrInviteNotFound          = errors.New("Invite not found.")
 	ErrUnauthorized            = errors.New("User is not authorized.")
 	ErrUnsupportedInviteUpdate = errors.New("Invite update status is not supported.")
+	ErrInviteCancelled         = errors.New("Invite has been cancelled.")
 	ErrInvalidStatusFilter     = errors.New("Invalid status filter.")
 	defaultBoardDescription    = "My default board description."
 )
@@ -34,7 +35,7 @@ type Service interface {
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListInvitesByBoard(ctx context.Context, input ListInvitesByBoardInput) ([]models.Invite, error)
-	ListInvitesByReceiver(ctx context.Context, receiverID string) ([]InviteWithBoardAndSenderDTO, error)
+	ListInvitesByReceiver(ctx context.Context, input ListInvitesByReceiverInput) ([]InviteWithBoardAndSenderDTO, error)
 
 	UpdateInvite(ctx context.Context, input UpdateInviteInput) error
 }
@@ -288,12 +289,19 @@ func (s *service) ListInvitesByBoard(ctx context.Context, input ListInvitesByBoa
 
 // ListInvitesByReceiver returns a list of board invites for a given receiver. Each board invite element is augmented with
 // sender and board details. The receiver ID should be the same as the authenticated user making the request.
-func (s *service) ListInvitesByReceiver(ctx context.Context, receiverID string) ([]InviteWithBoardAndSenderDTO, error) {
+func (s *service) ListInvitesByReceiver(ctx context.Context, input ListInvitesByReceiverInput) ([]InviteWithBoardAndSenderDTO, error) {
+	receiverID := input.ReceiverID
+	status := input.Status
 	receiverUUID, err := uuid.Parse(receiverID)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	inviteBoardSenders, err := s.repo.ListInvitesByReceiver(ctx, receiverUUID)
+	if status != "" {
+		if !models.ValidInviteStatusFilter(status) {
+			return []InviteWithBoardAndSenderDTO{}, ErrInvalidStatusFilter
+		}
+	}
+	inviteBoardSenders, err := s.repo.ListInvitesByReceiver(ctx, receiverUUID, status)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to list invites by receiver >: %w", err)
 	}
@@ -314,9 +322,12 @@ func (s *service) UpdateInvite(ctx context.Context, input UpdateInviteInput) err
 	}
 	now := time.Now()
 	switch input.Status {
-	case models.InviteStatusAccepted:
+	case string(models.InviteStatusAccepted):
 		if invite.ReceiverID != userUUID {
 			return ErrUnauthorized
+		}
+		if invite.Status == models.InviteStatusCancelled {
+			return ErrInviteCancelled
 		}
 		// Add user to board
 		membership := models.BoardMembership{
@@ -328,11 +339,14 @@ func (s *service) UpdateInvite(ctx context.Context, input UpdateInviteInput) err
 			UpdatedAt: now,
 		}
 		err = s.repo.CreateMembership(ctx, membership)
-	case models.InviteStatusIgnored:
+	case string(models.InviteStatusIgnored):
 		if invite.ReceiverID != userUUID {
 			return ErrUnauthorized
 		}
-	case models.InviteStatusCancelled:
+		if invite.Status == models.InviteStatusCancelled {
+			return ErrInviteCancelled
+		}
+	case string(models.InviteStatusCancelled):
 		if invite.SenderID != userUUID {
 			return ErrUnauthorized
 		}
@@ -340,7 +354,7 @@ func (s *service) UpdateInvite(ctx context.Context, input UpdateInviteInput) err
 		return ErrUnsupportedInviteUpdate
 	}
 	invite.UpdatedAt = now
-	invite.Status = input.Status
+	invite.Status = models.InviteStatus(input.Status)
 	return s.repo.UpdateInvite(ctx, invite)
 }
 
@@ -399,6 +413,7 @@ func hasPendingInvite(receiverID uuid.UUID, pexistingInvites []models.Invite) (m
 func toInviteWithBoardAndSenderDTO(rows []InviteBoardSender) []InviteWithBoardAndSenderDTO {
 	dto := []InviteWithBoardAndSenderDTO{}
 	for _, row := range rows {
+		row.Sender.Password = nil
 		mappedRow := InviteWithBoardAndSenderDTO{
 			ID:         row.Invite.BoardID,
 			Board:      row.Board,

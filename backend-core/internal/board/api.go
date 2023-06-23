@@ -223,6 +223,86 @@ func (api *API) HandleListInvitesByBoard(w http.ResponseWriter, r *http.Request)
 	}{Result: invites})
 }
 
+// HandleListInvitesByReceiver is the handler for returning a list of invites belonging to a receiver. The handler
+// can filter for invites using an optional status query parameter.
+func (api *API) HandleListInvitesByReceiver(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	// Parse relevant data and prepare input
+	userID := middleware.UserIDFromContext(ctx)
+	if userID == "" {
+		logger.Error("handler: failed to parse user ID from request context")
+		endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
+		return
+	}
+	queryParams := r.URL.Query()
+	status := queryParams.Get("status")
+	input := ListInvitesByReceiverInput{
+		ReceiverID: userID,
+		Status:     status,
+	}
+	// List board invites
+	invites, err := api.boardService.ListInvitesByReceiver(ctx, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrInvalidID):
+			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidID.Error())
+		case errors.Is(err, ErrUnauthorized):
+			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
+		case errors.Is(err, ErrInvalidStatusFilter):
+			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidStatusFilter.Error())
+		default:
+			logger.Errorf("handler: failed to list board invites: %v", err)
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusOK, struct {
+		Result []InviteWithBoardAndSenderDTO `json:"result"`
+	}{Result: invites})
+}
+
+// HandleUpdateInvite is the handler for updating an invite. The sender of an invite can use this
+// endpoint to cancel an invite or a receiver can accept or ignore a pending invite.
+func (api *API) HandleUpdateInvite(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	// Decode request body
+	var input UpdateInviteInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		endpoint.HandleDecodeErr(w, err)
+		return
+	}
+	defer r.Body.Close()
+
+	// Prepare input
+	inviteID := chi.URLParam(r, "inviteID")
+	userID := middleware.UserIDFromContext(ctx)
+	input.ID = inviteID
+	input.UserID = userID
+
+	err := api.boardService.UpdateInvite(ctx, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, ErrUnsupportedInviteUpdate):
+			endpoint.WriteWithError(w, http.StatusBadRequest, ErrUnsupportedInviteUpdate.Error())
+		case errors.Is(err, ErrInviteCancelled):
+			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInviteCancelled.Error())
+		case errors.Is(err, ErrInviteDoesNotExist):
+			endpoint.WriteWithError(w, http.StatusNotFound, ErrInviteDoesNotExist.Error())
+		case errors.Is(err, ErrUnauthorized):
+			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
+		default:
+			logger.Errorf("handler: failed to update invite > %w", err)
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusOK, nil)
+}
+
 func hasUser(members []MemberDTO, userID string) bool {
 	for _, member := range members {
 		if member.ID.String() == userID {
@@ -265,6 +345,14 @@ func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) ht
 				r.Post("/invites", api.HandleCreateInvites)
 				r.Get("/invites", api.HandleListInvitesByBoard)
 			})
+		})
+	})
+
+	r.Route("/invites", func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+			r.Use(authHandler)
+			r.Get("/", api.HandleListInvitesByReceiver)
+			r.Patch("/{inviteID}", api.HandleUpdateInvite)
 		})
 	})
 }

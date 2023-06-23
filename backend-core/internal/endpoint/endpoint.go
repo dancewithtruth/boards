@@ -39,7 +39,9 @@ func WriteWithError(w http.ResponseWriter, statusCode int, errMsg string) {
 func WriteWithStatus(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	json.NewEncoder(w).Encode(data)
+	if data != nil {
+		json.NewEncoder(w).Encode(data)
+	}
 }
 
 // buildDecodeErrorMsg formats the decode error and returns it as a string

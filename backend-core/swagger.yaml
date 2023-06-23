@@ -9,6 +9,9 @@ info:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.17
+servers:
+  - url: http://localhost:8080
+    description: Local server
 externalDocs:
   description: Find out more about Swagger
   url: http://swagger.io
@@ -253,6 +256,18 @@ paths:
           schema:
             type: string
             format: uuid
+        - name: status
+          in: query
+          description: Status filter
+          required: false
+          schema:
+            type: string
+            enum: 
+              - ACCEPTED
+              - PENDING
+              - IGNORED
+              - CANCELLED
+            example: PENDING
       responses:
         '200':
           description: successful operation

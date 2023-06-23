@@ -192,9 +192,17 @@ func (r *mockRepository) ListInvitesByBoard(ctx context.Context, boardID uuid.UU
 }
 
 // ListInvitesByReceiver returns a list of mock board invites for a given board ID and status.
-func (r *mockRepository) ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID) ([]InviteBoardSender, error) {
+func (r *mockRepository) ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID, status string) ([]InviteBoardSender, error) {
 	inviteBoardSender := []InviteBoardSender{}
 	for _, invite := range r.invites {
+		if status != "" {
+			if invite.ReceiverID == receiverID && string(invite.Status) == status {
+				board := r.boards[invite.BoardID]
+				sender := r.users[invite.SenderID]
+				inviteBoardSender = append(inviteBoardSender, InviteBoardSender{invite, board, sender})
+				continue
+			}
+		}
 		if invite.ReceiverID == receiverID {
 			board := r.boards[invite.BoardID]
 			sender := r.users[invite.SenderID]
