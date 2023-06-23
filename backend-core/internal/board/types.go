@@ -31,6 +31,13 @@ type UpdateInviteInput struct {
 	Status models.InviteStatus
 }
 
+// ListInvitesByBoardInput defines the input params for listing invites by board.
+type ListInvitesByBoardInput struct {
+	BoardID string
+	UserID  string
+	Status  string
+}
+
 // BoardWithMembersDTO is a formatted response representing a board and its associated members.
 type BoardWithMembersDTO struct {
 	ID          uuid.UUID   `json:"id"`

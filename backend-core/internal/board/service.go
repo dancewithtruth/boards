@@ -33,7 +33,7 @@ type Service interface {
 
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
-	ListInvitesByBoard(ctx context.Context, userID string, boardID string, status string) ([]models.Invite, error)
+	ListInvitesByBoard(ctx context.Context, input ListInvitesByBoardInput) ([]models.Invite, error)
 	ListInvitesByReceiver(ctx context.Context, receiverID string) ([]InviteWithBoardAndSenderDTO, error)
 
 	UpdateInvite(ctx context.Context, input UpdateInviteInput) error
@@ -263,13 +263,18 @@ func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userID string
 
 // ListInvitesByBoard returns a list of invites belonging to a board. The user ID that is passed in should already
 // be authenticated.
-func (s *service) ListInvitesByBoard(ctx context.Context, userID string, boardID string, status string) ([]models.Invite, error) {
+func (s *service) ListInvitesByBoard(ctx context.Context, input ListInvitesByBoardInput) ([]models.Invite, error) {
+	boardID := input.BoardID
+	status := input.Status
+	userID := input.UserID
 	boardUUID, err := uuid.Parse(boardID)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	if !models.ValidInviteStatusFilter(status) {
-		return []models.Invite{}, ErrInvalidStatusFilter
+	if status != "" {
+		if !models.ValidInviteStatusFilter(status) {
+			return []models.Invite{}, ErrInvalidStatusFilter
+		}
 	}
 	board, err := s.GetBoardWithMembers(ctx, boardID)
 	if err != nil {

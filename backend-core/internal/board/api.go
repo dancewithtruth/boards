@@ -187,7 +187,7 @@ func (api *API) HandleListInvitesByBoard(w http.ResponseWriter, r *http.Request)
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	// Get user and board IDs
+	// Parse relevant data and prepare input
 	userID := middleware.UserIDFromContext(ctx)
 	if userID == "" {
 		logger.Error("handler: failed to parse user ID from request context")
@@ -197,8 +197,13 @@ func (api *API) HandleListInvitesByBoard(w http.ResponseWriter, r *http.Request)
 	boardID := chi.URLParam(r, "boardID")
 	queryParams := r.URL.Query()
 	status := queryParams.Get("status")
+	input := ListInvitesByBoardInput{
+		BoardID: boardID,
+		UserID:  userID,
+		Status:  status,
+	}
 	// List board invites
-	invites, err := api.boardService.ListInvitesByBoard(ctx, userID, boardID, status)
+	invites, err := api.boardService.ListInvitesByBoard(ctx, input)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidID):

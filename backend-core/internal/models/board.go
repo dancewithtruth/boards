@@ -52,15 +52,12 @@ const (
 
 // ValidInviteStatusFilter checks if the status filter is valid if it is non-empty.
 func ValidInviteStatusFilter(status string) bool {
-	if status != "" {
-		switch status {
-		case string(InviteStatusAccepted), string(InviteStatusIgnored), string(InviteStatusCancelled), string(InviteStatusPending):
-			return true
-		default:
-			return false
-		}
+	switch status {
+	case string(InviteStatusAccepted), string(InviteStatusIgnored), string(InviteStatusCancelled), string(InviteStatusPending):
+		return true
+	default:
+		return false
 	}
-	return true
 }
 
 // Invite defines the domain model for a board invite entity.
