@@ -34,7 +34,7 @@ type Repository interface {
 	ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
 	ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
-	ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, status string) ([]models.Invite, error)
+	ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, status string) ([]InviteReceiver, error)
 	ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID, status string) ([]InviteBoardSender, error)
 
 	UpdateInvite(ctx context.Context, invite models.Invite) error
@@ -254,7 +254,7 @@ func (r *repository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UU
 }
 
 // ListInvitesByBoard returns a list of board invites for a given board.
-func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, status string) ([]models.Invite, error) {
+func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, status string) ([]InviteReceiver, error) {
 	arg := db.ListInvitesByBoardParams{
 		BoardID: pgtype.UUID{Bytes: boardID, Valid: true},
 	}
@@ -263,14 +263,15 @@ func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, 
 	}
 	rows, err := r.q.ListInvitesByBoard(ctx, arg)
 	if err != nil {
-		return []models.Invite{}, fmt.Errorf("repository: failed to list board invites: %w", err)
+		return []InviteReceiver{}, fmt.Errorf("repository: failed to list board invites: %w", err)
 	}
-	invites := []models.Invite{}
+	inviteReceivers := []InviteReceiver{}
 	for _, row := range rows {
-		invite := toInvite(row)
-		invites = append(invites, invite)
+		invite := toInvite(row.BoardInvite)
+		receiver := toUser(row.User)
+		inviteReceivers = append(inviteReceivers, InviteReceiver{invite, receiver})
 	}
-	return invites, nil
+	return inviteReceivers, nil
 }
 
 // ListInvitesByReceiver returns a list of board invites along with board and sender details.
@@ -357,10 +358,17 @@ func toBoardMembership(dbBoardMembership db.BoardMembership) models.BoardMembers
 	}
 }
 
+// InviteBoardSender is a struct that encapsulates domain models.
 type InviteBoardSender struct {
 	Invite models.Invite
 	Board  models.Board
 	Sender models.User
+}
+
+// InviteReceiver is a struct that encapsulates domain models.
+type InviteReceiver struct {
+	Invite   models.Invite
+	Receiver models.User
 }
 
 func toInvite(row db.BoardInvite) models.Invite {

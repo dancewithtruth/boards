@@ -82,3 +82,13 @@ type InviteWithBoardAndSenderDTO struct {
 	CreatedAt  time.Time    `json:"created_at"`
 	UpdatedAt  time.Time    `json:"updated_at"`
 }
+
+type InviteWithReceiverDTO struct {
+	ID        uuid.UUID   `json:"id"`
+	BoardID   uuid.UUID   `json:"board_id"`
+	SenderID  uuid.UUID   `json:"sender_id"`
+	Receiver  models.User `json:"receiver"`
+	Status    string      `json:"status"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+}

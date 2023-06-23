@@ -267,7 +267,8 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 }
 
 const listInvitesByBoard = `-- name: ListInvitesByBoard :many
-SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at FROM board_invites
+INNER JOIN users on users.id = board_invites.receiver_id
 WHERE board_invites.board_id = $1 AND
 (status = $2 OR $2 IS NULL)
 ORDER BY board_invites.updated_at DESC
@@ -278,23 +279,35 @@ type ListInvitesByBoardParams struct {
 	Status  pgtype.Text
 }
 
-func (q *Queries) ListInvitesByBoard(ctx context.Context, arg ListInvitesByBoardParams) ([]BoardInvite, error) {
+type ListInvitesByBoardRow struct {
+	BoardInvite BoardInvite
+	User        User
+}
+
+func (q *Queries) ListInvitesByBoard(ctx context.Context, arg ListInvitesByBoardParams) ([]ListInvitesByBoardRow, error) {
 	rows, err := q.db.Query(ctx, listInvitesByBoard, arg.BoardID, arg.Status)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []BoardInvite
+	var items []ListInvitesByBoardRow
 	for rows.Next() {
-		var i BoardInvite
+		var i ListInvitesByBoardRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.BoardID,
-			&i.SenderID,
-			&i.ReceiverID,
-			&i.Status,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.BoardInvite.ID,
+			&i.BoardInvite.BoardID,
+			&i.BoardInvite.SenderID,
+			&i.BoardInvite.ReceiverID,
+			&i.BoardInvite.Status,
+			&i.BoardInvite.CreatedAt,
+			&i.BoardInvite.UpdatedAt,
+			&i.User.ID,
+			&i.User.Name,
+			&i.User.Email,
+			&i.User.Password,
+			&i.User.IsGuest,
+			&i.User.CreatedAt,
+			&i.User.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -309,7 +322,7 @@ func (q *Queries) ListInvitesByBoard(ctx context.Context, arg ListInvitesByBoard
 const listInvitesByReceiver = `-- name: ListInvitesByReceiver :many
 SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at FROM board_invites
 INNER JOIN boards on boards.id = board_invites.board_id
-INNER JOIN users on users.id = board_invites.receiver_id 
+INNER JOIN users on users.id = board_invites.sender_id 
 WHERE board_invites.receiver_id = $1 AND
 (status = $2 OR $2 IS NULL)
 ORDER BY board_invites.updated_at DESC

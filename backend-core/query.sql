@@ -82,7 +82,8 @@ UPDATE board_invites SET
 ($1, $2, $3, $4, $5, $6, $7) WHERE id = $1;
 
 -- name: ListInvitesByBoard :many
-SELECT * FROM board_invites
+SELECT sqlc.embed(board_invites), sqlc.embed(users) FROM board_invites
+INNER JOIN users on users.id = board_invites.receiver_id
 WHERE board_invites.board_id = sqlc.arg('board_id') AND
 (status = sqlc.narg('status') OR sqlc.narg('status') IS NULL)
 ORDER BY board_invites.updated_at DESC;
@@ -90,7 +91,7 @@ ORDER BY board_invites.updated_at DESC;
 -- name: ListInvitesByReceiver :many
 SELECT sqlc.embed(board_invites), sqlc.embed(users), sqlc.embed(boards) FROM board_invites
 INNER JOIN boards on boards.id = board_invites.board_id
-INNER JOIN users on users.id = board_invites.receiver_id 
+INNER JOIN users on users.id = board_invites.sender_id 
 WHERE board_invites.receiver_id = sqlc.arg('receiver_id') AND
 (status = sqlc.narg('status') OR sqlc.narg('status') IS NULL)
 ORDER BY board_invites.updated_at DESC;

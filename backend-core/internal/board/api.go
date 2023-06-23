@@ -219,7 +219,7 @@ func (api *API) HandleListInvitesByBoard(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	endpoint.WriteWithStatus(w, http.StatusOK, struct {
-		Result []models.Invite `json:"result"`
+		Result []InviteWithReceiverDTO `json:"result"`
 	}{Result: invites})
 }
 
