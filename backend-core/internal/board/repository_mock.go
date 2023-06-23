@@ -78,6 +78,14 @@ func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID
 	return boardAndUsers, nil
 }
 
+// GetInvite returns a single invite.
+func (r *mockRepository) GetInvite(ctx context.Context, inviteID uuid.UUID) (models.Invite, error) {
+	if invite, ok := r.invites[inviteID]; ok {
+		return invite, nil
+	}
+	return models.Invite{}, ErrInviteDoesNotExist
+}
+
 // ListOwnedBoards returns a list of mock boards belonging to a mock user.
 func (r *mockRepository) ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error) {
 	list := []models.Board{}

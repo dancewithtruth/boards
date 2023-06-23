@@ -282,7 +282,7 @@ paths:
           required: false
           schema:
             type: string
-            enum: [ACCEPTED, PENDING, IGNORED]
+            enum: [ACCEPTED, PENDING, IGNORED, CANCELLED]
       responses:
         '200':
           description: successful operation

@@ -14,10 +14,12 @@ import (
 )
 
 var (
-	ErrInvalidID            = errors.New("ID not in UUID format.")
-	ErrBoardNotFound        = errors.New("Board not found.")
-	ErrUnauthorized         = errors.New("User is not authorized.")
-	defaultBoardDescription = "My default board description."
+	ErrInvalidID               = errors.New("ID not in UUID format.")
+	ErrBoardNotFound           = errors.New("Board not found.")
+	ErrInviteNotFound          = errors.New("Invite not found.")
+	ErrUnauthorized            = errors.New("User is not authorized.")
+	ErrUnsupportedInviteUpdate = errors.New("Invite update status is not supported.")
+	defaultBoardDescription    = "My default board description."
 )
 
 type Service interface {
@@ -26,10 +28,14 @@ type Service interface {
 
 	GetBoard(ctx context.Context, boardID string) (models.Board, error)
 	GetBoardWithMembers(ctx context.Context, boardID string) (BoardWithMembersDTO, error)
+	GetInvite(ctx context.Context, inviteID string) (models.Invite, error)
 
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
-	ListInvites(ctx context.Context, boardID string) ([]models.Invite, error)
+	ListInvitesByBoard(ctx context.Context, userID string, boardID string) ([]models.Invite, error)
+	ListInvitesByReceiver(ctx context.Context, receiverID string) ([]InviteWithBoardAndSenderDTO, error)
+
+	UpdateInvite(ctx context.Context, input UpdateInviteInput) error
 }
 
 type service struct {
@@ -99,21 +105,21 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 // CreateInvites creates board invites
 func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) ([]models.Invite, error) {
 	// Parse IDs into UUIDs
-	boardIDUUID, err := uuid.Parse(input.BoardID)
+	boardUUID, err := uuid.Parse(input.BoardID)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	senderIDUUID, err := uuid.Parse(input.SenderID)
+	senderUUID, err := uuid.Parse(input.SenderID)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
 	receiverIDsUUID := []uuid.UUID{}
 	for _, inviteReq := range input.Invites {
-		receiverIDUUID, err := uuid.Parse(inviteReq.ReceiverId)
+		receiverUUID, err := uuid.Parse(inviteReq.ReceiverId)
 		if err != nil {
 			return nil, ErrInvalidID
 		}
-		receiverIDsUUID = append(receiverIDsUUID, receiverIDUUID)
+		receiverIDsUUID = append(receiverIDsUUID, receiverUUID)
 	}
 
 	boardWithMembers, err := s.GetBoardWithMembers(ctx, input.BoardID)
@@ -125,7 +131,7 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 		return nil, ErrUnauthorized
 	}
 
-	existingInvites, err := s.repo.ListInvitesByBoard(ctx, boardIDUUID)
+	existingInvites, err := s.repo.ListInvitesByBoard(ctx, boardUUID)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get pending invites: %w", err)
 	}
@@ -133,9 +139,9 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 	invitesToInsert := []models.Invite{}
 	now := time.Now()
 	// Prepare invites to insert
-	for _, receiverIDUUID := range receiverIDsUUID {
+	for _, receiverUUID := range receiverIDsUUID {
 		// If invite already exists, update the updated_at timestamp
-		if existingInvite, ok := hasPendingInvite(receiverIDUUID, existingInvites); ok {
+		if existingInvite, ok := hasPendingInvite(receiverUUID, existingInvites); ok {
 			existingInvite.UpdatedAt = now
 			invitesToInsert = append(invitesToInsert, existingInvite)
 			continue
@@ -143,9 +149,9 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 		// Build new invite
 		invite := models.Invite{
 			ID:         uuid.New(),
-			BoardID:    boardIDUUID,
-			SenderID:   senderIDUUID,
-			ReceiverID: receiverIDUUID,
+			BoardID:    boardUUID,
+			SenderID:   senderUUID,
+			ReceiverID: receiverUUID,
 			Status:     models.InviteStatusPending,
 			CreatedAt:  now,
 			UpdatedAt:  now,
@@ -162,11 +168,11 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 
 // GetBoard returns a single board for a given board ID
 func (s *service) GetBoard(ctx context.Context, boardID string) (models.Board, error) {
-	boardIDUUID, err := uuid.Parse(boardID)
+	boardUUID, err := uuid.Parse(boardID)
 	if err != nil {
 		return models.Board{}, fmt.Errorf("service: issue parsing boardID into UUID: %w", err)
 	}
-	board, err := s.repo.GetBoard(ctx, boardIDUUID)
+	board, err := s.repo.GetBoard(ctx, boardUUID)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.Board{}, ErrBoardNotFound
@@ -179,12 +185,12 @@ func (s *service) GetBoard(ctx context.Context, boardID string) (models.Board, e
 // GetBoardWithMembers returns a single board with a list of associated members
 func (s *service) GetBoardWithMembers(ctx context.Context, boardID string) (BoardWithMembersDTO, error) {
 	logger := logger.FromContext(ctx)
-	boardIDUUID, err := uuid.Parse(boardID)
+	boardUUID, err := uuid.Parse(boardID)
 	if err != nil {
 		logger.Errorf("service: failed to parse boardID")
 		return BoardWithMembersDTO{}, ErrInvalidID
 	}
-	rows, err := s.repo.GetBoardAndUsers(ctx, boardIDUUID)
+	rows, err := s.repo.GetBoardAndUsers(ctx, boardUUID)
 	if err != nil {
 		return BoardWithMembersDTO{}, fmt.Errorf("service: failed to get board with members: %w", err)
 	}
@@ -195,13 +201,29 @@ func (s *service) GetBoardWithMembers(ctx context.Context, boardID string) (Boar
 	return list[0], nil
 }
 
+// GetInvite returns a single invite for a given invite ID
+func (s *service) GetInvite(ctx context.Context, inviteID string) (models.Invite, error) {
+	inviteUUID, err := uuid.Parse(inviteID)
+	if err != nil {
+		return models.Invite{}, fmt.Errorf("service: issue parsing inviteID into UUID: %w", err)
+	}
+	invite, err := s.repo.GetInvite(ctx, inviteUUID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Invite{}, ErrInviteNotFound
+		}
+		return models.Invite{}, fmt.Errorf("service: failed to get invite: %w", err)
+	}
+	return invite, nil
+}
+
 // ListOwnedBoardsWithMembers returns a list of boards that belong to a user
 func (s *service) ListOwnedBoards(ctx context.Context, userID string) ([]models.Board, error) {
-	userIDUUID, err := uuid.Parse(userID)
+	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userID into UUID: %w", err)
 	}
-	boards, err := s.repo.ListOwnedBoards(ctx, userIDUUID)
+	boards, err := s.repo.ListOwnedBoards(ctx, userUUID)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
 	}
@@ -210,11 +232,11 @@ func (s *service) ListOwnedBoards(ctx context.Context, userID string) ([]models.
 
 // ListOwnedBoardsWithMembers returns a list of boards that belong to a user along with a list of board members
 func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error) {
-	userIDUUID, err := uuid.Parse(userID)
+	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userID into UUID: %w", err)
 	}
-	rows, err := s.repo.ListOwnedBoardAndUsers(ctx, userIDUUID)
+	rows, err := s.repo.ListOwnedBoardAndUsers(ctx, userUUID)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
 	}
@@ -225,11 +247,11 @@ func (s *service) ListOwnedBoardsWithMembers(ctx context.Context, userID string)
 
 // ListSharedBoardsWithMembers returns a list of boards that belong to a user along with a list of board members
 func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error) {
-	userIDUUID, err := uuid.Parse(userID)
+	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return nil, fmt.Errorf("service: issue parsing userID into UUID: %w", err)
 	}
-	rows, err := s.repo.ListSharedBoardAndUsers(ctx, userIDUUID)
+	rows, err := s.repo.ListSharedBoardAndUsers(ctx, userUUID)
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to get boards by user ID: %w", err)
 	}
@@ -238,13 +260,79 @@ func (s *service) ListSharedBoardsWithMembers(ctx context.Context, userID string
 	return list, nil
 }
 
-// ListInvites returns a list of invites belonging to a board.
-func (s *service) ListInvites(ctx context.Context, boardID string) ([]models.Invite, error) {
-	boardIDUUID, err := uuid.Parse(boardID)
+// ListInvitesByBoard returns a list of invites belonging to a board. The user ID that is passed in should already
+// be authenticated.
+func (s *service) ListInvitesByBoard(ctx context.Context, userID string, boardID string) ([]models.Invite, error) {
+	boardUUID, err := uuid.Parse(boardID)
 	if err != nil {
 		return nil, ErrInvalidID
 	}
-	return s.repo.ListInvitesByBoard(ctx, boardIDUUID)
+	board, err := s.GetBoardWithMembers(ctx, boardID)
+	if err != nil {
+		return []models.Invite{}, fmt.Errorf("service: failed to get board with members > %w", err)
+	}
+	if !UserHasAccess(board, userID) {
+		return []models.Invite{}, ErrUnauthorized
+	}
+	return s.repo.ListInvitesByBoard(ctx, boardUUID)
+}
+
+// ListInvitesByReceiver returns a list of board invites for a given receiver. Each board invite element is augmented with
+// sender and board details. The receiver ID should be the same as the authenticated user making the request.
+func (s *service) ListInvitesByReceiver(ctx context.Context, receiverID string) ([]InviteWithBoardAndSenderDTO, error) {
+	receiverUUID, err := uuid.Parse(receiverID)
+	if err != nil {
+		return nil, ErrInvalidID
+	}
+	inviteBoardSenders, err := s.repo.ListInvitesByReceiver(ctx, receiverUUID)
+	if err != nil {
+		return nil, fmt.Errorf("service: failed to list invites by receiver >: %w", err)
+	}
+	dto := toInviteWithBoardAndSenderDTO(inviteBoardSenders)
+	return dto, nil
+}
+
+// UpdateInvite updates a board invite. Only the sender of an invite can cancel the board invite, and only
+// the receiver of an invite can accept or ignore the board invite.
+func (s *service) UpdateInvite(ctx context.Context, input UpdateInviteInput) error {
+	userUUID, err := uuid.Parse(input.UserID)
+	if err != nil {
+		return ErrInvalidID
+	}
+	invite, err := s.GetInvite(ctx, input.ID)
+	if err != nil {
+		return err
+	}
+	now := time.Now()
+	switch input.Status {
+	case models.InviteStatusAccepted:
+		if invite.ReceiverID != userUUID {
+			return ErrUnauthorized
+		}
+		// Add user to board
+		membership := models.BoardMembership{
+			ID:        uuid.New(),
+			BoardID:   invite.BoardID,
+			UserID:    invite.ReceiverID,
+			Role:      models.RoleMember,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+		err = s.repo.CreateMembership(ctx, membership)
+	case models.InviteStatusIgnored:
+		if invite.ReceiverID != userUUID {
+			return ErrUnauthorized
+		}
+	case models.InviteStatusCancelled:
+		if invite.SenderID != userUUID {
+			return ErrUnauthorized
+		}
+	default:
+		return ErrUnsupportedInviteUpdate
+	}
+	invite.UpdatedAt = now
+	invite.Status = input.Status
+	return s.repo.UpdateInvite(ctx, invite)
 }
 
 // toBoardWithMembersDTO transforms the BoardAndUser rows into a nested DTO struct
@@ -295,4 +383,23 @@ func hasPendingInvite(receiverID uuid.UUID, pexistingInvites []models.Invite) (m
 		}
 	}
 	return models.Invite{}, false
+}
+
+// toInviteWithBoardAndSenderDTO takes the flat structure from InviteBoardSender and maps it to the nested
+// DTO structure.
+func toInviteWithBoardAndSenderDTO(rows []InviteBoardSender) []InviteWithBoardAndSenderDTO {
+	dto := []InviteWithBoardAndSenderDTO{}
+	for _, row := range rows {
+		mappedRow := InviteWithBoardAndSenderDTO{
+			ID:         row.Invite.BoardID,
+			Board:      row.Board,
+			Sender:     row.Sender,
+			ReceiverID: row.Invite.ReceiverID,
+			Status:     string(row.Invite.Status),
+			CreatedAt:  row.Invite.CreatedAt,
+			UpdatedAt:  row.Invite.UpdatedAt,
+		}
+		dto = append(dto, mappedRow)
+	}
+	return dto
 }

@@ -72,6 +72,10 @@ INSERT INTO board_invites
 (id, board_id, sender_id, receiver_id, status, created_at, updated_at) 
 VALUES ($1, $2, $3, $4, $5, $6, $7);
 
+-- name: GetInvite :one
+SELECT * FROM board_invites
+WHERE board_invites.id = $1;
+
 -- name: UpdateInvite :exec
 UPDATE board_invites SET
 (id, board_id, sender_id, receiver_id, status, created_at, updated_at) =

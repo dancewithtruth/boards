@@ -29,6 +29,7 @@ type Repository interface {
 
 	GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error)
 	GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error)
+	GetInvite(ctx context.Context, inviteID uuid.UUID) (models.Invite, error)
 
 	ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error)
@@ -154,6 +155,28 @@ func (r *repository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([
 		list = append(list, item)
 	}
 	return list, nil
+}
+
+// GetInvite returns a single invite for a given invite ID.
+func (r *repository) GetInvite(ctx context.Context, inviteID uuid.UUID) (models.Invite, error) {
+	row, err := r.q.GetInvite(ctx, pgtype.UUID{Bytes: inviteID, Valid: true})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Invite{}, ErrInviteDoesNotExist
+		}
+		return models.Invite{}, fmt.Errorf("repository: failed to get invite by id: %w", err)
+	}
+	// Convert storage type to domain type.
+	invite := models.Invite{
+		ID:         row.ID.Bytes,
+		BoardID:    row.BoardID.Bytes,
+		SenderID:   row.SenderID.Bytes,
+		ReceiverID: row.ReceiverID.Bytes,
+		Status:     models.InviteStatus(row.Status.String),
+		CreatedAt:  row.CreatedAt.Time,
+		UpdatedAt:  row.UpdatedAt.Time,
+	}
+	return invite, nil
 }
 
 // ListOwnedBoards returns a list of boards that belong to a user.

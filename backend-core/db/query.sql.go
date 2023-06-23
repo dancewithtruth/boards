@@ -222,6 +222,26 @@ func (q *Queries) GetBoardAndUsers(ctx context.Context, id pgtype.UUID) ([]GetBo
 	return items, nil
 }
 
+const getInvite = `-- name: GetInvite :one
+SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+WHERE board_invites.id = $1
+`
+
+func (q *Queries) GetInvite(ctx context.Context, id pgtype.UUID) (BoardInvite, error) {
+	row := q.db.QueryRow(ctx, getInvite, id)
+	var i BoardInvite
+	err := row.Scan(
+		&i.ID,
+		&i.BoardID,
+		&i.SenderID,
+		&i.ReceiverID,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getPost = `-- name: GetPost :one
 SELECT id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at FROM posts
 WHERE posts.id = $1

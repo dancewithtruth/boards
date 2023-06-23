@@ -67,25 +67,25 @@ func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models
 func (s *service) GetPost(ctx context.Context, postID string) (models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
-	postIDUUID, err := uuid.Parse(postID)
+	postUUID, err := uuid.Parse(postID)
 	if err != nil {
 		logger.Errorf("service: failed to parse postID into UUID")
 		return models.Post{}, err
 	}
 	//TODO: Handle error in service layer
-	return s.repo.GetPost(ctx, postIDUUID)
+	return s.repo.GetPost(ctx, postUUID)
 }
 
 func (s *service) ListPosts(ctx context.Context, boardID string) ([]models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
-	boardIDUUID, err := uuid.Parse(boardID)
+	boardUUID, err := uuid.Parse(boardID)
 	if err != nil {
 		logger.Errorf("service: failed to parse boardID into UUID")
 		return []models.Post{}, err
 	}
 	//TODO: Handle error in service layer
-	return s.repo.ListPosts(ctx, boardIDUUID)
+	return s.repo.ListPosts(ctx, boardUUID)
 }
 
 func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error) {
@@ -134,10 +134,10 @@ func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models
 // CreatePost takes an input, validates it, and creates a new post
 func (s *service) DeletePost(ctx context.Context, postID string) error {
 	logger := logger.FromContext(ctx)
-	postIDUUID, err := uuid.Parse(postID)
+	postUUID, err := uuid.Parse(postID)
 	if err != nil {
 		logger.Errorf("service: failed to parse post ID into UUID")
 		return err
 	}
-	return s.repo.DeletePost(ctx, postIDUUID)
+	return s.repo.DeletePost(ctx, postUUID)
 }

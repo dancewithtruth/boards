@@ -55,11 +55,11 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 
 // GetUser returns a single user for a given user ID
 func (s *service) GetUser(ctx context.Context, userID string) (models.User, error) {
-	userIDUUID, err := uuid.Parse(userID)
+	userUUID, err := uuid.Parse(userID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: issue parsing userID into UUID: %w", err)
 	}
-	user, err := s.userRepo.GetUser(ctx, userIDUUID)
+	user, err := s.userRepo.GetUser(ctx, userUUID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: failed to get user: %w", err)
 	}

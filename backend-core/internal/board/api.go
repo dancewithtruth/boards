@@ -211,7 +211,7 @@ func (api *API) HandleListInvites(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// List board invites
-	invites, err := api.boardService.ListInvites(ctx, boardID)
+	invites, err := api.boardService.ListInvitesByBoard(ctx, userID, boardID)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrInvalidID):
