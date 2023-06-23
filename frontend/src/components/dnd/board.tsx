@@ -43,6 +43,7 @@ import { User } from '@/api';
 
 export type PostUI = {
   typingBy: User | null;
+  autoFocus: boolean;
 } & Post;
 
 export type PostMap = {
@@ -116,6 +117,9 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, posts: initialPosts }
         break;
       case EVENT_POST_CREATE:
         if (success) {
+          if (result.user_id == user?.id) {
+            result.autoFocus = true
+          }
           addPost(result);
         } else {
           toast.error(error_message);

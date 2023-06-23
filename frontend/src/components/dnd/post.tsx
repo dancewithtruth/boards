@@ -29,6 +29,7 @@ export const Post: FC<PostProps> = memo(function Post({
   send,
   setColorSetting,
   typingBy,
+  autoFocus,
 }) {
   const [textareaValue, setTextareaValue] = useState(content);
   const [textareaHeight, setTextareaHeight] = useState(height);
@@ -136,6 +137,7 @@ export const Post: FC<PostProps> = memo(function Post({
           onChange={handleChange}
           onBlur={handleBlur}
           onFocus={handleFocus}
+          autoFocus={autoFocus}
           style={{ minHeight: textareaHeight }}
         />
         <div className="flex h-6 justify-between items-center">
