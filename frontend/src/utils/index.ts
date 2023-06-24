@@ -1,3 +1,6 @@
+import { BoardWithMembers } from '@/api';
+import { MEMBERSHIP_ROLES } from '@/constants';
+
 export const getMaxFieldFromObj = <T, K extends keyof T & string>(obj: { [key: string]: T }, field: K) => {
   let maxNumber = 0;
   for (const key in obj) {
@@ -25,4 +28,15 @@ export const mergeArrays = <T extends Record<any, any>>(fieldName: keyof T, ...a
   }, {} as Record<string, T>);
 
   return Object.values(mergedObject);
+};
+
+export const isAdmin = (userID: string, boardWithMembers: BoardWithMembers): boolean => {
+  if (boardWithMembers.user_id == userID) {
+    return true;
+  }
+  return boardWithMembers.members.some((member) => {
+    if (member.id == userID && member.membership.role == MEMBERSHIP_ROLES.ADMIN) {
+      return true;
+    }
+  });
 };

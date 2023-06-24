@@ -2,7 +2,7 @@
 import { NAVBAR_HEIGHT } from '@/constants';
 import Avatar from './avatar';
 import { User, BoardWithMembers } from '@/api';
-import { mergeArrays } from '@/utils';
+import { isAdmin, mergeArrays } from '@/utils';
 import InviteMemberModal from './modals/inviteMember';
 
 interface SidebarProps {
@@ -35,7 +35,7 @@ const Sidebar = ({ width, board, user, connectedUsers }: SidebarProps) => {
               ))}
             </div>
           </div>
-          <InviteMemberModal board={board} user={user} />
+          {isAdmin(user.id, board) ? <InviteMemberModal board={board} user={user} /> : null}
           <div className="divider" />
         </div>
         <div className="flex flex-col justify-center items-center space-y-1">

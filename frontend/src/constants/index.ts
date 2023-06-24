@@ -20,3 +20,7 @@ export const INVITE_STATUS = {
   IGNORED: 'IGNORED',
   CANCELLED: 'CANCELLED',
 };
+export const MEMBERSHIP_ROLES = {
+  ADMIN: 'ADMIN',
+  MEMBER: 'MEMBER',
+};

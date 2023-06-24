@@ -25,10 +25,14 @@ export type BoardWithMembers = {
   name: string;
   description: string;
   user_id: string;
-  members: User[];
+  members: UserWithMembership[];
   created_at: string;
   updated_at: string;
 };
+
+export type UserWithMembership = {
+  membership: Membership;
+} & User;
 
 export type Membership = {
   role: string;
