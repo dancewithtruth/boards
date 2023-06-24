@@ -14,3 +14,9 @@ export const POST_COLORS: { [key: string]: string } = {
   LIGHT_AQUA: '#D8E2DC',
 };
 export const WS_URL = 'ws://localhost:8080/ws';
+export const INVITE_STATUS = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  IGNORED: 'IGNORED',
+  CANCELLED: 'CANCELLED',
+};

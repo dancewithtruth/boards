@@ -27,7 +27,7 @@ export default function AccountMenu({ user, avatar }: { user: User; avatar: Reac
       <div className="right-0 mt-3 p-2 shadow menu menu-compact dropdown-content bg-base-100 rounded-box w-52">
         <ul className="menu menu-compact gap-1 p-3">
           <li>
-            <Link href="/dashboard" className="flex items-center justify-between">
+            <Link href="/dashboard" replace={true} className="flex items-center justify-between">
               Dashboard
               <span className="badge ml-2">New</span>
             </Link>

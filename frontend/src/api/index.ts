@@ -69,3 +69,32 @@ export async function sendGetRequest<T>(url: string, authToken?: string): Promis
     throw error;
   }
 }
+
+export async function sendPatchRequest<T>(url: string, body: object, authToken?: string) {
+  try {
+    const headers: Record<string, string> = {};
+
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify(body),
+      next: { revalidate: 0 },
+    });
+
+    console.log(response);
+
+    if (!response.ok) {
+      const errorData: APIErrorResponse = await response.json();
+      throw new APIError(errorData.message, errorData.status);
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    throw error;
+  }
+}
