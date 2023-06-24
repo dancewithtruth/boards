@@ -31,15 +31,20 @@ func NewService(repo Repository, validator validator.Validate) *service {
 	return &service{userRepo: repo, validator: validator}
 }
 
-// CreateUser creates and returns a new user
+// CreateUser takes a user input and standardizes the user name, hashes the password (if provided), and stores the
+// user details into the database.
 func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models.User, error) {
 	logger := logger.FromContext(ctx)
+	// Validate input
 	if err := s.validator.Struct(input); err != nil {
 		return models.User{}, err
 	}
-	name := toNameCase(input.Name)
+
+	// Prepare user input for storage
 	id := uuid.New()
+	name := toNameCase(input.Name)
 	now := time.Now()
+	// Hash the password
 	if input.Password != nil {
 		hashedPassword, err := security.HashPassword(*input.Password)
 		if err != nil {
@@ -57,6 +62,7 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+
 	err := s.userRepo.CreateUser(ctx, user)
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: failed to create user: %w", err)

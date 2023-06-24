@@ -46,7 +46,7 @@ func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrBadLogin):
-			endpoint.WriteWithError(w, http.StatusNotFound, ErrBadLogin.Error())
+			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrBadLogin.Error())
 		case errors.As(err, &v.ValidationErrors{}):
 			endpoint.WriteValidationErr(w, input, err)
 		default:
