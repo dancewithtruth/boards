@@ -29,9 +29,9 @@ func (r *mockRepository) GetUser(ctx context.Context, userID uuid.UUID) (models.
 	return models.User{}, ErrUserNotFound
 }
 
-func (r *mockRepository) GetUserByLogin(ctx context.Context, email, password string) (models.User, error) {
+func (r *mockRepository) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
 	for _, user := range r.users {
-		if email == *user.Email && password == *user.Password {
+		if email == *user.Email {
 			return user, nil
 		}
 	}

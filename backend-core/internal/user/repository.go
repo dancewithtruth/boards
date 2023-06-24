@@ -26,7 +26,7 @@ type Repository interface {
 	CreateUser(ctx context.Context, user models.User) error
 
 	GetUser(ctx context.Context, userID uuid.UUID) (models.User, error)
-	GetUserByLogin(ctx context.Context, email, password string) (models.User, error)
+	GetUserByEmail(ctx context.Context, email string) (models.User, error)
 
 	ListUsersByEmail(ctx context.Context, email string) ([]models.User, error)
 
@@ -84,27 +84,16 @@ func (r *repository) GetUser(ctx context.Context, userID uuid.UUID) (models.User
 	return user, nil
 }
 
-// GetuserByLogin returns a single user for a given email and password combination.
-func (r *repository) GetUserByLogin(ctx context.Context, email, password string) (models.User, error) {
-	sql := "SELECT * FROM users WHERE email = $1 and password = $2"
-	user := models.User{}
-	// TODO: make scanning more robust
-	err := r.db.QueryRow(ctx, sql, email, password).Scan(
-		&user.ID,
-		&user.Name,
-		&user.Email,
-		&user.Password,
-		&user.IsGuest,
-		&user.CreatedAt,
-		&user.UpdatedAt,
-	)
+// GetUserByEmail returns a single user for a given email.
+func (r *repository) GetUserByEmail(ctx context.Context, email string) (models.User, error) {
+	userDB, err := r.q.GetUserByEmail(ctx, pgtype.Text{String: email, Valid: true})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.User{}, ErrUserNotFound
 		}
 		return models.User{}, fmt.Errorf("repository: failed to get user by login credentials: %w", err)
 	}
-	return user, nil
+	return toUser(userDB), nil
 }
 
 // ListUsersByEmail uses a levenshtein query to return the top 10 matches by email.
@@ -138,4 +127,17 @@ func (r *repository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 		return fmt.Errorf("repository: failed to delete user: %w", err)
 	}
 	return nil
+}
+
+// toUser is a mapper that converts a db user to a domain user.
+func toUser(userDB db.User) models.User {
+	return models.User{
+		ID:        userDB.ID.Bytes,
+		Name:      userDB.Name.String,
+		Email:     &userDB.Email.String,
+		Password:  &userDB.Password.String,
+		IsGuest:   userDB.IsGuest.Bool,
+		CreatedAt: userDB.CreatedAt.Time,
+		UpdatedAt: userDB.UpdatedAt.Time,
+	}
 }

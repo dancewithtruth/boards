@@ -6,6 +6,7 @@ import (
 
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/models"
+	"github.com/Wave-95/boards/backend-core/internal/security"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/internal/user"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
@@ -62,7 +63,13 @@ func getServiceDeps() (user.Repository, jwt.Service, validator.Validate) {
 
 func setupUser(t *testing.T, userRepo user.Repository) models.User {
 	user := test.NewUser()
-	err := userRepo.CreateUser(context.Background(), user)
+	hashedPassword, err := security.HashPassword(*user.Password)
+	if err != nil {
+		assert.FailNow(t, "Failed to hash password.")
+	}
+	userWithHashedPW := user
+	userWithHashedPW.Password = &hashedPassword
+	err = userRepo.CreateUser(context.Background(), userWithHashedPW)
 	if err != nil {
 		assert.FailNow(t, "Failed to create test user.")
 	}

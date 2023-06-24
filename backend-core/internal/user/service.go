@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
+	"github.com/Wave-95/boards/backend-core/internal/security"
+	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/google/uuid"
 )
@@ -31,12 +33,21 @@ func NewService(repo Repository, validator validator.Validate) *service {
 
 // CreateUser creates and returns a new user
 func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models.User, error) {
+	logger := logger.FromContext(ctx)
 	if err := s.validator.Struct(input); err != nil {
 		return models.User{}, err
 	}
 	name := toNameCase(input.Name)
 	id := uuid.New()
 	now := time.Now()
+	if input.Password != nil {
+		hashedPassword, err := security.HashPassword(*input.Password)
+		if err != nil {
+			logger.Errorf("service: failed to hash password : %w", err)
+			return models.User{}, err
+		}
+		input.Password = &hashedPassword
+	}
 	user := models.User{
 		ID:        id,
 		Name:      name,

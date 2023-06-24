@@ -6,13 +6,14 @@ import (
 	"fmt"
 
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
-	u "github.com/Wave-95/boards/backend-core/internal/user"
+	"github.com/Wave-95/boards/backend-core/internal/security"
+	"github.com/Wave-95/boards/backend-core/internal/user"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 )
 
 var (
 	// ErrBadLogin is an error that is used when a user cannot be found with the given credentials.
-	ErrBadLogin = errors.New("Could not login with provided credentials")
+	ErrBadLogin = errors.New("Incorrect email or password.")
 )
 
 // Service defines the authentication service interface.
@@ -21,13 +22,13 @@ type Service interface {
 }
 
 type service struct {
-	userRepo   u.Repository
+	userRepo   user.Repository
 	jwtService jwt.Service
 	validator  validator.Validate
 }
 
 // NewService creates a new instance of the authentication service.
-func NewService(userRepo u.Repository, jwtService jwt.Service, validator validator.Validate) Service {
+func NewService(userRepo user.Repository, jwtService jwt.Service, validator validator.Validate) Service {
 	return &service{
 		userRepo:   userRepo,
 		jwtService: jwtService,
@@ -44,12 +45,15 @@ func (s *service) Login(ctx context.Context, input LoginInput) (token string, er
 	if err := s.validator.Struct(input); err != nil {
 		return "", err
 	}
-	user, err := s.userRepo.GetUserByLogin(ctx, input.Email, input.Password)
+	retrievedUser, err := s.userRepo.GetUserByEmail(ctx, input.Email)
 	if err != nil {
-		if errors.Is(err, u.ErrUserNotFound) {
+		if errors.Is(err, user.ErrUserNotFound) {
 			return "", ErrBadLogin
 		}
-		return "", fmt.Errorf("service: failed to login: %w", err)
+		return "", fmt.Errorf("service: failed to get user by email: %w", err)
 	}
-	return s.jwtService.GenerateToken(user.ID.String())
+	if ok := security.CheckPasswordHash(input.Password, *retrievedUser.Password); ok == false {
+		return "", ErrBadLogin
+	}
+	return s.jwtService.GenerateToken(retrievedUser.ID.String())
 }

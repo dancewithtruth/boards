@@ -181,7 +181,7 @@ func buildDisconnectMsg(client *Client) []byte {
 	}
 	bytes, err := json.Marshal(msgRes)
 	if err != nil {
-		log.Printf("Failed to marshal disconnect event response: %w", err)
+		log.Printf("Failed to marshal disconnect event response: %v", err)
 	}
 	return bytes
 }

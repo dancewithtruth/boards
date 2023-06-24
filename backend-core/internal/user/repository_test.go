@@ -56,15 +56,14 @@ func TestRepository(t *testing.T) {
 		}
 		defer userRepo.DeleteUser(context.Background(), user.ID)
 		t.Run("credentials exist", func(t *testing.T) {
-			newUser, err := userRepo.GetUserByLogin(context.Background(), *user.Email, *user.Password)
+			newUser, err := userRepo.GetUserByEmail(context.Background(), *user.Email)
 			assert.NoError(t, err)
 			assert.Equal(t, user.Email, newUser.Email)
 		})
 
 		t.Run("credientials do not exist", func(t *testing.T) {
 			email := "doesnotexist@gmail.com"
-			password := "doesnotexist"
-			user, err := userRepo.GetUserByLogin(context.Background(), email, password)
+			user, err := userRepo.GetUserByEmail(context.Background(), email)
 			assert.Empty(t, user)
 			assert.ErrorIs(t, err, ErrUserNotFound)
 		})

@@ -266,6 +266,26 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 	return i, err
 }
 
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
+WHERE users.email = $1
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email pgtype.Text) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.IsGuest,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const listInvitesByBoard = `-- name: ListInvitesByBoard :many
 SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at FROM board_invites
 INNER JOIN users on users.id = board_invites.receiver_id

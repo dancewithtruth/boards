@@ -1,3 +1,7 @@
+-- name: GetUserByEmail :one
+SELECT * FROM users
+WHERE users.email = $1;
+
 -- name: CreateBoard :exec
 INSERT INTO boards 
 (id, name, description, user_id, created_at, updated_at) 

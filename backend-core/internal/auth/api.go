@@ -13,8 +13,6 @@ import (
 )
 
 const (
-	// ErrMsgUserDoesNotExist is a message displayed when a user provides login credentials for a user that does not exist
-	ErrMsgUserDoesNotExist = "User does not exist."
 	// ErrMsgInternalServer is a message displayed when an unexpected error occurs
 	ErrMsgInternalServer = "Internal server error."
 )
@@ -36,18 +34,19 @@ func NewAPI(authService Service, validator validator.Validate) API {
 // HandleLogin handles a user's login request. It returns a token in the response
 // if the login is successful.
 func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	logger := logger.FromContext(r.Context())
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
 	var input LoginInput
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		endpoint.HandleDecodeErr(w, err)
 		return
 	}
 	defer r.Body.Close()
-	token, err := api.authService.Login(r.Context(), input)
+	token, err := api.authService.Login(ctx, input)
 	if err != nil {
 		switch {
 		case errors.Is(err, ErrBadLogin):
-			endpoint.WriteWithError(w, http.StatusNotFound, ErrMsgUserDoesNotExist)
+			endpoint.WriteWithError(w, http.StatusNotFound, ErrBadLogin.Error())
 		case errors.As(err, &v.ValidationErrors{}):
 			endpoint.WriteValidationErr(w, input, err)
 		default:

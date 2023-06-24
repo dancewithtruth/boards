@@ -52,19 +52,12 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	// Validate request
-	if err := api.validator.Struct(input); err != nil {
-		logger.Errorf("handler: failed to validate request: %v", err)
-		endpoint.WriteValidationErr(w, input, err)
-		return
-	}
-
 	// Create user and handle errors
 	user, err := api.userService.CreateUser(ctx, input)
 	if err != nil {
 		switch {
 		case errors.As(err, &v.ValidationErrors{}):
-			endpoint.WriteWithError(w, http.StatusBadRequest, validator.GetValidationErrMsg(input, err))
+			endpoint.WriteValidationErr(w, input, err)
 		case errors.Is(err, ErrEmailAlreadyExists):
 			endpoint.WriteWithError(w, http.StatusConflict, ErrEmailAlreadyExists.Error())
 		default:
