@@ -71,32 +71,22 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 	userID, err := c.ws.jwtService.VerifyToken(params.Jwt)
 	user, err := c.ws.userService.GetUser(context.Background(), userID)
 	user.Password = nil
-	var msgRes ResponseUserAuthenticate
+	msgRes := ResponseUserAuthenticate{Event: EventUserAuthenticate}
 	if err != nil {
 		// Prepare error response
-		msgRes = ResponseUserAuthenticate{
-			Event:        EventUserAuthenticate,
-			Success:      false,
-			ErrorMessage: ErrMsgInvalidJwt,
-		}
+		msgRes.Success = false
+		msgRes.ErrorMessage = ErrMsgInvalidJwt
 	} else {
 		// Prepare success response
-		msgRes = ResponseUserAuthenticate{
-			Event:   EventUserAuthenticate,
-			Success: true,
-			Result: ResultUserAuthenticate{
-				User: user,
-			},
-		}
+		msgRes.Success = true
+		msgRes.Result = ResultUserAuthenticate{User: user}
 		// Assign userID to client struct
 		c.user = &user
 	}
 
 	// Send response
 	msgResBytes, err := json.Marshal(msgRes)
-	if err != nil {
-		log.Printf("handleUserAuthenticate: Failed to marshal response into JSON: %v", err)
-		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+	if err := handleMarshalError(err, "handleUserAuthenticate", c); err != nil {
 		return
 	}
 	c.send <- msgResBytes
@@ -160,9 +150,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 		}
 	}
 	msgResBytes, err := json.Marshal(msgRes)
-	if err != nil {
-		log.Printf("handleUserAuthenticate: Failed to marshal response into JSON: %v", err)
-		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+	if err := handleMarshalError(err, "handleBoardConnect", c); err != nil {
 		return
 	}
 	// Only broadcast message if successful, otherwise send only to the client
@@ -220,9 +208,7 @@ func handlePostCreate(c *Client, msgReq Request) {
 	}
 	msgResBytes, err := json.Marshal(msgRes)
 
-	if err != nil {
-		log.Printf("handlePostCreate: Failed to marshal response into JSON: %v", err)
-		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+	if err := handleMarshalError(err, "handlePostCreate", c); err != nil {
 		return
 	}
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
@@ -260,9 +246,7 @@ func handlePostFocus(c *Client, msgReq Request) {
 	}
 	msgResBytes, err := json.Marshal(msgRes)
 
-	if err != nil {
-		log.Printf("handlePostFocus: Failed to marshal response into JSON: %v", err)
-		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+	if err := handleMarshalError(err, "handlePostFocus", c); err != nil {
 		return
 	}
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
@@ -313,10 +297,7 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		Result: post,
 	}
 	msgResBytes, err := json.Marshal(msgRes)
-
-	if err != nil {
-		log.Printf("handlePostUpdate: Failed to marshal response into JSON: %v", err)
-		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
 		return
 	}
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
@@ -357,15 +338,24 @@ func handlePostDelete(c *Client, msgReq Request) {
 		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
-
-	if err != nil {
-		log.Printf("handlePostDelete: Failed to marshal response into JSON: %v", err)
-		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+	if err := handleMarshalError(err, "handlePostDelete", c); err != nil {
 		return
 	}
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
+// handleMarshalError checks to see if there are any errors when marshalling the WebSocket message response into JSON.
+// If there is an issue, it will close the connection with an internal server error close reason.
+func handleMarshalError(err error, handlerName string, c *Client) error {
+	if err != nil {
+		log.Printf("%s: Failed to marshal response into JSON: %v", handlerName, err)
+		closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		return err
+	}
+	return nil
+}
+
+// closeConnection is a helper function to write a control message with a status code and close reason text.
 func closeConnection(c *Client, statusCode int, text string) {
 	c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(statusCode, text), time.Now().Add(writeWait))
 }
