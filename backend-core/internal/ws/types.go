@@ -11,6 +11,7 @@ const (
 	// Events
 	EventUserAuthenticate = "user.authenticate"
 	EventBoardConnect     = "board.connect"
+	EventBoardDisconnect  = "board.disconnect"
 	EventPostCreate       = "post.create"
 	EventPostUpdate       = "post.update"
 	EventPostDelete       = "post.delete"
@@ -153,4 +154,13 @@ type ResultPostFocus struct {
 	ID      string      `json:"id"`
 	BoardID string      `json:"board_id"`
 	User    models.User `json:"user"`
+}
+
+type ResponseUserDisconnect struct {
+	ResponseBase
+	Result ResultUserDisconnect `json:"result,omitempty"`
+}
+
+type ResultUserDisconnect struct {
+	UserID string `json:"user_id"`
 }

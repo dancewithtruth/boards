@@ -18,7 +18,7 @@ const (
 	writeWait = 10 * time.Second
 
 	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
+	pongWait = 5 * time.Second
 
 	// Send pings to peer with this period. Must be less than pongWait.
 	pingPeriod = (pongWait * 9) / 10
@@ -67,7 +67,10 @@ func (c *Client) readPump() {
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
+	c.conn.SetPongHandler(func(string) error {
+		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil
+	})
 	for {
 		_, msg, err := c.conn.ReadMessage()
 		if err != nil {
@@ -119,7 +122,7 @@ func (c *Client) writePump() {
 			}
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+			if err := c.conn.WriteMessage(websocket.PingMessage, []byte("hi")); err != nil {
 				return
 			}
 		}
@@ -128,7 +131,9 @@ func (c *Client) writePump() {
 
 func (c *Client) unregisterAll() {
 	for boardID := range c.boards {
-		c.ws.boardHubs[boardID].unregister <- c
+		boardHub := c.ws.boardHubs[boardID]
+		boardHub.broadcast <- buildDisconnectMsg(c)
+		boardHub.unregister <- c
 	}
 }
 
@@ -162,4 +167,21 @@ func handleMessage(c *Client, msg []byte) {
 		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonUnsupportedEvent)
 		return
 	}
+}
+
+func buildDisconnectMsg(client *Client) []byte {
+	msgRes := ResponseUserDisconnect{
+		ResponseBase: ResponseBase{
+			Event:   EventBoardDisconnect,
+			Success: true,
+		},
+		Result: ResultUserDisconnect{
+			UserID: client.user.ID.String(),
+		},
+	}
+	bytes, err := json.Marshal(msgRes)
+	if err != nil {
+		log.Printf("Failed to marshal disconnect event response: %w", err)
+	}
+	return bytes
 }

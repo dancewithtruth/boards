@@ -1,6 +1,8 @@
 package ws
 
-import "github.com/Wave-95/boards/backend-core/internal/models"
+import (
+	"github.com/Wave-95/boards/backend-core/internal/models"
+)
 
 type Hub struct {
 	// Board ID
@@ -43,9 +45,10 @@ func (h *Hub) run() {
 			if _, ok := h.clients[client]; ok {
 				delete(h.clients, client)
 				close(client.send)
+				// Destroy the hub if all clients are disconnected to free resources
 				if len(h.clients) == 0 {
 					h.destroy <- h.boardID
-					break
+					return
 				}
 			}
 		case message := <-h.broadcast:

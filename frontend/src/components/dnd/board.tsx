@@ -14,6 +14,7 @@ import {
   BOARD_SPACE_ADD,
   COOKIE_NAME_JWT_TOKEN,
   EVENT_BOARD_CONNECT,
+  EVENT_BOARD_DISCONNECT,
   EVENT_POST_CREATE,
   EVENT_POST_DELETE,
   EVENT_POST_FOCUS,
@@ -62,7 +63,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, posts: initialPosts }
   const [overlayText, setOverlayText] = useState(TEXT_CONNECTING);
   const [showOverlay, setShowOverlay] = useState(true);
   const [user, setUser] = useState<User>();
-  const [connectedUsers, setConnectedUsers] = useState([]);
+  const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
   const [boardDimension, setBoardDimension] = useState({ height: 0, width: 0 });
   const [highestZ, setHighestZ] = useState(getMaxFieldFromObj(initialPosts, 'z_index'));
   const [colorSetting, setColorSetting] = useState(pickColor(posts));
@@ -115,10 +116,17 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, posts: initialPosts }
           toast.error(error_message);
         }
         break;
+      case EVENT_BOARD_DISCONNECT:
+        if (success) {
+          const userID = result.user_id;
+          const newConnectedUsers = connectedUsers.filter((user) => user.id != userID);
+          setConnectedUsers(newConnectedUsers);
+        }
+        break;
       case EVENT_POST_CREATE:
         if (success) {
           if (result.user_id == user?.id) {
-            result.autoFocus = true
+            result.autoFocus = true;
           }
           addPost(result);
         } else {
