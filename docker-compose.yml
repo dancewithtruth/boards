@@ -30,12 +30,11 @@ services:
       - db-core
   db-core:
     container_name: db-core
-    image: postgres
+    build:
+      context: ./db-core
     restart: always
-    environment:
-      POSTGRES_DB: "boards"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
+    env_file:
+      - db-core/.env
     ports:
       - 5432:5432
     healthcheck:
@@ -45,7 +44,6 @@ services:
       retries: 5
     volumes:
       - db-core-data:/var/lib/postgresql/data
-      - ./backend-core/db/testdata:/db/testdata
   swagger-core:
     container_name: swagger-core
     image: swaggerapi/swagger-ui
