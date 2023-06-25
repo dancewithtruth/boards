@@ -7,13 +7,12 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
-	v "github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService(t *testing.T) {
-	userRepo, _, validator := getServiceDeps()
-	userService := NewService(userRepo, validator)
+	userRepo, _, validate := getServiceDeps()
+	userService := NewService(userRepo, validate)
 	assert.NotNil(t, userService)
 	t.Run("Create and get user", func(t *testing.T) {
 		t.Run("using valid user input", func(t *testing.T) {
@@ -34,7 +33,7 @@ func TestService(t *testing.T) {
 		t.Run("using invalid user input", func(t *testing.T) {
 			input := CreateUserInput{}
 			_, err := userService.CreateUser(context.Background(), input)
-			assert.ErrorAs(t, err, &v.ValidationErrors{}, "Expected error to be a validation error")
+			assert.True(t, validator.IsValidationError(err), "Expected error to be a validation error")
 		})
 	})
 }

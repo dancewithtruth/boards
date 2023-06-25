@@ -9,7 +9,6 @@ import (
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/go-chi/chi/v5"
-	v "github.com/go-playground/validator/v10"
 )
 
 const (
@@ -47,7 +46,7 @@ func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.Is(err, errBadLogin):
 			endpoint.WriteWithError(w, http.StatusUnauthorized, errBadLogin.Error())
-		case errors.As(err, &v.ValidationErrors{}):
+		case validator.IsValidationError(err):
 			endpoint.WriteValidationErr(w, input, err)
 		default:
 			logger.Errorf("HandleLogin: Failed to login user due to internal server error > %v", err)

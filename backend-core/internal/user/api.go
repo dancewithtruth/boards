@@ -12,7 +12,6 @@ import (
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/go-chi/chi/v5"
-	v "github.com/go-playground/validator/v10"
 )
 
 const (
@@ -56,7 +55,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	user, err := api.userService.CreateUser(ctx, input)
 	if err != nil {
 		switch {
-		case errors.As(err, &v.ValidationErrors{}):
+		case validator.IsValidationError(err):
 			endpoint.WriteValidationErr(w, input, err)
 		case errors.Is(err, errEmailAlreadyExists):
 			endpoint.WriteWithError(w, http.StatusConflict, errEmailAlreadyExists.Error())

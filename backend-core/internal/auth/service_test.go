@@ -10,14 +10,13 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/internal/user"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
-	v "github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService(t *testing.T) {
-	userRepo, jwtService, validator := getServiceDeps()
-	authService := NewService(userRepo, jwtService, validator)
+	userRepo, jwtService, validate := getServiceDeps()
+	authService := NewService(userRepo, jwtService, validate)
 	assert.NotNil(t, authService)
 	t.Run("Login", func(t *testing.T) {
 		t.Run("using invalid input will return a validation error", func(t *testing.T) {
@@ -26,7 +25,7 @@ func TestService(t *testing.T) {
 				Password: "bad",
 			}
 			token, err := authService.Login(context.Background(), invalidInput)
-			assert.ErrorAs(t, err, &v.ValidationErrors{}, "Expected a validation error", err)
+			assert.True(t, validator.IsValidationError(err), "Expected a validation error", err)
 			assert.Empty(t, token, "Expected an empty token to be returned")
 		})
 
@@ -57,8 +56,8 @@ func TestService(t *testing.T) {
 func getServiceDeps() (user.Repository, jwt.Service, validator.Validate) {
 	userRepo := user.NewMockRepository()
 	jwtService := test.NewJWTService()
-	validator := validator.New()
-	return userRepo, jwtService, validator
+	validate := validator.New()
+	return userRepo, jwtService, validate
 }
 
 func setupUser(t *testing.T, userRepo user.Repository) models.User {

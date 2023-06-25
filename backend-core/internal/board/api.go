@@ -54,12 +54,6 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 		defer r.Body.Close()
 	}
 
-	// Validate input
-	if err := api.validator.Struct(input); err != nil {
-		endpoint.WriteValidationErr(w, input, err)
-		return
-	}
-
 	// Get userID from context
 	userID := middleware.UserIDFromContext(ctx)
 	if userID == "" {
@@ -72,9 +66,18 @@ func (api *API) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	// Create board
 	board, err := api.boardService.CreateBoard(ctx, input)
 	if err != nil {
-		logger.Errorf("handler: failed to create board: %v", err)
-		endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
-		return
+		switch {
+		case errors.Is(err, errInvalidID):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidID.Error())
+			return
+		case validator.IsValidationError(err):
+			endpoint.WriteValidationErr(w, input, err)
+			return
+		default:
+			logger.Errorf("handler: failed to create board: %v", err)
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+			return
+		}
 	}
 	endpoint.WriteWithStatus(w, http.StatusCreated, board)
 }

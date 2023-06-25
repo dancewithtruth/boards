@@ -57,10 +57,15 @@ func NewService(repo Repository, validator validator.Validate) *service {
 // CreateBoard creates a new board and inserts the owner as the first member to that board. It will
 // set the provided name and description or use defaults if none are provided.
 func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (models.Board, error) {
+	// Validate input
+	if err := s.validator.Struct(input); err != nil {
+		return models.Board{}, err
+	}
 	userID, err := uuid.Parse(input.UserID)
 	if err != nil {
-		return models.Board{}, fmt.Errorf("service: failed to parse user ID input into UUID: %w", err)
+		return models.Board{}, errInvalidID
 	}
+
 	// Create board name if none provided
 	if input.Name == nil {
 		boards, err := s.repo.ListOwnedBoards(ctx, userID)
@@ -90,7 +95,7 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 	}
 	err = s.repo.CreateBoard(ctx, board)
 
-	// Create corresponding membership
+	// Create membership for owner
 	membershipID := uuid.New()
 	membership := models.BoardMembership{
 		ID:        membershipID,

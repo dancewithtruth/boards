@@ -43,3 +43,11 @@ func getStructTag(s interface{}, fieldName string, tagKey string) string {
 
 	return field.Tag.Get(tagKey)
 }
+
+// IsValidationError checks to see if error is of type validator.ValidationErrors
+func IsValidationError(err error) bool {
+	if _, ok := err.(validator.ValidationErrors); ok {
+		return true
+	}
+	return false
+}
