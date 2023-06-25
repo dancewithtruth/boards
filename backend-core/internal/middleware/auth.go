@@ -10,13 +10,13 @@ import (
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 )
 
-type UserID int
+type userID int
 
 const (
-	UserIDKey UserID = 0
+	keyUserID userID = 0
 
-	ErrMsgMissingToken = "Missing or invalid bearer token"
-	ErrMsgInvalidToken = "Invalid token"
+	errMsgMissingToken = "Missing bearer token."
+	errMsgInvalidToken = "Token is invalid."
 )
 
 // Auth creates a middleware function that retrieves a bearer token and validates the token.
@@ -30,7 +30,7 @@ func Auth(jwtService jwt.Service) func(next http.Handler) http.Handler {
 			authHeader := r.Header.Get("Authorization")
 
 			if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer") {
-				endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgMissingToken)
+				endpoint.WriteWithError(w, http.StatusUnauthorized, errMsgMissingToken)
 				return
 			}
 
@@ -38,7 +38,7 @@ func Auth(jwtService jwt.Service) func(next http.Handler) http.Handler {
 			userID, err := jwtService.VerifyToken(token)
 			if err != nil {
 				logger.Errorf("handler: issue verifying jwt token: %w", err)
-				endpoint.WriteWithError(w, http.StatusUnauthorized, ErrMsgInvalidToken)
+				endpoint.WriteWithError(w, http.StatusUnauthorized, errMsgInvalidToken)
 				return
 			}
 			r = r.WithContext(withUser(ctx, userID))
@@ -49,7 +49,7 @@ func Auth(jwtService jwt.Service) func(next http.Handler) http.Handler {
 
 // UserIDFromContext returns a user ID from context
 func UserIDFromContext(ctx context.Context) string {
-	if userID, ok := ctx.Value(UserIDKey).(string); ok {
+	if userID, ok := ctx.Value(keyUserID).(string); ok {
 		return userID
 	}
 	return ""
@@ -57,5 +57,5 @@ func UserIDFromContext(ctx context.Context) string {
 
 // withUser adds the userID to a context object and returns that context
 func withUser(ctx context.Context, userID string) context.Context {
-	return context.WithValue(ctx, UserIDKey, userID)
+	return context.WithValue(ctx, keyUserID, userID)
 }

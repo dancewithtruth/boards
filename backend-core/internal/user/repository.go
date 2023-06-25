@@ -15,8 +15,7 @@ import (
 )
 
 var (
-	//ErrEmailAlreadyExists is an error that occurs when a user cannot be created due to duplicate email.
-	ErrEmailAlreadyExists = errors.New("User with this email already exists")
+	errEmailAlreadyExists = errors.New("User with this email already exists")
 	//ErrUserNotFound is an error that occurs when a user cannot be found.
 	ErrUserNotFound = errors.New("User does not exist")
 )
@@ -54,7 +53,7 @@ func (r *repository) CreateUser(ctx context.Context, user models.User) error {
 	if err != nil {
 		pgError := &pgconn.PgError{}
 		if errors.As(err, &pgError) && pgError.Code == pgerrcode.UniqueViolation && pgError.ConstraintName == "users_email_key" {
-			return ErrEmailAlreadyExists
+			return errEmailAlreadyExists
 		}
 		return fmt.Errorf("repository: failed to create user: %w", err)
 	}

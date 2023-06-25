@@ -10,18 +10,19 @@ import (
 )
 
 const (
-	DBHostKey     = "DB_HOST"
-	DBPortKey     = "DB_PORT"
-	DBNameKey     = "DB_NAME"
-	DBUserKey     = "DB_USER"
-	DBPasswordKey = "DB_PASSWORD"
+	keyDBHost     = "DB_HOST"
+	keyDBPort     = "DB_PORT"
+	keyDBName     = "DB_NAME"
+	keyDBUser     = "DB_USER"
+	keyDBPassword = "DB_PASSWORD"
 
-	ServerPortKey    = "SERVER_PORT"
-	JWTSecretKey     = "JWT_SIGNING_KEY"
-	JWTExpirationKey = "JWT_EXPIRATION"
-	DockerKey        = "DOCKER"
+	keyServerPort    = "SERVER_PORT"
+	keyJWTSecret     = "JWT_SIGNING_KEY"
+	keyJWTExpiration = "JWT_EXPIRATION"
+	keyDocker        = "DOCKER"
 )
 
+// Config encapsulates all the server configuration values.
 type Config struct {
 	ServerPort     string
 	JwtSecret      string
@@ -29,6 +30,7 @@ type Config struct {
 	DatabaseConfig DatabaseConfig
 }
 
+// Load looks for config values in environment variables and sets them into the Config struct.
 func Load(file string) (*Config, error) {
 	err := godotenv.Load(file)
 	if err != nil {
@@ -38,9 +40,9 @@ func Load(file string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	serverPort := os.Getenv(ServerPortKey)
-	jwtSecret := os.Getenv(JWTSecretKey)
-	jwtExpirationStr := os.Getenv(JWTExpirationKey)
+	serverPort := os.Getenv(keyServerPort)
+	jwtSecret := os.Getenv(keyJWTSecret)
+	jwtExpirationStr := os.Getenv(keyJWTExpiration)
 	jwtExpiration, err := strconv.Atoi(jwtExpirationStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT expiration value: %w", err)
@@ -54,6 +56,7 @@ func Load(file string) (*Config, error) {
 	}, nil
 }
 
+// DatabaseConfig encapsulates all the config values for the database.
 type DatabaseConfig struct {
 	Host     string `validate:"required"`
 	Port     string `validate:"required"`
@@ -62,6 +65,7 @@ type DatabaseConfig struct {
 	Password string `validate:"required"`
 }
 
+// Validate checks that all values are properly loaded into the database config.
 func (dbConfig *DatabaseConfig) Validate() error {
 	validate := validator.New()
 	if err := validate.Struct(dbConfig); err != nil {
@@ -72,16 +76,16 @@ func (dbConfig *DatabaseConfig) Validate() error {
 
 func getDatabaseConfig() (DatabaseConfig, error) {
 	databaseConfig := DatabaseConfig{
-		Host:     os.Getenv(DBHostKey),
-		Port:     os.Getenv(DBPortKey),
-		Name:     os.Getenv(DBNameKey),
-		User:     os.Getenv(DBUserKey),
-		Password: os.Getenv(DBPasswordKey),
+		Host:     os.Getenv(keyDBHost),
+		Port:     os.Getenv(keyDBPort),
+		Name:     os.Getenv(keyDBName),
+		User:     os.Getenv(keyDBUser),
+		Password: os.Getenv(keyDBPassword),
 	}
 
 	// This allows running tests from outside the docker network assuming your local
 	// development environment has ports exposed
-	if os.Getenv(DockerKey) == "" {
+	if os.Getenv(keyDocker) == "" {
 		databaseConfig.Host = "localhost"
 	}
 

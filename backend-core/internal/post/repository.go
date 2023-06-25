@@ -11,9 +11,10 @@ import (
 )
 
 var (
-	ErrPostNotFound = errors.New("Post not found.")
+	errPostNotFound = errors.New("Post not found")
 )
 
+// Repository is an interface that represents all the database capabilities for the post repository.
 type Repository interface {
 	CreatePost(ctx context.Context, post models.Post) error
 	GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error)
@@ -27,11 +28,13 @@ type repository struct {
 	q  *db.Queries
 }
 
+// NewRepository intializes a struct that implements the Repository interface.
 func NewRepository(conn *db.DB) *repository {
 	q := db.New(conn)
 	return &repository{db: conn, q: q}
 }
 
+// CreatePost creates a single post.
 func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 	arg := db.CreatePostParams{
 		ID:        pgtype.UUID{Bytes: post.ID, Valid: true},
@@ -49,6 +52,7 @@ func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 	return r.q.CreatePost(ctx, arg)
 }
 
+// GetPost returns a single post.
 func (r *repository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
 	postDB, err := r.q.GetPost(ctx, pgtype.UUID{Bytes: postID, Valid: true})
 	if err != nil {
@@ -70,6 +74,7 @@ func (r *repository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post
 	return post, nil
 }
 
+// ListPosts returns a list of posts for a given board ID.
 func (r *repository) ListPosts(ctx context.Context, boardID uuid.UUID) ([]models.Post, error) {
 	postsDB, err := r.q.ListPosts(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
@@ -95,6 +100,7 @@ func (r *repository) ListPosts(ctx context.Context, boardID uuid.UUID) ([]models
 	return posts, nil
 }
 
+// UpdatePost takes a post model and updates an existing post.
 func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
 	arg := db.UpdatePostParams{
 		ID:        pgtype.UUID{Bytes: post.ID, Valid: true},
@@ -112,6 +118,7 @@ func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
 	return r.q.UpdatePost(ctx, arg)
 }
 
+// DeletePost delets a single post.
 func (r *repository) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	return r.q.DeletePost(ctx, pgtype.UUID{Bytes: postID, Valid: true})
 }

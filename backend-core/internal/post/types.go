@@ -30,6 +30,7 @@ type UpdatePostInput struct {
 	ZIndex  *int    `json:"z_index" validate:"omitempty,min=1"`
 }
 
+// Validate validates the update post payload.
 func (i *UpdatePostInput) Validate() error {
 	validator := validator.New()
 	return validator.Struct(i)

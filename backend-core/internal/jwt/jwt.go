@@ -8,6 +8,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// Service is an interface that represents all the capabilities for the JWT service.
 type Service interface {
 	GenerateToken(userID string) (string, error)
 	VerifyToken(token string) (string, error)
@@ -18,10 +19,13 @@ type service struct {
 	expiration int
 }
 
+// New creates a service with a provided JWT secret string and expiration (hourly) number. It implements
+// the JWT Service interface.
 func New(jwtSecret string, expiration int) *service {
 	return &service{jwtSecret, expiration}
 }
 
+// GenerateToken takes a user ID and
 func (s *service) GenerateToken(userID string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"userID": userID,
@@ -30,8 +34,7 @@ func (s *service) GenerateToken(userID string) (string, error) {
 	return token.SignedString([]byte(s.jwtSecret))
 }
 
-// verifyToken parses and validates a jwt token. It returns the userID on a
-// valid token.
+// VerifyToken parses and validates a jwt token. It returns the userID if the token is valid.
 func (s *service) VerifyToken(tokenString string) (string, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -54,7 +57,7 @@ func (s *service) VerifyToken(tokenString string) (string, error) {
 			return "", fmt.Errorf("User id not set: %w", err)
 		}
 		return userIDStr, nil
-	} else {
-		return "", errors.New("Invalid token")
 	}
+	return "", errors.New("Invalid token")
+
 }

@@ -9,15 +9,12 @@ import (
 )
 
 const (
-	InvalidRequest      = "Invalid request"
-	JsonDecodingFailure = "Unable to decode json request"
+	errMsgInvalidReq = "Invalid request"
+	// ErrMsgJSONDecode is an error message displayed to the API consumer when the server fails to decode the JSON body.
+	ErrMsgJSONDecode = "Failed to decode json request"
 )
 
-type Validator interface {
-	Validate() error
-}
-
-type ErrResponse struct {
+type errResponse struct {
 	Status  int    `json:"status"`
 	Message string `json:"message"`
 }
@@ -27,7 +24,7 @@ type ErrResponse struct {
 func WriteWithError(w http.ResponseWriter, statusCode int, errMsg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
-	errResponse := ErrResponse{
+	errResponse := errResponse{
 		Status:  statusCode,
 		Message: errMsg,
 	}
@@ -52,7 +49,7 @@ func buildDecodeErrorMsg(field string, want string, got string) string {
 // HandleDecodeErr responds with the appropriate decode error msg and sets
 // the http status to 400
 func HandleDecodeErr(w http.ResponseWriter, err error) {
-	errMsg := JsonDecodingFailure
+	errMsg := ErrMsgJSONDecode
 	if err, ok := err.(*json.UnmarshalTypeError); ok {
 		errMsg = buildDecodeErrorMsg(err.Field, err.Type.String(), err.Value)
 	}
@@ -62,7 +59,7 @@ func HandleDecodeErr(w http.ResponseWriter, err error) {
 // WriteValidationErr responds with the appropriate validation error msg and
 // sets the http status to 400
 func WriteValidationErr(w http.ResponseWriter, s interface{}, err error) {
-	errMsg := InvalidRequest
+	errMsg := errMsgInvalidReq
 	validationErrMsg := validator.GetValidationErrMsg(s, err)
 	if validationErrMsg != "" {
 		errMsg = validationErrMsg

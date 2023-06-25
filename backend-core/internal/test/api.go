@@ -1,4 +1,3 @@
-// Credit goes to https://github.com/qiangxue/go-rest-api
 package test
 
 import (
@@ -23,6 +22,7 @@ type APITestCase struct {
 }
 
 // Endpoint tests an HTTP endpoint using the given APITestCase spec.
+// Credit goes to https://github.com/qiangxue/go-rest-api
 func Endpoint(t *testing.T, router chi.Router, tc APITestCase) {
 	t.Run(tc.Name, func(t *testing.T) {
 		req, _ := http.NewRequest(tc.Method, tc.URL, bytes.NewBufferString(tc.Body))

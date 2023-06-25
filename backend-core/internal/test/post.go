@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// NewPost generates a new test post.
 func NewPost(boardID uuid.UUID, userID uuid.UUID) models.Post {
 	postID := uuid.New()
 	now := time.Now()

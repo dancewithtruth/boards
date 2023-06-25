@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// NewBoard creates a new board domain.
 func NewBoard(userID uuid.UUID) models.Board {
 	name := "test board name"
 	description := "test board description"

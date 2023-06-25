@@ -9,6 +9,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/config"
 )
 
+// DB creates a new test DB.
 func DB(t *testing.T) *db.DB {
 	// load env vars into config
 	dir := getSourcePath()
@@ -27,7 +28,7 @@ func DB(t *testing.T) *db.DB {
 }
 
 // getSourcePath returns the directory containing the source code that is calling this function.
-// thanks go-rest-api
+// Credit goes to https://github.com/qiangxue/go-rest-api
 func getSourcePath() string {
 	_, filename, _, _ := runtime.Caller(1)
 	return path.Dir(filename)

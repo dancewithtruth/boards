@@ -87,7 +87,7 @@ func (api *API) HandleGetBoard(w http.ResponseWriter, r *http.Request) {
 	boardID := chi.URLParam(r, "boardID")
 	boardWithMembers, err := api.boardService.GetBoardWithMembers(ctx, boardID)
 	if err != nil {
-		if errors.Is(err, ErrInvalidID) {
+		if errors.Is(err, errInvalidID) {
 			endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidBoardID)
 			return
 		}
@@ -166,10 +166,10 @@ func (api *API) HandleCreateInvites(w http.ResponseWriter, r *http.Request) {
 	invites, err := api.boardService.CreateInvites(ctx, input)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrUnauthorized):
-			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
-		case errors.Is(err, ErrInvalidID):
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidID.Error())
+		case errors.Is(err, errUnauthorized):
+			endpoint.WriteWithError(w, http.StatusForbidden, errUnauthorized.Error())
+		case errors.Is(err, errInvalidID):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidID.Error())
 		default:
 			logger.Errorf("handler: failed to create board invites: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
@@ -206,12 +206,12 @@ func (api *API) HandleListInvitesByBoard(w http.ResponseWriter, r *http.Request)
 	invites, err := api.boardService.ListInvitesByBoard(ctx, input)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrInvalidID):
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidID.Error())
-		case errors.Is(err, ErrUnauthorized):
-			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
-		case errors.Is(err, ErrInvalidStatusFilter):
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidStatusFilter.Error())
+		case errors.Is(err, errInvalidID):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidID.Error())
+		case errors.Is(err, errUnauthorized):
+			endpoint.WriteWithError(w, http.StatusForbidden, errUnauthorized.Error())
+		case errors.Is(err, errInvalidStatusFilter):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidStatusFilter.Error())
 		default:
 			logger.Errorf("handler: failed to list board invites: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
@@ -246,12 +246,12 @@ func (api *API) HandleListInvitesByReceiver(w http.ResponseWriter, r *http.Reque
 	invites, err := api.boardService.ListInvitesByReceiver(ctx, input)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrInvalidID):
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidID.Error())
-		case errors.Is(err, ErrUnauthorized):
-			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
-		case errors.Is(err, ErrInvalidStatusFilter):
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInvalidStatusFilter.Error())
+		case errors.Is(err, errInvalidID):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidID.Error())
+		case errors.Is(err, errUnauthorized):
+			endpoint.WriteWithError(w, http.StatusForbidden, errUnauthorized.Error())
+		case errors.Is(err, errInvalidStatusFilter):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidStatusFilter.Error())
 		default:
 			logger.Errorf("handler: failed to list board invites: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
@@ -286,14 +286,14 @@ func (api *API) HandleUpdateInvite(w http.ResponseWriter, r *http.Request) {
 	err := api.boardService.UpdateInvite(ctx, input)
 	if err != nil {
 		switch {
-		case errors.Is(err, ErrUnsupportedInviteUpdate):
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrUnsupportedInviteUpdate.Error())
-		case errors.Is(err, ErrInviteCancelled):
-			endpoint.WriteWithError(w, http.StatusBadRequest, ErrInviteCancelled.Error())
-		case errors.Is(err, ErrInviteDoesNotExist):
-			endpoint.WriteWithError(w, http.StatusNotFound, ErrInviteDoesNotExist.Error())
-		case errors.Is(err, ErrUnauthorized):
-			endpoint.WriteWithError(w, http.StatusForbidden, ErrUnauthorized.Error())
+		case errors.Is(err, errUnsupportedInviteUpdate):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errUnsupportedInviteUpdate.Error())
+		case errors.Is(err, errInviteCancelled):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInviteCancelled.Error())
+		case errors.Is(err, errInviteDoesNotExist):
+			endpoint.WriteWithError(w, http.StatusNotFound, errInviteDoesNotExist.Error())
+		case errors.Is(err, errUnauthorized):
+			endpoint.WriteWithError(w, http.StatusForbidden, errUnauthorized.Error())
 		default:
 			logger.Errorf("handler: failed to update invite > %w", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)

@@ -79,8 +79,8 @@ func TestService(t *testing.T) {
 			BoardID:  board.ID.String(),
 			SenderID: testUser.ID.String(),
 			Invites: []struct {
-				ReceiverId string `json:"receiver_id"`
-			}{{ReceiverId: receiver1.ID.String()}, {ReceiverId: receiver2.ID.String()}},
+				ReceiverID string `json:"receiver_id"`
+			}{{ReceiverID: receiver1.ID.String()}, {ReceiverID: receiver2.ID.String()}},
 		}
 		invites, err := boardService.CreateInvites(context.Background(), createBoardInvitesInput)
 		assert.NoError(t, err)

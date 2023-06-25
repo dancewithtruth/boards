@@ -7,8 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// CreateBoardInput defines the data structure for a create board request
-
+// CreateBoardInput defines the data structure for a create board request.
 type CreateBoardInput struct {
 	Name        *string `json:"name" validate:"omitempty,required,min=3,max=20"`
 	Description *string `json:"description" validate:"omitempty,required,min=3,max=100"`
@@ -20,7 +19,7 @@ type CreateInvitesInput struct {
 	BoardID  string
 	SenderID string
 	Invites  []struct {
-		ReceiverId string `json:"receiver_id"`
+		ReceiverID string `json:"receiver_id"`
 	} `json:"invites"`
 }
 
@@ -55,7 +54,7 @@ type BoardWithMembersDTO struct {
 	UpdatedAt   time.Time   `json:"updated_at"`
 }
 
-// MembersDTO is a formatted response representing a board member's details.
+// MemberDTO is a formatted response representing a board member's details.
 type MemberDTO struct {
 	ID         uuid.UUID     `json:"id"`
 	Name       string        `json:"name"`
@@ -83,6 +82,7 @@ type InviteWithBoardAndSenderDTO struct {
 	UpdatedAt  time.Time    `json:"updated_at"`
 }
 
+// InviteWithReceiverDTO is a formatted response representing a board invite along with its receiver details.
 type InviteWithReceiverDTO struct {
 	ID        uuid.UUID   `json:"id"`
 	BoardID   uuid.UUID   `json:"board_id"`

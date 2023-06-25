@@ -12,20 +12,20 @@ import (
 	"github.com/google/uuid"
 )
 
-type requestIDKey int
-type correlationIDKey int
+type requestID int
+type correlationID int
 
 const (
-	RequestIdKey     requestIDKey     = 0
-	CorrelationIdKey correlationIDKey = 0
+	keyRequestID     requestID     = 0
+	keyCorrelationID correlationID = 0
 
-	HeaderRequestID     = "X-Request-ID"
-	HeaderCorrelationID = "X-Correlation-ID"
+	headerNameRequestID     = "X-Request-ID"
+	headerNameCorrelationID = "X-Correlation-ID"
 
-	FieldDuration      = "duration"
-	FieldBytes         = "bytes"
-	FieldRequestID     = "requestID"
-	FieldCorrelationID = "correlationID"
+	fieldDuration      = "duration"
+	fieldBytes         = "bytes"
+	fieldRequestID     = "requestID"
+	fieldCorrelationID = "correlationID"
 )
 
 // LoggerRW is a wrapper around ResponseWriter meant to capture the status code and number of bytes written
@@ -35,17 +35,22 @@ type LoggerRW struct {
 	BytesWritten int
 }
 
+// Write overrides the ResponseWriter Write method. It saves the amount of bytes written to the BytesWritten field which
+// will be used in the request logger.
 func (lrw *LoggerRW) Write(p []byte) (int, error) {
 	bytesWritten, err := lrw.ResponseWriter.Write(p)
 	lrw.BytesWritten = bytesWritten
 	return bytesWritten, err
 }
 
+// WriteHeader overrides the ResponseWriter WriteHeader method. It saves the status code to the StatusCode field which
+// will be used in the request logger.
 func (lrw *LoggerRW) WriteHeader(statusCode int) {
 	lrw.StatusCode = statusCode
 	lrw.ResponseWriter.WriteHeader(statusCode)
 }
 
+// Hijack method is added as a method to LoggerRW to support WebSockets.
 func (lrw *LoggerRW) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	h, ok := lrw.ResponseWriter.(http.Hijacker)
 	if !ok {
@@ -64,7 +69,7 @@ func RequestLogger(l logger.Logger) func(http.Handler) http.Handler {
 			// Get request and correlation IDs and append fields to request logger
 			// Then set logger to request context
 			reqID, corrID := getOrCreateIDs(r)
-			requestLogger := l.With(FieldRequestID, reqID, FieldCorrelationID, corrID)
+			requestLogger := l.With(fieldRequestID, reqID, fieldCorrelationID, corrID)
 			ctx := r.Context()
 			ctx = context.WithValue(ctx, logger.LoggerKey, requestLogger)
 			r = r.WithContext(ctx)
@@ -80,7 +85,7 @@ func RequestLogger(l logger.Logger) func(http.Handler) http.Handler {
 			// Log duration of request
 			requestLogger.
 				WithoutCaller().
-				With(FieldDuration, time.Since(start).Milliseconds(), FieldBytes, lrw.BytesWritten).
+				With(fieldDuration, time.Since(start).Milliseconds(), fieldBytes, lrw.BytesWritten).
 				Infof("[%v] %s: %s%s", lrw.StatusCode, r.Method, r.URL.Path, queryString)
 		})
 	}
@@ -102,11 +107,11 @@ func getOrCreateIDs(r *http.Request) (reqID string, corrID string) {
 
 // getRequestID grabs the request ID string off the X-Request-ID header
 func getRequestID(r *http.Request) string {
-	return r.Header.Get(HeaderRequestID)
+	return r.Header.Get(headerNameRequestID)
 }
 
 // getCorrelationId grabs the correlation ID string off the X-Correlation-ID header
 // The correlation id groups together multiple request ids
 func getCorrelationID(r *http.Request) string {
-	return r.Header.Get(HeaderCorrelationID)
+	return r.Header.Get(headerNameCorrelationID)
 }

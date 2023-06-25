@@ -58,8 +58,8 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case errors.As(err, &v.ValidationErrors{}):
 			endpoint.WriteValidationErr(w, input, err)
-		case errors.Is(err, ErrEmailAlreadyExists):
-			endpoint.WriteWithError(w, http.StatusConflict, ErrEmailAlreadyExists.Error())
+		case errors.Is(err, errEmailAlreadyExists):
+			endpoint.WriteWithError(w, http.StatusConflict, errEmailAlreadyExists.Error())
 		default:
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}

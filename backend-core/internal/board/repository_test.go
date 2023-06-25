@@ -45,7 +45,7 @@ func TestRepository(t *testing.T) {
 		randUUID := uuid.New()
 		board, err := boardRepo.GetBoard(context.Background(), randUUID)
 		assert.Empty(t, board)
-		assert.ErrorIs(t, err, ErrBoardDoesNotExist)
+		assert.ErrorIs(t, err, errBoardDoesNotExist)
 	})
 
 	t.Run("Create a board membership and check for membership", func(t *testing.T) {

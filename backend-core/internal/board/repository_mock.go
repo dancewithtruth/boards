@@ -57,20 +57,20 @@ func (r *mockRepository) GetBoard(ctx context.Context, boardID uuid.UUID) (model
 	if board, ok := r.boards[boardID]; ok {
 		return board, nil
 	}
-	return models.Board{}, ErrBoardDoesNotExist
+	return models.Board{}, errBoardDoesNotExist
 }
 
 // GetBoardAndUsers returns a flat structure of mock BoardAndUser domain types.
-func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardAndUser, error) {
-	boardAndUsers := []BoardAndUser{}
+func (r *mockRepository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardMembershipUser, error) {
+	boardAndUsers := []BoardMembershipUser{}
 	for _, boardMembership := range r.boardMemberships {
 		if boardMembership.BoardID == boardID {
 			board := r.boards[boardID]
 			user := r.users[boardMembership.UserID]
-			boardAndUser := BoardAndUser{
-				Board:           board,
-				BoardMembership: boardMembership,
-				User:            user,
+			boardAndUser := BoardMembershipUser{
+				Board:      board,
+				Membership: boardMembership,
+				User:       user,
 			}
 			boardAndUsers = append(boardAndUsers, boardAndUser)
 		}
@@ -83,7 +83,7 @@ func (r *mockRepository) GetInvite(ctx context.Context, inviteID uuid.UUID) (mod
 	if invite, ok := r.invites[inviteID]; ok {
 		return invite, nil
 	}
-	return models.Invite{}, ErrInviteDoesNotExist
+	return models.Invite{}, errInviteDoesNotExist
 }
 
 // ListOwnedBoards returns a list of mock boards belonging to a mock user.
@@ -98,9 +98,9 @@ func (r *mockRepository) ListOwnedBoards(ctx context.Context, userID uuid.UUID) 
 }
 
 // ListOwnedBoardAndUsers returns a list of mock owned boards and associated mock members for a given mock user.
-func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
+func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardMembershipUser, error) {
 	ownedBoardIDs := []uuid.UUID{}
-	boardAndUsers := []BoardAndUser{}
+	boardAndUsers := []BoardMembershipUser{}
 	for _, board := range r.boards {
 		if board.UserID == userID {
 			ownedBoardIDs = append(ownedBoardIDs, board.ID)
@@ -110,10 +110,10 @@ func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid
 		if boardInList(boardMembership.BoardID, ownedBoardIDs) {
 			board := r.boards[boardMembership.BoardID]
 			user := r.users[boardMembership.UserID]
-			boardAndUser := BoardAndUser{
-				Board:           board,
-				BoardMembership: boardMembership,
-				User:            user,
+			boardAndUser := BoardMembershipUser{
+				Board:      board,
+				Membership: boardMembership,
+				User:       user,
 			}
 			boardAndUsers = append(boardAndUsers, boardAndUser)
 		}
@@ -122,9 +122,9 @@ func (r *mockRepository) ListOwnedBoardAndUsers(ctx context.Context, userID uuid
 }
 
 // ListSharedBoardAndUsers returns a list of mock shared boards and associated mock members for a given mock user.
-func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardAndUser, error) {
+func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardMembershipUser, error) {
 	sharedBoardIDs := []uuid.UUID{}
-	boardAndUsers := []BoardAndUser{}
+	boardAndUsers := []BoardMembershipUser{}
 	for _, boardMembership := range r.boardMemberships {
 		if boardMembership.UserID == userID && boardMembership.Role == models.RoleMember {
 			sharedBoardIDs = append(sharedBoardIDs, boardMembership.BoardID)
@@ -134,10 +134,10 @@ func (r *mockRepository) ListSharedBoardAndUsers(ctx context.Context, userID uui
 		if boardInList(boardMembership.BoardID, sharedBoardIDs) {
 			board := r.boards[boardMembership.BoardID]
 			user := r.users[boardMembership.UserID]
-			boardAndUser := BoardAndUser{
-				Board:           board,
-				BoardMembership: boardMembership,
-				User:            user,
+			boardAndUser := BoardMembershipUser{
+				Board:      board,
+				Membership: boardMembership,
+				User:       user,
 			}
 			boardAndUsers = append(boardAndUsers, boardAndUser)
 		}
@@ -171,7 +171,7 @@ func (r *mockRepository) UpdateInvite(ctx context.Context, invite models.Invite)
 		r.invites[invite.ID] = invite
 		return nil
 	}
-	return ErrInviteDoesNotExist
+	return errInviteDoesNotExist
 }
 
 // ListInvitesByBoard returns a list of mock board invites for a given board ID and status.

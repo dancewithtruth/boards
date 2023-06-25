@@ -45,7 +45,7 @@ func TestRepository(t *testing.T) {
 		userWithBadEmail := test.NewUser()
 		userWithBadEmail.Email = user.Email
 		err = userRepo.CreateUser(context.Background(), userWithBadEmail)
-		assert.ErrorIs(t, err, ErrEmailAlreadyExists, "Expected error to be returned when user created with non-unique email")
+		assert.ErrorIs(t, err, errEmailAlreadyExists, "Expected error to be returned when user created with non-unique email")
 	})
 
 	t.Run("Get user by email and password", func(t *testing.T) {

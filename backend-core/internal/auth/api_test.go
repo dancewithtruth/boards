@@ -44,8 +44,8 @@ func TestAPI(t *testing.T) {
 			URL:          url,
 			Body:         `{"email":"notfound@example.com", "password": "notfound"}`,
 			Header:       nil,
-			WantStatus:   http.StatusNotFound,
-			WantResponse: `*` + ErrBadLogin.Error() + `*`,
+			WantStatus:   http.StatusUnauthorized,
+			WantResponse: `*` + errBadLogin.Error() + `*`,
 		},
 	}
 

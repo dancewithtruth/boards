@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/cors"
 )
 
+// Cors is a middleware handler that sets the CORS configuration.
 func Cors() func(http.Handler) http.Handler {
 	return cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},

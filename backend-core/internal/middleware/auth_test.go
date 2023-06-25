@@ -27,7 +27,7 @@ func TestAuth(t *testing.T) {
 
 		// testHandler is used to check if a user ID was properly set on the request context
 		testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if ctxUserID, ok := r.Context().Value(UserIDKey).(string); ok {
+			if ctxUserID, ok := r.Context().Value(keyUserID).(string); ok {
 				assert.Equal(t, userID, ctxUserID, "Expected ctx user id to match jwt user id")
 			}
 		})
@@ -53,7 +53,7 @@ func TestAuth(t *testing.T) {
 		handler.ServeHTTP(res, req)
 
 		assert.Equal(t, http.StatusUnauthorized, res.Result().StatusCode)
-		assert.Contains(t, res.Body.String(), ErrMsgInvalidToken)
+		assert.Contains(t, res.Body.String(), errMsgInvalidToken)
 	})
 
 }

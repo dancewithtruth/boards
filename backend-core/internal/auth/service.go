@@ -12,8 +12,7 @@ import (
 )
 
 var (
-	// ErrBadLogin is an error that is used when a user cannot be found with the given credentials.
-	ErrBadLogin = errors.New("Incorrect email or password.")
+	errBadLogin = errors.New("Incorrect email or password.")
 )
 
 // Service defines the authentication service interface.
@@ -48,12 +47,12 @@ func (s *service) Login(ctx context.Context, input LoginInput) (token string, er
 	retrievedUser, err := s.userRepo.GetUserByEmail(ctx, input.Email)
 	if err != nil {
 		if errors.Is(err, user.ErrUserNotFound) {
-			return "", ErrBadLogin
+			return "", errBadLogin
 		}
 		return "", fmt.Errorf("service: failed to get user by email: %w", err)
 	}
 	if ok := security.CheckPasswordHash(input.Password, *retrievedUser.Password); ok == false {
-		return "", ErrBadLogin
+		return "", errBadLogin
 	}
 	return s.jwtService.GenerateToken(retrievedUser.ID.String())
 }

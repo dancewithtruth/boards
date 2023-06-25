@@ -48,7 +48,7 @@ func TestService(t *testing.T) {
 				Password: "badpassword123",
 			}
 			token, err := authService.Login(context.Background(), badInput)
-			assert.ErrorIs(t, err, ErrBadLogin, "Expected an ErrBadLogin error", err)
+			assert.ErrorIs(t, err, errBadLogin, "Expected an ErrBadLogin error", err)
 			assert.Empty(t, token, "Expected an empty token to be returned")
 		})
 	})

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/Wave-95/boards/backend-core/internal/endpoint"
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/go-chi/chi/v5"
@@ -45,7 +46,7 @@ func TestAPI(t *testing.T) {
 			Body:         "",
 			Header:       nil,
 			WantStatus:   http.StatusBadRequest,
-			WantResponse: "*Unable to decode json request*",
+			WantResponse: `*` + endpoint.ErrMsgJSONDecode + `*`,
 		},
 		{
 			Name:         "create user invalid body",

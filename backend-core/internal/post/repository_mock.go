@@ -25,7 +25,7 @@ func (r *mockRepository) GetPost(ctx context.Context, postID uuid.UUID) (models.
 	if post, ok := r.posts[postID]; ok {
 		return post, nil
 	}
-	return models.Post{}, ErrPostNotFound
+	return models.Post{}, errPostNotFound
 }
 
 func (r *mockRepository) UpdatePost(ctx context.Context, post models.Post) error {

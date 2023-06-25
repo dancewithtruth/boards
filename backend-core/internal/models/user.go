@@ -6,6 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// User defines a domain model for the user entity.
 type User struct {
 	ID        uuid.UUID `json:"id"`
 	Name      string    `json:"name"`

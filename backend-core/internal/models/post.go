@@ -7,9 +7,11 @@ import (
 )
 
 const (
+	// PostColorLightPink is a sample hex code background color for a post.
 	PostColorLightPink = "#F5E6E8"
 )
 
+// Post defines the domain model for a Post entity.
 type Post struct {
 	ID        uuid.UUID `json:"id"`
 	BoardID   uuid.UUID `json:"board_id"`

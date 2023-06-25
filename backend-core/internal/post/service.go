@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 )
 
+// Service is an interface that represents all the post service capabilities.
 type Service interface {
 	CreatePost(ctx context.Context, input CreatePostInput) (models.Post, error)
 	GetPost(ctx context.Context, postID string) (models.Post, error)
@@ -21,6 +22,7 @@ type service struct {
 	repo Repository
 }
 
+// NewService creates a service that implements the post Service interface.
 func NewService(repo Repository) *service {
 	return &service{repo: repo}
 }
@@ -64,6 +66,7 @@ func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models
 	return post, nil
 }
 
+// GetPost returns a single post.
 func (s *service) GetPost(ctx context.Context, postID string) (models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
@@ -76,6 +79,7 @@ func (s *service) GetPost(ctx context.Context, postID string) (models.Post, erro
 	return s.repo.GetPost(ctx, postUUID)
 }
 
+// ListPosts returns a list of posts for a given board ID.
 func (s *service) ListPosts(ctx context.Context, boardID string) ([]models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
@@ -88,6 +92,7 @@ func (s *service) ListPosts(ctx context.Context, boardID string) ([]models.Post,
 	return s.repo.ListPosts(ctx, boardUUID)
 }
 
+// UpdatePost takes an update request and applies the updates to an exisitng post.
 func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
@@ -131,7 +136,7 @@ func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models
 	return post, nil
 }
 
-// CreatePost takes an input, validates it, and creates a new post
+// DeletePost deletes a single post.
 func (s *service) DeletePost(ctx context.Context, postID string) error {
 	logger := logger.FromContext(ctx)
 	postUUID, err := uuid.Parse(postID)
