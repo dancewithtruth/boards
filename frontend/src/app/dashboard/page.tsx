@@ -3,10 +3,8 @@ import { listBoards, listInvitesByReceiver } from '@/api/board';
 import Board from '@/components/board';
 import WidthContainer from '@/components/widthContainer';
 import { COOKIE_NAME_JWT_TOKEN, FOOTER_HEIGHT, INVITE_STATUS, NAVBAR_HEIGHT } from '@/constants';
-import NewBoardForm from '@/components/forms/newBoard';
-import { FaPlus, FaUserPlus } from 'react-icons/fa';
 import NewBoardModal from '@/components/modals/newBoard';
-import InviteAlerts from '@/components/InviteAlerts';
+import InviteAlerts from '@/components/inviteAlerts';
 
 export const metadata = {
   title: 'Dashboard',
@@ -38,7 +36,7 @@ async function getPendingInvites() {
 export default async function DashboardPage() {
   const boardsData = listBoardsData();
   const invitesData = getPendingInvites();
-  
+
   const [boards, pendingInvites] = await Promise.all([boardsData, invitesData]);
 
   return (

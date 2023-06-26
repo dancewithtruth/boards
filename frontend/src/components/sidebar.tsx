@@ -27,7 +27,6 @@ const Sidebar = ({ width, board, user, connectedUsers }: SidebarProps) => {
           <p className="text-gray-700 text-md font-bold">Members</p>
           <div
             className="overflow-y-auto max-h-[500px] w-full p-6"
-            style={{ background: 'linear-gradient(to bottom, rgba(255, 255, 255, 0), rgba(255, 255, 255, 1))' }}
           >
             <div className="flex flex-col items-start space-y-4">
               {allUsers.map((user) => (
