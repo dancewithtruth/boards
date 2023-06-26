@@ -7,4 +7,4 @@ sql:
       go:
         package: "db"
         sql_package: "pgx/v5"
-        out: "db"
+        out: "./"
