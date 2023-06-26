@@ -6,9 +6,9 @@ import (
 
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/models"
-	"github.com/Wave-95/boards/backend-core/internal/security"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/internal/user"
+	"github.com/Wave-95/boards/backend-core/pkg/security"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

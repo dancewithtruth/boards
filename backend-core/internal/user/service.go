@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
-	"github.com/Wave-95/boards/backend-core/internal/security"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
+	"github.com/Wave-95/boards/backend-core/pkg/security"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/google/uuid"
 )
