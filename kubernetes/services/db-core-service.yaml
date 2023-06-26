@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: db-core
+spec:
+  selector:
+    app: db-core
+  ports:
+    - name: db-core-port
+      port: 5432
+  type: ClusterIP
