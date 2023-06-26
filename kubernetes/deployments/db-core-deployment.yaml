@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: db-core-deployment
+  labels:
+    app: db-core
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: db-core
+  template:
+    metadata:
+      labels:
+        app: db-core
+    spec:
+      containers:
+        - name: db-core
+          image: postgres
+          env:
+          - name: POSTGRES_DB
+            value: "boards"
+          - name: POSTGRES_USER
+            value: "postgres"
+          - name: POSTGRES_PASSWORD
+            value: "postgres"
