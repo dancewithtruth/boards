@@ -25,7 +25,7 @@ services:
     env_file:
       - backend-core/.env
     environment:
-      - DOCKER=true
+      - INTERNAL_NETWORK=true
     depends_on:
       - db-core
   db-core:

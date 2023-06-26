@@ -16,10 +16,10 @@ const (
 	keyDBUser     = "DB_USER"
 	keyDBPassword = "DB_PASSWORD"
 
-	keyServerPort    = "SERVER_PORT"
-	keyJWTSecret     = "JWT_SIGNING_KEY"
-	keyJWTExpiration = "JWT_EXPIRATION"
-	keyDocker        = "DOCKER"
+	keyServerPort      = "SERVER_PORT"
+	keyJWTSecret       = "JWT_SIGNING_KEY"
+	keyJWTExpiration   = "JWT_EXPIRATION"
+	keyInternalNetwork = "INTERNAL_NETWORK"
 )
 
 // Config encapsulates all the server configuration values.
@@ -85,7 +85,7 @@ func getDatabaseConfig() (DatabaseConfig, error) {
 
 	// This allows running tests from outside the docker network assuming your local
 	// development environment has ports exposed
-	if os.Getenv(keyDocker) == "" {
+	if os.Getenv(keyInternalNetwork) == "false" {
 		databaseConfig.Host = "localhost"
 	}
 

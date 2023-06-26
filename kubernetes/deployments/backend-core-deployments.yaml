@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-core-deployment
+  labels:
+    app: backend-core
+spec:
+  selector:
+    matchLabels:
+      app: backend-core
+  template:
+    metadata:
+      labels:
+        app: backend-core
+    spec:
+      containers:
+        - name: backend-core
+          image: wuvictor95/backend-core:1.0.2
+          env:
+          - name: INTERNAL_NETWORK
+            value: "true"
+
