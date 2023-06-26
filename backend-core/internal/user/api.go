@@ -60,6 +60,7 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, errEmailAlreadyExists):
 			endpoint.WriteWithError(w, http.StatusConflict, errEmailAlreadyExists.Error())
 		default:
+			logger.Errorf("handler: failed to create user: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
 		return
