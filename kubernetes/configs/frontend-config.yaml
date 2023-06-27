@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+data:
+  ENV: production
+  BACKEND_URL: http://backend-core:8080
+  NEXT_PUBLIC_BACKEND_URL: http://backend-core:8080
