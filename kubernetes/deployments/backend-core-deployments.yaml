@@ -13,8 +13,29 @@ spec:
     spec:
       containers:
         - name: backend-core
-          image: wuvictor95/backend-core:1.0.2
+          image: wuvictor95/backend-core:1.0.3
           envFrom:
           - configMapRef:
               name: backend-core-config
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-core-user
+                  key: db-core-user
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-core-password
+                  key: db-core-password
+            - name: JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-signing-key
+                  key: jwt-signing-key
+            - name: JWT_EXPIRATION
+              valueFrom:
+                secretKeyRef:
+                  name: jwt-expiration
+                  key: jwt-expiration
 
