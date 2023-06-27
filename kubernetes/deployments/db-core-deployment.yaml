@@ -18,12 +18,18 @@ spec:
             - name: db-core-persistent-storage
               mountPath: /var/lib/postgresql/data
           env:
-          - name: POSTGRES_DB
-            value: "boards"
-          - name: POSTGRES_USER
-            value: "postgres"
-          - name: POSTGRES_PASSWORD
-            value: "postgres"
+            - name: POSTGRES_DB
+              value: boards
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: db-core-user
+                  key: db-core-user
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-core-password
+                  key: db-core-password
       volumes:
         - name: db-core-persistent-storage
           persistentVolumeClaim:

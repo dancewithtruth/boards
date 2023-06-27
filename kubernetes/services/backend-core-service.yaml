@@ -7,6 +7,6 @@ spec:
     app: backend-core
   ports:
     - name: backend-core-port
-      port: 8080
-      nodePort: 30100
+      port: 80
+      nodePort: 30080
   type: NodePort

@@ -8,5 +8,5 @@ spec:
   ports:
     - name: frontend-port
       port: 3000
-      nodePort: 30101
+      nodePort: 30000
   type: NodePort
