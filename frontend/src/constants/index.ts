@@ -13,9 +13,10 @@ export const POST_COLORS: { [key: string]: string } = {
   LIGHT_PEACH: '#FCE6C9',
   LIGHT_AQUA: '#D8E2DC',
 };
-export const WS_URL = 'ws://localhost:8080/ws';
+// TODO: Make env var more robust
+export const WS_URL = process.env.ENV === 'development' ? 'ws://localhost:8080/ws' : 'ws://api.useboards.com/ws';
 export const INVITE_STATUS = {
-  PENDING: 'PENDING',
+PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
   IGNORED: 'IGNORED',
   CANCELLED: 'CANCELLED',

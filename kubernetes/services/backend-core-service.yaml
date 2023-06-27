@@ -8,5 +8,4 @@ spec:
   ports:
     - name: backend-core-port
       port: 80
-      nodePort: 30080
-  type: NodePort
+  type: LoadBalancer

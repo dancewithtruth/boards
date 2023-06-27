@@ -4,6 +4,6 @@ metadata:
   name: frontend-config
 data:
   ENV: production
-  BACKEND_URL: http://backend-core:80
+  BACKEND_URL: http://api.useboards.com
   # TODO: NEXT_PUBLIC_BACKEND_URL to be changed to loadbalancer stable IP
-  NEXT_PUBLIC_BACKEND_URL: http://backend-core:80
+  NEXT_PUBLIC_BACKEND_URL: http://api.useboards.com

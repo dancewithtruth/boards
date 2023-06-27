@@ -14,6 +14,7 @@ spec:
       containers:
         - name: backend-core
           image: wuvictor95/backend-core:1.0.3
+          imagePullPolicy: IfNotPresent
           envFrom:
           - configMapRef:
               name: backend-core-config

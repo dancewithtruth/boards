@@ -7,6 +7,6 @@ spec:
     app: frontend
   ports:
     - name: frontend-port
-      port: 3000
-      nodePort: 30000
-  type: NodePort
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
