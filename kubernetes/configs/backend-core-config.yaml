@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-core-config
+data:
+  ENV: production
+  DB_HOST: db-core
+  DB_PORT: "5432"
+  DB_NAME: boards
+  SERVER_PORT: ":8080"
+  INTERNAL_NETWORK: "true"

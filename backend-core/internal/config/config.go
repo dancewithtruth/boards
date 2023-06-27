@@ -16,6 +16,7 @@ const (
 	keyDBUser     = "DB_USER"
 	keyDBPassword = "DB_PASSWORD"
 
+	keyEnv             = "ENV"
 	keyServerPort      = "SERVER_PORT"
 	keyJWTSecret       = "JWT_SIGNING_KEY"
 	keyJWTExpiration   = "JWT_EXPIRATION"
@@ -32,9 +33,11 @@ type Config struct {
 
 // Load looks for config values in environment variables and sets them into the Config struct.
 func Load(file string) (*Config, error) {
-	err := godotenv.Load(file)
-	if err != nil {
-		return nil, fmt.Errorf("error loading .env file: %w", err)
+	if os.Getenv(keyEnv) == "development" {
+		err := godotenv.Load(file)
+		if err != nil {
+			return nil, fmt.Errorf("error loading .env file: %w", err)
+		}
 	}
 	databaseConfig, err := getDatabaseConfig()
 	if err != nil {
