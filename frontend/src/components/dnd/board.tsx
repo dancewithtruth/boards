@@ -67,7 +67,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, posts: initialPosts }
   const [boardDimension, setBoardDimension] = useState({ height: 0, width: 0 });
   const [highestZ, setHighestZ] = useState(getMaxFieldFromObj(initialPosts, 'z_index'));
   const [colorSetting, setColorSetting] = useState(pickColor(posts));
-  const { data, error, send, readyState } = useWebSocket(WS_URL);
+  const { messages, error, send, readyState } = useWebSocket(WS_URL);
   const cookies = new Cookies();
 
   useEffect(() => {
@@ -99,68 +99,73 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, posts: initialPosts }
 
   // Handles all the different post events
   useEffect(() => {
-    if (data == null) {
+    if (messages.length === 0) {
       return;
     }
-    const { event, result, success, error_message } = JSON.parse(data);
-    switch (event) {
-      case EVENT_USER_AUTHENTICATE:
-        setUser(result.user);
-        connectBoardWS(board.id, send);
-        break;
-      case EVENT_BOARD_CONNECT:
-        if (success) {
-          setShowOverlay(false);
-          setConnectedUsers(result.connected_users.concat([result.new_user]));
-        } else {
-          toast.error(error_message);
-        }
-        break;
-      case EVENT_BOARD_DISCONNECT:
-        if (success) {
-          const userID = result.user_id;
-          const newConnectedUsers = connectedUsers.filter((user) => user.id != userID);
-          setConnectedUsers(newConnectedUsers);
-        }
-        break;
-      case EVENT_POST_CREATE:
-        if (success) {
-          if (result.user_id == user?.id) {
-            result.autoFocus = true;
-          }
-          addPost(result);
-        } else {
-          toast.error(error_message);
-        }
-        break;
-      case EVENT_POST_UPDATE:
-        if (success) {
-          updatePost({ ...result, typingBy: null });
-        } else {
-          toast.error(error_message);
-        }
-        break;
-      case EVENT_POST_DELETE:
-        if (success) {
-          deletePost(result.post_id);
-        } else {
-          toast.error(error_message);
-        }
-        break;
-      case EVENT_POST_FOCUS:
-        if (success) {
-          if (result.user.id != user?.id) {
-            updatePost({ id: result.id, typingBy: result.user });
-          }
-        } else {
-          toast.error(error_message);
-        }
-        break;
+    messages.forEach(({ event, result, success, error_message }) => {
+      try {
+        switch (event) {
+          case EVENT_USER_AUTHENTICATE:
+            setUser(result.user);
+            connectBoardWS(board.id, send);
+            break;
+          case EVENT_BOARD_CONNECT:
+            if (success) {
+              setShowOverlay(false);
+              setConnectedUsers(result.connected_users.concat([result.new_user]));
+            } else {
+              toast.error(error_message);
+            }
+            break;
+          case EVENT_BOARD_DISCONNECT:
+            if (success) {
+              const userID = result.user_id;
+              const newConnectedUsers = connectedUsers.filter((user) => user.id != userID);
+              setConnectedUsers(newConnectedUsers);
+            }
+            break;
+          case EVENT_POST_CREATE:
+            if (success) {
+              if (result.user_id == user?.id) {
+                result.autoFocus = true;
+              }
+              addPost(result);
+            } else {
+              toast.error(error_message);
+            }
+            break;
+          case EVENT_POST_UPDATE:
+            if (success) {
+              updatePost({ ...result, typingBy: null });
+            } else {
+              toast.error(error_message);
+            }
+            break;
+          case EVENT_POST_DELETE:
+            if (success) {
+              deletePost(result.post_id);
+            } else {
+              toast.error(error_message);
+            }
+            break;
+          case EVENT_POST_FOCUS:
+            if (success) {
+              if (result.user.id != user?.id) {
+                updatePost({ id: result.id, typingBy: result.user });
+              }
+            } else {
+              toast.error(error_message);
+            }
+            break;
 
-      default:
-        break;
-    }
-  }, [data]);
+          default:
+            break;
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    });
+  }, [messages]);
 
   // handleDoubleClick creates a new post
   const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {

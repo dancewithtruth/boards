@@ -32,7 +32,6 @@ export const Post: FC<PostProps> = memo(function Post({
   autoFocus,
 }) {
   const [textareaValue, setTextareaValue] = useState(content);
-  const [textareaHeight, setTextareaHeight] = useState(height);
   const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const allMembers = board.members;
@@ -40,8 +39,7 @@ export const Post: FC<PostProps> = memo(function Post({
 
   useEffect(() => {
     setTextareaValue(content);
-    setTextareaHeight(height);
-  }, [content, height]);
+  }, [content]);
 
   // isHovered is used to customize styles if a Post is hovered
   const handleMouseEnter = () => {
@@ -56,20 +54,14 @@ export const Post: FC<PostProps> = memo(function Post({
     focusPost({ id, board_id: board.id }, send);
   };
 
-  // handleChange updates the textarea value and the textarea height
+  // handleChange updates the textarea value
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const { value } = event.target;
     setTextareaValue(value);
-
-    if (textareaRef.current) {
-      const scrollHeight = textareaRef.current.scrollHeight;
-      setTextareaHeight(scrollHeight);
-    }
   };
 
   const handleBlur = () => {
-    setTextareaHeight(height);
-    updatePost({ id, board_id: board.id, content: textareaValue, height: textareaHeight }, send);
+    updatePost({ id, board_id: board.id, content: textareaValue }, send);
   };
 
   const handleDelete = () => {
@@ -138,7 +130,6 @@ export const Post: FC<PostProps> = memo(function Post({
           onBlur={handleBlur}
           onFocus={handleFocus}
           autoFocus={autoFocus}
-          style={{ minHeight: textareaHeight }}
         />
         <div className="flex h-6 justify-between items-center">
           <div data-tooltip-id="my-tooltip" data-tooltip-content={authorName}>

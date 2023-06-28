@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 
 export const useWebSocket = (url: string) => {
-  const [data, setData] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const [error, setError] = useState<Event | null>(null);
   const [readyState, setReadyState] = useState<WebSocket['readyState']>();
   const ws = useRef<WebSocket>();
@@ -15,13 +15,26 @@ export const useWebSocket = (url: string) => {
   useEffect(() => {
     ws.current = new WebSocket(url);
 
-    ws.current.onopen = (event) => {
+    ws.current.onopen = () => {
       console.log(`Connected: ${url}`);
       setReadyState(ws.current?.readyState);
     };
 
     ws.current.onmessage = (event) => {
-      setData(event.data);
+      const receivedData = event.data;
+      const messages = receivedData.split('\n');
+      const parsedMessages : any[] = []
+
+      messages.forEach((message : any) => {
+        try {
+          const parsedMessage = JSON.parse(message);
+          // Process each individual message
+          parsedMessages.push(parsedMessage)
+        } catch (error) {
+          console.log('Error parsing message:', error);
+        }
+      });
+      setMessages(parsedMessages);
     };
 
     ws.current.onerror = (event) => {
@@ -37,5 +50,5 @@ export const useWebSocket = (url: string) => {
     };
   }, [url]);
 
-  return { send, data, error, readyState };
+  return { send, messages, error, readyState };
 };
