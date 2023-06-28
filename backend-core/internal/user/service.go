@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
-	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/security"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/google/uuid"
@@ -34,39 +33,40 @@ func NewService(repo Repository, validator validator.Validate) *service {
 // CreateUser takes a user input and standardizes the user name, hashes the password (if provided), and stores the
 // user details into the database.
 func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models.User, error) {
-	logger := logger.FromContext(ctx)
 	// Validate input
 	if err := s.validator.Struct(input); err != nil {
-		return models.User{}, err
+		return models.User{}, fmt.Errorf("service: failed to validate input: %w", err)
 	}
 
-	// Prepare user input for storage
+	// Prepare user input
 	id := uuid.New()
 	name := toNameCase(input.Name)
 	now := time.Now()
-	// Hash the password
-	if input.Password != nil {
-		hashedPassword, err := security.HashPassword(*input.Password)
-		if err != nil {
-			logger.Errorf("service: failed to hash password : %w", err)
-			return models.User{}, err
-		}
-		input.Password = &hashedPassword
-	}
+
+	// Initialize user
 	user := models.User{
 		ID:        id,
 		Name:      name,
 		Email:     input.Email,
-		Password:  input.Password,
 		IsGuest:   input.IsGuest,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
 
-	err := s.userRepo.CreateUser(ctx, user)
-	if err != nil {
+	// Hash the password
+	if input.Password != nil {
+		hashedPassword, err := security.HashPassword(*input.Password)
+		if err != nil {
+			return models.User{}, fmt.Errorf("service: faled to hash password: %w", err)
+		}
+		user.Password = &hashedPassword
+	}
+
+	if err := s.userRepo.CreateUser(ctx, user); err != nil {
 		return models.User{}, fmt.Errorf("service: failed to create user: %w", err)
 	}
+
+	user.Password = nil
 	return user, nil
 }
 
