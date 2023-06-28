@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 
@@ -22,7 +23,9 @@ func New() Validate {
 // returns the first validation error message.
 func GetValidationErrMsg(s interface{}, err error) string {
 	errMsg := ""
-	if fieldErrors, ok := err.(validator.ValidationErrors); ok {
+	fieldErrors := validator.ValidationErrors{}
+
+	if ok := errors.As(err, &fieldErrors); ok {
 		fieldErr := fieldErrors[0]
 		fieldName := getStructTag(s, fieldErr.Field(), "json")
 		switch fieldErr.Tag() {
@@ -50,8 +53,5 @@ func getStructTag(s interface{}, fieldName string, tagKey string) string {
 
 // IsValidationError checks to see if error is of type validator.ValidationErrors
 func IsValidationError(err error) bool {
-	if _, ok := err.(validator.ValidationErrors); ok {
-		return true
-	}
-	return false
+	return errors.As(err, &validator.ValidationErrors{})
 }

@@ -52,7 +52,7 @@ func TestAPI(t *testing.T) {
 			Name:         "create user invalid body",
 			Method:       http.MethodPost,
 			URL:          "/users",
-			Body:         "{}",
+			Body:         `{"email": "test@email.com"}`,
 			Header:       nil,
 			WantStatus:   http.StatusBadRequest,
 			WantResponse: "*name is a required field*",
