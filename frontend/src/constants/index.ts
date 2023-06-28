@@ -13,10 +13,17 @@ export const POST_COLORS: { [key: string]: string } = {
   LIGHT_PEACH: '#FCE6C9',
   LIGHT_AQUA: '#D8E2DC',
 };
-// TODO: Make env var more robust
-export const WS_URL = process.env.ENV === 'development' ? 'ws://localhost:8080/ws' : 'ws://api.useboards.com/ws';
+export const ENV = {
+  DEVELOPMENT: 'development',
+  PRODUCTION: 'production',
+};
+export const WS_URLS = {
+  DEVELOPMENT: 'ws://localhost:8080/ws',
+  PRODUCTION: 'ws://api.useboards.com/ws',
+};
+export const WS_URL = process.env.NEXT_PUBLIC_ENV === ENV.DEVELOPMENT ? WS_URLS.DEVELOPMENT : WS_URLS.PRODUCTION;
 export const INVITE_STATUS = {
-PENDING: 'PENDING',
+  PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
   IGNORED: 'IGNORED',
   CANCELLED: 'CANCELLED',
