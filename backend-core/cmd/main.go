@@ -26,12 +26,14 @@ import (
 func main() {
 	logger := logger.New()
 	validator := validator.New()
-	// Load env vars into config
+
+	// Get config
 	cfg, err := config.Load(".env")
 	if err != nil {
 		logger.Fatalf("Error loading config: %v", err)
 	}
-	// Connect to db
+
+	// Connect to database
 	conn, err := db.Connect(cfg.DatabaseConfig)
 	if err != nil {
 		logger.Fatalf("Error connecting to db: %v", err)
@@ -42,6 +44,7 @@ func main() {
 	r := chi.NewRouter()
 	server := http.Server{Addr: cfg.ServerPort, Handler: buildHandler(r, conn, logger, validator, cfg)}
 
+	// Graceful shutdown
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 
@@ -59,6 +62,7 @@ func main() {
 	}
 }
 
+// buildHandler sets up all the middleware and API routes for the server.
 func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate, cfg *config.Config) chi.Router {
 	// Set up middleware
 	r.Use(middleware.RequestLogger(logger))
