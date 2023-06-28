@@ -32,6 +32,7 @@ export const Post: FC<PostProps> = memo(function Post({
   autoFocus,
 }) {
   const [textareaValue, setTextareaValue] = useState(content);
+  const [textareaHeight, setTextareaHeight] = useState(height);
   const [isHovered, setIsHovered] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const allMembers = board.members;
@@ -39,7 +40,8 @@ export const Post: FC<PostProps> = memo(function Post({
 
   useEffect(() => {
     setTextareaValue(content);
-  }, [content]);
+    setTextareaHeight(height);
+  }, [content, height]);
 
   // isHovered is used to customize styles if a Post is hovered
   const handleMouseEnter = () => {
@@ -54,14 +56,25 @@ export const Post: FC<PostProps> = memo(function Post({
     focusPost({ id, board_id: board.id }, send);
   };
 
-  // handleChange updates the textarea value
+  // handleChange updates the textarea value and the textarea height
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     const { value } = event.target;
     setTextareaValue(value);
+
+    if (textareaRef.current) {
+      let scrollHeight = textareaRef.current.scrollHeight;
+      if (scrollHeight != textareaHeight) {
+        // Reset height to auto to calculate scroll height based on contents inside textarea
+        textareaRef.current.style.height = 'auto';
+        // Reassign scroll height based on content
+        scrollHeight = textareaRef.current.scrollHeight;
+        setTextareaHeight(scrollHeight);
+      }
+    }
   };
 
   const handleBlur = () => {
-    updatePost({ id, board_id: board.id, content: textareaValue }, send);
+    updatePost({ id, board_id: board.id, content: textareaValue, height: textareaHeight }, send);
   };
 
   const handleDelete = () => {
@@ -130,6 +143,7 @@ export const Post: FC<PostProps> = memo(function Post({
           onBlur={handleBlur}
           onFocus={handleFocus}
           autoFocus={autoFocus}
+          style={{ height: textareaHeight }}
         />
         <div className="flex h-6 justify-between items-center">
           <div data-tooltip-id="my-tooltip" data-tooltip-content={authorName}>
