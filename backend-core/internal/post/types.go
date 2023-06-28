@@ -14,6 +14,7 @@ type CreatePostInput struct {
 	ZIndex  int    `json:"z_index" validate:"min=1"`
 }
 
+// Validate validates the create post input.
 func (i *CreatePostInput) Validate() error {
 	validator := validator.New()
 	return validator.Struct(i)

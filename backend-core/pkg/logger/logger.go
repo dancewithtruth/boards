@@ -7,10 +7,12 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-type loggerKey int
+type keyLogger int
 
-const LoggerKey loggerKey = 0
+// LoggerKey is the key used to retrieve the logger value from the request context.
+const LoggerKey keyLogger = 0
 
+// Logger is an interface that describes all the capabilities of the application's logger.
 type Logger interface {
 	With(args ...interface{}) Logger
 
@@ -37,25 +39,25 @@ type logger struct {
 	*zap.SugaredLogger
 }
 
-// New creates a new logger using the default configuration
+// New creates a new logger using the default configuration.
 func New() Logger {
 	l, _ := zap.NewProduction()
 	return NewSugar(l)
 }
 
-// Returns a logger and observer for testing
-func NewTest() (Logger, *observer.ObservedLogs) {
+// NewTestLogger returns a test logger with observability capabilities.
+func NewTestLogger() (Logger, *observer.ObservedLogs) {
 	observedLogs, logObserver := observer.New(zap.InfoLevel)
 	testLogger := zap.New(observedLogs)
 	return NewSugar(testLogger), logObserver
 }
 
-// NewSugar returns a SugaredLogger and implements the Logger interface
+// NewSugar returns a SugaredLogger and implements the Logger interface.
 func NewSugar(l *zap.Logger) Logger {
 	return &logger{l.Sugar()}
 }
 
-// With returns a logger based off the root logger and decorates it with the arguments
+// With returns a logger based off the root logger and decorates it with the arguments.
 func (l *logger) With(args ...interface{}) Logger {
 	return &logger{l.SugaredLogger.With(args...)}
 }
@@ -65,7 +67,7 @@ func (l *logger) WithoutCaller() Logger {
 	return &logger{l.SugaredLogger.WithOptions(zap.WithCaller(false))}
 }
 
-// FromContext returns a logger from context. If none found, instantiate a new logger
+// FromContext returns a logger from context. If none found, instantiate a new logger.
 func FromContext(ctx context.Context) Logger {
 	if l, ok := ctx.Value(LoggerKey).(Logger); ok {
 		return l

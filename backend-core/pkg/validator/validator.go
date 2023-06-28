@@ -7,15 +7,19 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// Validate is a struct that holds the validator implementation.
 type Validate struct {
 	*validator.Validate
 }
 
+// New initializes a new validator.
 func New() Validate {
 	validate := validator.New()
 	return Validate{validate}
 }
 
+// GetValidationErrMsg checks to see if the provided err is a validation error and
+// returns the first validation error message.
 func GetValidationErrMsg(s interface{}, err error) string {
 	errMsg := ""
 	if fieldErrors, ok := err.(validator.ValidationErrors); ok {

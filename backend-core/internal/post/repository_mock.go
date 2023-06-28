@@ -11,6 +11,7 @@ type mockRepository struct {
 	posts map[uuid.UUID]models.Post
 }
 
+// NewMockRepository returns a mock post repository.
 func NewMockRepository() *mockRepository {
 	posts := make(map[uuid.UUID]models.Post)
 	return &mockRepository{posts: posts}

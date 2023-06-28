@@ -11,7 +11,7 @@ import (
 
 func TestRequestLogger(t *testing.T) {
 	t.Run("handler should add duration, request ID, and correlation ID fields", func(t *testing.T) {
-		l, observer := logger.NewTest()
+		l, observer := logger.NewTestLogger()
 		middleware := RequestLogger(l)
 		mux := http.NewServeMux()
 		handler := middleware(mux)

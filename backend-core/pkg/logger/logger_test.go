@@ -13,7 +13,7 @@ func TestNew(t *testing.T) {
 }
 
 func Test_logger_With(t *testing.T) {
-	l, observer := NewTest()
+	l, observer := NewTestLogger()
 	l = l.With("requestID", "123")
 	l.Info("Logging with request ID field appended")
 	logs := observer.All()
@@ -24,7 +24,7 @@ func Test_logger_With(t *testing.T) {
 }
 
 func Test_logger_WithoutCaller(t *testing.T) {
-	l, observer := NewTest()
+	l, observer := NewTestLogger()
 	l = l.WithoutCaller()
 	l.Info("Logging without caller")
 	logs := observer.All()
@@ -34,7 +34,7 @@ func Test_logger_WithoutCaller(t *testing.T) {
 
 func Test_logger_FromContext(t *testing.T) {
 	t.Run("context with logger", func(t *testing.T) {
-		l, observer := NewTest()
+		l, observer := NewTestLogger()
 		l = l.With("customArgKey", "customArgValue")
 		ctx := context.WithValue(context.Background(), LoggerKey, l)
 		loggerFromCtx := FromContext(ctx)

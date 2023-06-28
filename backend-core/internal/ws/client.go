@@ -32,7 +32,7 @@ var (
 	space   = []byte{' '}
 )
 
-// A thin wrapper that encapsulates write permissions for a client.
+// Board is a thin wrapper that encapsulates write permissions for a client.
 type Board struct {
 	canWrite bool
 }

@@ -4,6 +4,9 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/models"
 )
 
+// Hub represents a single board that clients are connected to. It encapsulates logic to
+// register & unregister clients, broadcast messages to clients, and destroy itself to free
+// up resources.
 type Hub struct {
 	// Board ID
 	boardID string
