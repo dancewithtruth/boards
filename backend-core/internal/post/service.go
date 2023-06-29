@@ -35,27 +35,51 @@ func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models
 	if err := input.Validate(); err != nil {
 		return models.Post{}, fmt.Errorf("service: failed to validate input: %w", err)
 	}
-	// Transform input into model
-	postID := uuid.New()
-	userID, err := uuid.Parse(input.UserID)
-	boardID, err := uuid.Parse(input.BoardID)
+	// Prepare post
+	postUUID := uuid.New()
+	userUUID, err := uuid.Parse(input.UserID)
+	boardUUID, err := uuid.Parse(input.BoardID)
 	if err != nil {
 		logger.Errorf("service: failed to parse strings into UUIDs")
 		return models.Post{}, err
 	}
 	now := time.Now()
+	var postGroupUUID uuid.UUID
+
+	// Generate post group if post group ID not provided in input
+	if input.PostGroupID == "" {
+		postGroup := models.PostGroup{
+			ID:        uuid.New(),
+			PosX:      input.PosX,
+			PosY:      input.PosY,
+			ZIndex:    input.ZIndex,
+			CreatedAt: now,
+			UpdatedAt: now,
+		}
+		err := s.repo.CreatePostGroup(ctx, postGroup)
+		if err != nil {
+			return models.Post{}, fmt.Errorf("service: failed to auto-generate post group: %w", err)
+		}
+		postGroupUUID = postGroup.ID
+	}
+
+	// Assign post order to 1 if order value is not provided
+	if input.PostOrder == 0 {
+		input.PostOrder = 1
+	}
+
+	// Create post
 	post := models.Post{
-		ID:        postID,
-		BoardID:   boardID,
-		UserID:    userID,
-		Content:   input.Content,
-		PosX:      input.PosX,
-		PosY:      input.PosY,
-		Color:     input.Color,
-		Height:    input.Height,
-		ZIndex:    input.ZIndex,
-		CreatedAt: now,
-		UpdatedAt: now,
+		ID:          postUUID,
+		BoardID:     boardUUID,
+		UserID:      userUUID,
+		Content:     input.Content,
+		Color:       input.Color,
+		Height:      input.Height,
+		CreatedAt:   now,
+		UpdatedAt:   now,
+		PostOrder:   input.PostOrder,
+		PostGroupID: postGroupUUID,
 	}
 	err = s.repo.CreatePost(ctx, post)
 	if err != nil {
@@ -110,20 +134,22 @@ func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models
 	if input.Content != nil {
 		post.Content = *input.Content
 	}
-	if input.PosX != nil {
-		post.PosX = *input.PosX
-	}
-	if input.PosY != nil {
-		post.PosY = *input.PosY
-	}
 	if input.Color != nil {
 		post.Color = *input.Color
 	}
 	if input.Height != nil {
 		post.Height = *input.Height
 	}
-	if input.ZIndex != nil {
-		post.ZIndex = *input.ZIndex
+	if input.PostOrder != nil {
+		post.PostOrder = *input.PostOrder
+	}
+	if input.PostGroupID != nil {
+		postGroupUUID, err := uuid.Parse(*input.PostGroupID)
+		if err != nil {
+			logger.Errorf("service: failed to parse post group ID")
+			return models.Post{}, err
+		}
+		post.PostGroupID = postGroupUUID
 	}
 	post.UpdatedAt = time.Now()
 

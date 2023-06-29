@@ -61,8 +61,13 @@ DELETE from boards WHERE id = $1;
 
 -- name: CreatePost :exec
 INSERT INTO posts
-(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+(id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10);
+
+-- name: CreatePostGroup :exec
+INSERT INTO post_groups
+(id, title, pos_x, pos_y, z_index, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7);
 
 -- name: GetPost :one
 SELECT * FROM posts
@@ -74,8 +79,8 @@ WHERE posts.board_id = $1;
 
 -- name: UpdatePost :exec
 UPDATE posts SET
-(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) =
-($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) WHERE id = $1;
+(id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) =
+($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) WHERE id = $1;
 
 -- name: DeletePost :exec
 DELETE from posts WHERE id = $1;

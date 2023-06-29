@@ -37,14 +37,23 @@ type BoardMembership struct {
 }
 
 type Post struct {
+	ID          pgtype.UUID
+	BoardID     pgtype.UUID
+	UserID      pgtype.UUID
+	Content     pgtype.Text
+	Color       pgtype.Text
+	Height      pgtype.Int4
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	PostOrder   pgtype.Float8
+	PostGroupID pgtype.UUID
+}
+
+type PostGroup struct {
 	ID        pgtype.UUID
-	BoardID   pgtype.UUID
-	UserID    pgtype.UUID
-	Content   pgtype.Text
+	Title     pgtype.Text
 	PosX      pgtype.Int4
 	PosY      pgtype.Int4
-	Color     pgtype.Text
-	Height    pgtype.Int4
 	ZIndex    pgtype.Int4
 	CreatedAt pgtype.Timestamp
 	UpdatedAt pgtype.Timestamp

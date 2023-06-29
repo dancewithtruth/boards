@@ -270,13 +270,12 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		return
 	}
 	updatePostInput := post.UpdatePostInput{
-		ID:      params.ID,
-		Content: params.Content,
-		PosX:    params.PosX,
-		PosY:    params.PosY,
-		Color:   params.Color,
-		Height:  params.Height,
-		ZIndex:  params.ZIndex,
+		ID:          params.ID,
+		Content:     params.Content,
+		Color:       params.Color,
+		Height:      params.Height,
+		PostOrder:   params.PostOrder,
+		PostGroupID: params.PostGroupID,
 	}
 	post, err := c.ws.postService.UpdatePost(context.Background(), updatePostInput)
 	if err != nil {

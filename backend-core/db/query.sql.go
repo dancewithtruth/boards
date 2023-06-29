@@ -96,22 +96,21 @@ func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipPara
 
 const createPost = `-- name: CreatePost :exec
 INSERT INTO posts
-(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+(id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 `
 
 type CreatePostParams struct {
-	ID        pgtype.UUID
-	BoardID   pgtype.UUID
-	UserID    pgtype.UUID
-	Content   pgtype.Text
-	PosX      pgtype.Int4
-	PosY      pgtype.Int4
-	Color     pgtype.Text
-	Height    pgtype.Int4
-	ZIndex    pgtype.Int4
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	ID          pgtype.UUID
+	BoardID     pgtype.UUID
+	UserID      pgtype.UUID
+	Content     pgtype.Text
+	Color       pgtype.Text
+	Height      pgtype.Int4
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	PostOrder   pgtype.Float8
+	PostGroupID pgtype.UUID
 }
 
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
@@ -120,10 +119,38 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 		arg.BoardID,
 		arg.UserID,
 		arg.Content,
-		arg.PosX,
-		arg.PosY,
 		arg.Color,
 		arg.Height,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+		arg.PostOrder,
+		arg.PostGroupID,
+	)
+	return err
+}
+
+const createPostGroup = `-- name: CreatePostGroup :exec
+INSERT INTO post_groups
+(id, title, pos_x, pos_y, z_index, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+`
+
+type CreatePostGroupParams struct {
+	ID        pgtype.UUID
+	Title     pgtype.Text
+	PosX      pgtype.Int4
+	PosY      pgtype.Int4
+	ZIndex    pgtype.Int4
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+func (q *Queries) CreatePostGroup(ctx context.Context, arg CreatePostGroupParams) error {
+	_, err := q.db.Exec(ctx, createPostGroup,
+		arg.ID,
+		arg.Title,
+		arg.PosX,
+		arg.PosY,
 		arg.ZIndex,
 		arg.CreatedAt,
 		arg.UpdatedAt,
@@ -282,7 +309,7 @@ func (q *Queries) GetInvite(ctx context.Context, id pgtype.UUID) (BoardInvite, e
 }
 
 const getPost = `-- name: GetPost :one
-SELECT id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at FROM posts
+SELECT id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id FROM posts
 WHERE posts.id = $1
 `
 
@@ -294,13 +321,12 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 		&i.BoardID,
 		&i.UserID,
 		&i.Content,
-		&i.PosX,
-		&i.PosY,
 		&i.Color,
 		&i.Height,
-		&i.ZIndex,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PostOrder,
+		&i.PostGroupID,
 	)
 	return i, err
 }
@@ -547,7 +573,7 @@ func (q *Queries) ListOwnedBoards(ctx context.Context, userID pgtype.UUID) ([]Bo
 }
 
 const listPosts = `-- name: ListPosts :many
-SELECT id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at FROM posts
+SELECT id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id FROM posts
 WHERE posts.board_id = $1
 `
 
@@ -565,13 +591,12 @@ func (q *Queries) ListPosts(ctx context.Context, boardID pgtype.UUID) ([]Post, e
 			&i.BoardID,
 			&i.UserID,
 			&i.Content,
-			&i.PosX,
-			&i.PosY,
 			&i.Color,
 			&i.Height,
-			&i.ZIndex,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PostOrder,
+			&i.PostGroupID,
 		); err != nil {
 			return nil, err
 		}
@@ -702,22 +727,21 @@ func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) erro
 
 const updatePost = `-- name: UpdatePost :exec
 UPDATE posts SET
-(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) =
-($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) WHERE id = $1
+(id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) =
+($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) WHERE id = $1
 `
 
 type UpdatePostParams struct {
-	ID        pgtype.UUID
-	BoardID   pgtype.UUID
-	UserID    pgtype.UUID
-	Content   pgtype.Text
-	PosX      pgtype.Int4
-	PosY      pgtype.Int4
-	Color     pgtype.Text
-	Height    pgtype.Int4
-	ZIndex    pgtype.Int4
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	ID          pgtype.UUID
+	BoardID     pgtype.UUID
+	UserID      pgtype.UUID
+	Content     pgtype.Text
+	Color       pgtype.Text
+	Height      pgtype.Int4
+	CreatedAt   pgtype.Timestamp
+	UpdatedAt   pgtype.Timestamp
+	PostOrder   pgtype.Float8
+	PostGroupID pgtype.UUID
 }
 
 func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
@@ -726,13 +750,12 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
 		arg.BoardID,
 		arg.UserID,
 		arg.Content,
-		arg.PosX,
-		arg.PosY,
 		arg.Color,
 		arg.Height,
-		arg.ZIndex,
 		arg.CreatedAt,
 		arg.UpdatedAt,
+		arg.PostOrder,
+		arg.PostGroupID,
 	)
 	return err
 }

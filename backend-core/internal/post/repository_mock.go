@@ -8,17 +8,24 @@ import (
 )
 
 type mockRepository struct {
-	posts map[uuid.UUID]models.Post
+	posts      map[uuid.UUID]models.Post
+	postGroups map[uuid.UUID]models.PostGroup
 }
 
 // NewMockRepository returns a mock post repository.
 func NewMockRepository() *mockRepository {
 	posts := make(map[uuid.UUID]models.Post)
-	return &mockRepository{posts: posts}
+	postGroups := make(map[uuid.UUID]models.PostGroup)
+	return &mockRepository{posts: posts, postGroups: postGroups}
 }
 
 func (r *mockRepository) CreatePost(ctx context.Context, post models.Post) error {
 	r.posts[post.ID] = post
+	return nil
+}
+
+func (r *mockRepository) CreatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
+	r.postGroups[postGroup.ID] = postGroup
 	return nil
 }
 
