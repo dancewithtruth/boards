@@ -38,7 +38,7 @@ func (r *mockRepository) GetUserByEmail(ctx context.Context, email string) (mode
 	return models.User{}, ErrUserNotFound
 }
 
-func (r *mockRepository) ListUsersByEmail(ctx context.Context, email string) ([]models.User, error) {
+func (r *mockRepository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([]models.User, error) {
 	// TODO: Mock out
 	return []models.User{}, nil
 }

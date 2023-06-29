@@ -298,7 +298,7 @@ func (api *API) HandleUpdateInvite(w http.ResponseWriter, r *http.Request) {
 		case errors.Is(err, errUnauthorized):
 			endpoint.WriteWithError(w, http.StatusForbidden, errUnauthorized.Error())
 		default:
-			logger.Errorf("handler: failed to update invite > %w", err)
+			logger.Errorf("handler: failed to update invite : %w", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
 		return

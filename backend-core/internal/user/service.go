@@ -85,7 +85,7 @@ func (s *service) GetUser(ctx context.Context, userID string) (models.User, erro
 
 // ListUsersByEmail returns a list of the top 10 users ranked by email similarity
 func (s *service) ListUsersByEmail(ctx context.Context, email string) ([]models.User, error) {
-	users, err := s.userRepo.ListUsersByEmail(ctx, email)
+	users, err := s.userRepo.ListUsersByFuzzyEmail(ctx, email)
 	if err != nil {
 		return []models.User{}, fmt.Errorf("service: failed to list users by fuzzy email: %w", err)
 	}

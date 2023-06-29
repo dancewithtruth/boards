@@ -49,7 +49,7 @@ func (api *API) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		case validator.IsValidationError(err):
 			endpoint.WriteValidationErr(w, input, err)
 		default:
-			logger.Errorf("HandleLogin: Failed to login user due to internal server error > %v", err)
+			logger.Errorf("HandleLogin: Failed to login user due to internal server error: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
 		return

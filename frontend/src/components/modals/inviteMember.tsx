@@ -133,9 +133,11 @@ const SearchPanel = ({ selected, handleSelect, board }: SearchPanelProps) => {
   }, [email]);
 
   async function fetchAndSetSearchedUsers() {
-    const response = await listUsersByFuzzyEmail(email);
-    const filteredResults = response.result.filter((user) => !memberIDs.includes(user.id));
-    setSearch(filteredResults);
+    if (email !== '') {
+      const response = await listUsersByFuzzyEmail(email);
+      const filteredResults = response.result.filter((user) => !memberIDs.includes(user.id));
+      setSearch(filteredResults);
+    }
   }
 
   return (

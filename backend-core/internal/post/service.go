@@ -2,6 +2,7 @@ package post
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
@@ -31,10 +32,8 @@ func NewService(repo Repository) *service {
 func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
-	err := input.Validate()
-	if err != nil {
-		logger.Errorf("service: failed to validate input")
-		return models.Post{}, err
+	if err := input.Validate(); err != nil {
+		return models.Post{}, fmt.Errorf("service: failed to validate input: %w", err)
 	}
 	// Transform input into model
 	postID := uuid.New()

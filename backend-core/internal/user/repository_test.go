@@ -48,20 +48,20 @@ func TestRepository(t *testing.T) {
 		assert.ErrorIs(t, err, errEmailAlreadyExists, "Expected error to be returned when user created with non-unique email")
 	})
 
-	t.Run("Get user by email and password", func(t *testing.T) {
+	t.Run("Get user by email", func(t *testing.T) {
 		user := test.NewUser()
 		err := userRepo.CreateUser(context.Background(), user)
 		if err != nil {
 			assert.FailNow(t, "Failed to create test user", err)
 		}
 		defer userRepo.DeleteUser(context.Background(), user.ID)
-		t.Run("credentials exist", func(t *testing.T) {
+		t.Run("email exists", func(t *testing.T) {
 			newUser, err := userRepo.GetUserByEmail(context.Background(), *user.Email)
 			assert.NoError(t, err)
 			assert.Equal(t, user.Email, newUser.Email)
 		})
 
-		t.Run("credientials do not exist", func(t *testing.T) {
+		t.Run("email does not exist", func(t *testing.T) {
 			email := "doesnotexist@gmail.com"
 			user, err := userRepo.GetUserByEmail(context.Background(), email)
 			assert.Empty(t, user)
@@ -88,7 +88,7 @@ func TestRepository(t *testing.T) {
 			}
 		}()
 
-		users, err := userRepo.ListUsersByEmail(context.Background(), "George@gmail.com")
+		users, err := userRepo.ListUsersByFuzzyEmail(context.Background(), "George@gmail.com")
 		assert.NoError(t, err)
 		assert.GreaterOrEqual(t, len(users), 3, "Expected at least 3 users to be returned")
 		assert.Equal(t, testEmails[1], *users[0].Email, "Expected George@gmail.com to be first result")

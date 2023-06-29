@@ -21,8 +21,7 @@ func New() Validate {
 
 // GetValidationErrMsg checks to see if the provided err is a validation error and
 // returns the first validation error message.
-func GetValidationErrMsg(s interface{}, err error) string {
-	errMsg := ""
+func GetValidationErrMsg(s interface{}, err error) (errMsg string) {
 	fieldErrors := validator.ValidationErrors{}
 
 	if ok := errors.As(err, &fieldErrors); ok {
@@ -51,7 +50,7 @@ func getStructTag(s interface{}, fieldName string, tagKey string) string {
 	return field.Tag.Get(tagKey)
 }
 
-// IsValidationError checks to see if error is of type validator.ValidationErrors
+// IsValidationError checks to see if error is of type validator.ValidationErrors.
 func IsValidationError(err error) bool {
 	return errors.As(err, &validator.ValidationErrors{})
 }

@@ -49,7 +49,7 @@ func TestAPI(t *testing.T) {
 			WantResponse: `*` + endpoint.ErrMsgJSONDecode + `*`,
 		},
 		{
-			Name:         "create user invalid body",
+			Name:         "create user no name",
 			Method:       http.MethodPost,
 			URL:          "/users",
 			Body:         `{"email": "test@email.com"}`,

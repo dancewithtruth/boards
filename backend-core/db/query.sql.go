@@ -131,6 +131,35 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 	return err
 }
 
+const createUser = `-- name: CreateUser :exec
+INSERT into users
+(id, name, email, password, is_guest, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+`
+
+type CreateUserParams struct {
+	ID        pgtype.UUID
+	Name      pgtype.Text
+	Email     pgtype.Text
+	Password  pgtype.Text
+	IsGuest   pgtype.Bool
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
+	_, err := q.db.Exec(ctx, createUser,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.Password,
+		arg.IsGuest,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	return err
+}
+
 const deleteBoard = `-- name: DeleteBoard :exec
 DELETE from boards WHERE id = $1
 `
@@ -146,6 +175,16 @@ DELETE from posts WHERE id = $1
 
 func (q *Queries) DeletePost(ctx context.Context, id pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deletePost, id)
+	return err
+}
+
+const deleteUser = `-- name: DeleteUser :exec
+DELETE FROM users
+WHERE users.id = $1
+`
+
+func (q *Queries) DeleteUser(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteUser, id)
 	return err
 }
 
@@ -260,6 +299,26 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 		&i.Color,
 		&i.Height,
 		&i.ZIndex,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
+WHERE users.id = $1
+`
+
+func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, getUser, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Email,
+		&i.Password,
+		&i.IsGuest,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -579,13 +638,13 @@ func (q *Queries) ListSharedBoardAndUsers(ctx context.Context, userID pgtype.UUI
 	return items, nil
 }
 
-const listUsersByEmail = `-- name: ListUsersByEmail :many
+const listUsersByFuzzyEmail = `-- name: ListUsersByFuzzyEmail :many
 SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
 ORDER BY levenshtein(users.email, $1) LIMIT 10
 `
 
-func (q *Queries) ListUsersByEmail(ctx context.Context, levenshtein interface{}) ([]User, error) {
-	rows, err := q.db.Query(ctx, listUsersByEmail, levenshtein)
+func (q *Queries) ListUsersByFuzzyEmail(ctx context.Context, levenshtein interface{}) ([]User, error) {
+	rows, err := q.db.Query(ctx, listUsersByFuzzyEmail, levenshtein)
 	if err != nil {
 		return nil, err
 	}

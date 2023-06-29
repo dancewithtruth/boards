@@ -1,6 +1,19 @@
+-- name: CreateUser :exec
+INSERT into users
+(id, name, email, password, is_guest, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7);
+
+-- name: GetUser :one
+SELECT * FROM users
+WHERE users.id = $1;
+
 -- name: GetUserByEmail :one
 SELECT * FROM users
 WHERE users.email = $1;
+
+-- name: DeleteUser :exec
+DELETE FROM users
+WHERE users.id = $1;
 
 -- name: CreateBoard :exec
 INSERT INTO boards 
@@ -67,7 +80,7 @@ UPDATE posts SET
 -- name: DeletePost :exec
 DELETE from posts WHERE id = $1;
 
--- name: ListUsersByEmail :many
+-- name: ListUsersByFuzzyEmail :many
 SELECT * FROM users
 ORDER BY levenshtein(users.email, $1) LIMIT 10;
 

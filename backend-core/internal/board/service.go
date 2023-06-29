@@ -292,14 +292,14 @@ func (s *service) ListInvitesByBoard(ctx context.Context, input ListInvitesByBoa
 	}
 	board, err := s.GetBoardWithMembers(ctx, boardID)
 	if err != nil {
-		return []InviteWithReceiverDTO{}, fmt.Errorf("service: failed to get board with members > %w", err)
+		return []InviteWithReceiverDTO{}, fmt.Errorf("service: failed to get board with members: %w", err)
 	}
 	if !UserHasAccess(board, userID) {
 		return []InviteWithReceiverDTO{}, errUnauthorized
 	}
 	rows, err := s.repo.ListInvitesByBoard(ctx, boardUUID, status)
 	if err != nil {
-		logger.Errorf("service: failed to list invites by board > %w", err)
+		logger.Errorf("service: failed to list invites by board: %w", err)
 		return []InviteWithReceiverDTO{}, err
 	}
 	return toInviteWithReceiverDTO(rows), nil
@@ -321,7 +321,7 @@ func (s *service) ListInvitesByReceiver(ctx context.Context, input ListInvitesBy
 	}
 	inviteBoardSenders, err := s.repo.ListInvitesByReceiver(ctx, receiverUUID, status)
 	if err != nil {
-		return nil, fmt.Errorf("service: failed to list invites by receiver >: %w", err)
+		return nil, fmt.Errorf("service: failed to list invites by receiver: %w", err)
 	}
 	dto := toInviteWithBoardAndSenderDTO(inviteBoardSenders)
 	return dto, nil

@@ -3,7 +3,6 @@ package ws
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -11,8 +10,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/board"
 	"github.com/Wave-95/boards/backend-core/internal/post"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
-	v "github.com/Wave-95/boards/backend-core/pkg/validator"
-	"github.com/go-playground/validator/v10"
+	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/gorilla/websocket"
 )
 
@@ -191,10 +189,11 @@ func handlePostCreate(c *Client, msgReq Request) {
 	}
 	post, err := c.ws.postService.CreatePost(context.Background(), createPostInput)
 	if err != nil {
-		if errors.Is(err, validator.ValidationErrors{}) {
-			validationErrMsg := v.GetValidationErrMsg(createPostInput, err)
+		switch {
+		case validator.IsValidationError(err):
+			validationErrMsg := validator.GetValidationErrMsg(createPostInput, err)
 			sendErrorMessage(c, buildErrorResponse(msgReq, validationErrMsg))
-		} else {
+		default:
 			sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 		}
 		return
@@ -281,10 +280,11 @@ func handlePostUpdate(c *Client, msgReq Request) {
 	}
 	post, err := c.ws.postService.UpdatePost(context.Background(), updatePostInput)
 	if err != nil {
-		if errors.Is(err, validator.ValidationErrors{}) {
-			validationErrMsg := v.GetValidationErrMsg(updatePostInput, err)
+		switch {
+		case validator.IsValidationError(err):
+			validationErrMsg := validator.GetValidationErrMsg(updatePostInput, err)
 			sendErrorMessage(c, buildErrorResponse(msgReq, validationErrMsg))
-		} else {
+		default:
 			sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 		}
 		return
