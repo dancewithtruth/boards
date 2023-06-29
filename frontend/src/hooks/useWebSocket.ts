@@ -27,6 +27,7 @@ export const useWebSocket = (url: string) => {
 
       messages.forEach((message : any) => {
         try {
+          console.log(message)
           const parsedMessage = JSON.parse(message);
           // Process each individual message
           parsedMessages.push(parsedMessage)

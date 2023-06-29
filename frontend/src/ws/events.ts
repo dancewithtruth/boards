@@ -3,11 +3,12 @@ import {
   EVENT_POST_CREATE,
   EVENT_POST_DELETE,
   EVENT_POST_FOCUS,
+  EVENT_POST_GROUP_UPDATE,
   EVENT_POST_UPDATE,
   EVENT_USER_AUTHENTICATE,
 } from '@/constants';
 import { CreatePostParams, DeletePostParams, FocusPostParams, Send } from './types';
-import { Post } from '@/api/post';
+import { Post, PostGroupWithPosts } from '@/api/post';
 
 export const buildMessageRequest = (event: string, params: object): string => {
   const payload = {
@@ -34,6 +35,11 @@ export const createPost = (params: CreatePostParams, send: Send) => {
 
 export const updatePost = (params: Partial<Post>, send: Send) => {
   const message = buildMessageRequest(EVENT_POST_UPDATE, params);
+  send(message);
+};
+
+export const updatePostGroup = (params: Partial<PostGroupWithPosts>, send: Send) => {
+  const message = buildMessageRequest(EVENT_POST_GROUP_UPDATE, params);
   send(message);
 };
 

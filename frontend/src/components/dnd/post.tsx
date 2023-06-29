@@ -3,7 +3,7 @@
 import { BoardWithMembers, User } from '@/api';
 import { POST_COLORS, POST_HEIGHT, POST_WIDTH } from '@/constants';
 import { displayColor } from '@/utils';
-import { deletePost, focusPost, updatePost } from '@/ws/events';
+import { deletePost, focusPost, updatePost, updatePostGroup } from '@/ws/events';
 import { Send } from '@/ws/types';
 import { CSSProperties, ChangeEvent, FC, useEffect, useRef, useState } from 'react';
 import { memo } from 'react';
@@ -32,14 +32,11 @@ export const Post: FC<PostProps> = memo(function Post({
   setColorSetting,
   typingBy,
   autoFocus,
-  pos_x,
-  pos_y,
-  z_index,
 }) {
   const [textareaValue, setTextareaValue] = useState(content);
   const [textareaHeight, setTextareaHeight] = useState(height);
   const [isHovered, setIsHovered] = useState(false);
-  const [isFocused, setIsFocused] = useState(false)
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const allMembers = board.members;
   const authorName = getName(user_id, allMembers) || 'Unknown';
@@ -47,13 +44,13 @@ export const Post: FC<PostProps> = memo(function Post({
   const [{ isDragging }, drag] = useDrag(
     () => ({
       type: ItemTypes.POST,
-      item: { id, pos_x, pos_y, content },
+      item: { id, content },
       collect: (monitor: DragSourceMonitor) => ({
         isDragging: monitor.isDragging(),
       }),
       canDrag: !typingBy && !isFocused,
     }),
-    [id, pos_x, pos_y, content]
+    [id, content]
   );
 
   useEffect(() => {
@@ -71,7 +68,7 @@ export const Post: FC<PostProps> = memo(function Post({
   };
 
   const handleFocus = () => {
-    setIsFocused(true)
+    setIsFocused(true);
     focusPost({ id, board_id: board.id }, send);
   };
 
@@ -93,7 +90,7 @@ export const Post: FC<PostProps> = memo(function Post({
   };
 
   const handleBlur = () => {
-    setIsFocused(false)
+    setIsFocused(false);
     updatePost({ id, board_id: board.id, content: textareaValue, height: textareaHeight }, send);
   };
 
@@ -141,78 +138,51 @@ export const Post: FC<PostProps> = memo(function Post({
   };
   return (
     <div
-    ref={drag}
-    style={getStyles(pos_x, pos_y, z_index, isHovered, isDragging, color)}
-    role="DraggablePost"
-    onMouseEnter={handleMouseEnter}
-    onMouseLeave={handleMouseLeave}
-  >
-    <div
-      className="card card-compact border border-gray-500 cursor-move shadow-md"
-      role="Post"
+      // ref={drag}
+      style={getStyles(isHovered, isDragging, color)}
+      role="DraggablePost"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="card-body !py-1">
-        <div className="h-4">
-          {typingBy ? (
-            <div className="text-center text-xs text-gray-600"> {`${typingBy.name} is typing...`}</div>
-          ) : (
-            <PostActions />
-          )}
-        </div>
-        <textarea
-          ref={textareaRef}
-          className="textarea textarea-ghost textarea-sm textarea-bordered leading-4 resize-none"
-          value={textareaValue}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          onFocus={handleFocus}
-          autoFocus={autoFocus}
-          style={{ height: textareaHeight }}
-        />
-        <div className="flex h-6 justify-between items-center">
-          <div data-tooltip-id="my-tooltip" data-tooltip-content={authorName}>
-            <Avatar id={user_id} size={16} />
+      <div className="card card-compact border border-gray-500 cursor-move">
+        <div className="card-body !py-1">
+          <div className="h-4">
+            {typingBy ? (
+              <div className="text-center text-xs text-gray-600"> {`${typingBy.name} is typing...`}</div>
+            ) : (
+              <PostActions />
+            )}
+          </div>
+          <textarea
+            ref={textareaRef}
+            className="textarea textarea-ghost textarea-sm textarea-bordered leading-4 resize-none"
+            value={textareaValue}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            onFocus={handleFocus}
+            autoFocus={autoFocus}
+            style={{ height: textareaHeight }}
+          />
+          <div className="flex h-6 justify-between items-center">
+            <div data-tooltip-id="my-tooltip" data-tooltip-content={authorName}>
+              <Avatar id={user_id} size={16} />
+            </div>
           </div>
         </div>
       </div>
     </div>
-    </div>
   );
 });
 
-function getStyles(
-  pos_x: number,
-  pos_y: number,
-  z_index: number,
-  isHovered: boolean,
-  isDragging: boolean,
-  color: string
-): CSSProperties {
-  const transform = `translate3d(${pos_x}px, ${pos_y}px, 0)`;
+function getStyles(isHovered: boolean, isDragging: boolean, color: string): CSSProperties {
   return {
-    position: 'absolute',
-    transform,
-    WebkitTransform: transform,
-    // IE fallback: hide the real node using CSS when dragging
-    // because IE will ignore our custom "empty image" drag preview.
     opacity: isDragging ? 0 : 1,
     height: isDragging ? 0 : '',
-    zIndex: isHovered ? '10000' : z_index,
     minHeight: POST_HEIGHT,
     width: POST_WIDTH,
     background: color,
   };
 }
-
-// function getStyles(color: string): CSSProperties {
-//   return {
-//     minHeight: POST_HEIGHT,
-//     width: POST_WIDTH,
-//     background: color,
-//   };
-// }
 
 function getName(userID: string, boardMembers: User[]): string | undefined {
   let name;
