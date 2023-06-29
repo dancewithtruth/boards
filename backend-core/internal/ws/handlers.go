@@ -343,6 +343,57 @@ func handlePostDelete(c *Client, msgReq Request) {
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
+// handlePostGroupUpdate handles a message request to update a post group.
+func handlePostGroupUpdate(c *Client, msgReq Request) {
+	user := c.user
+	if user.ID.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	var params ParamsPostGroupUpdate
+	err := json.Unmarshal(msgReq.Params, &params)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return
+	}
+	boardID := params.BoardID
+	if !c.boards[boardID].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	updatePostInput := post.UpdatePostGroupInput{
+		ID:     params.ID,
+		Title:  params.Title,
+		PosX:   params.PosX,
+		PosY:   params.PosY,
+		ZIndex: params.ZIndex,
+	}
+	postGroup, err := c.ws.postService.UpdatePostGroup(context.Background(), updatePostInput)
+	if err != nil {
+		switch {
+		case validator.IsValidationError(err):
+			validationErrMsg := validator.GetValidationErrMsg(updatePostInput, err)
+			sendErrorMessage(c, buildErrorResponse(msgReq, validationErrMsg))
+		default:
+			sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		}
+		return
+	}
+	msgRes := ResponsePostGroup{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: postGroup,
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
+		return
+	}
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+}
+
 // handleMarshalError checks to see if there are any errors when marshalling the WebSocket message response into JSON.
 // If there is an issue, it will close the connection with an internal server error close reason.
 func handleMarshalError(err error, handlerName string, c *Client) error {

@@ -22,6 +22,8 @@ type Repository interface {
 	ListPostGroups(ctx context.Context, boardID uuid.UUID) ([]GroupAndPost, error)
 	UpdatePost(ctx context.Context, post models.Post) error
 	DeletePost(ctx context.Context, postID uuid.UUID) error
+	GetPostGroup(ctx context.Context, postGroupID uuid.UUID) (models.PostGroup, error)
+	UpdatePostGroup(ctx context.Context, postGroup models.PostGroup) error
 }
 
 type repository struct {
@@ -113,6 +115,30 @@ func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
 // DeletePost delets a single post.
 func (r *repository) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	return r.q.DeletePost(ctx, pgtype.UUID{Bytes: postID, Valid: true})
+}
+
+// GetPostGroup returns a single post group.
+func (r *repository) GetPostGroup(ctx context.Context, postGroupID uuid.UUID) (models.PostGroup, error) {
+	postGroupDB, err := r.q.GetPostGroup(ctx, pgtype.UUID{Bytes: postGroupID, Valid: true})
+	if err != nil {
+		return models.PostGroup{}, err
+	}
+	return toPostGroup(postGroupDB), nil
+}
+
+// UpdatePostGroup takes a post group model and updates an existing post group.
+func (r *repository) UpdatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
+	arg := db.UpdatePostGroupParams{
+		ID:        pgtype.UUID{Bytes: postGroup.ID, Valid: true},
+		BoardID:   pgtype.UUID{Bytes: postGroup.BoardID, Valid: true},
+		Title:     pgtype.Text{String: postGroup.Title, Valid: true},
+		PosX:      pgtype.Int4{Int32: int32(postGroup.PosX), Valid: true},
+		PosY:      pgtype.Int4{Int32: int32(postGroup.PosY), Valid: true},
+		ZIndex:    pgtype.Int4{Int32: int32(postGroup.ZIndex), Valid: true},
+		CreatedAt: pgtype.Timestamp{Time: postGroup.CreatedAt, Valid: true},
+		UpdatedAt: pgtype.Timestamp{Time: postGroup.UpdatedAt, Valid: true},
+	}
+	return r.q.UpdatePostGroup(ctx, arg)
 }
 
 // toPost maps a db post to a domain post

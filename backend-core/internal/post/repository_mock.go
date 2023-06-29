@@ -63,3 +63,15 @@ func (r *mockRepository) DeletePost(ctx context.Context, postID uuid.UUID) error
 	delete(r.posts, postID)
 	return nil
 }
+
+func (r *mockRepository) GetPostGroup(ctx context.Context, postGroupID uuid.UUID) (models.PostGroup, error) {
+	if postGroup, ok := r.postGroups[postGroupID]; ok {
+		return postGroup, nil
+	}
+	return models.PostGroup{}, errPostNotFound
+}
+
+func (r *mockRepository) UpdatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
+	r.postGroups[postGroup.ID] = postGroup
+	return nil
+}

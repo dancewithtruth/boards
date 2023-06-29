@@ -16,6 +16,7 @@ type Service interface {
 	GetPost(ctx context.Context, postID string) (models.Post, error)
 	ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error)
 	UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error)
+	UpdatePostGroup(ctx context.Context, input UpdatePostGroupInput) (models.PostGroup, error)
 	DeletePost(ctx context.Context, postID string) error
 }
 
@@ -173,6 +174,56 @@ func (s *service) DeletePost(ctx context.Context, postID string) error {
 		return err
 	}
 	return s.repo.DeletePost(ctx, postUUID)
+}
+
+// GetPostGroup returns a single post group.
+func (s *service) GetPostGroup(ctx context.Context, postGroupID string) (models.PostGroup, error) {
+	logger := logger.FromContext(ctx)
+	// Validate input
+	postGroupUUID, err := uuid.Parse(postGroupID)
+	if err != nil {
+		logger.Errorf("service: failed to parse post group ID into UUID")
+		return models.PostGroup{}, err
+	}
+	return s.repo.GetPostGroup(ctx, postGroupUUID)
+}
+
+// UpdatePostGroup takes an update request and applies the updates to an exisitng post group.
+func (s *service) UpdatePostGroup(ctx context.Context, input UpdatePostGroupInput) (models.PostGroup, error) {
+	logger := logger.FromContext(ctx)
+	// Validate input
+	err := input.Validate()
+	if err != nil {
+		logger.Errorf("service: failed to validate input")
+		return models.PostGroup{}, err
+	}
+	// Get postGroup
+	postGroup, err := s.GetPostGroup(ctx, input.ID)
+	if err != nil {
+		logger.Errorf("service: failed to get post group for update")
+		return models.PostGroup{}, err
+	}
+
+	if input.Title != nil {
+		postGroup.Title = *input.Title
+	}
+	if input.PosX != nil {
+		postGroup.PosX = *input.PosX
+	}
+	if input.PosY != nil {
+		postGroup.PosY = *input.PosY
+	}
+	if input.ZIndex != nil {
+		postGroup.ZIndex = *input.ZIndex
+	}
+	postGroup.UpdatedAt = time.Now()
+
+	err = s.repo.UpdatePostGroup(ctx, postGroup)
+	if err != nil {
+		logger.Errorf("service: failed to update post group")
+		return models.PostGroup{}, err
+	}
+	return postGroup, nil
 }
 
 // toDTOListPostGroups converts the repository data structure into a nested DTO structure.

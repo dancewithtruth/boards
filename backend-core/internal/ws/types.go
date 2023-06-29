@@ -31,6 +31,9 @@ const (
 	// EventPostFocus is when a post receives focus.
 	EventPostFocus = "post.focus"
 
+	// EventPostGroupUpdate is when a post group is updated.
+	EventPostGroupUpdate = "post_group.update"
+
 	// Close Reasons
 
 	// CloseReasonMissingEvent indicates that the event field is missing.
@@ -147,6 +150,18 @@ type ParamsPostFocus struct {
 	BoardID string `json:"board_id" validate:"required,uuid"`
 }
 
+// RequestPostGroupUpdate represents a request to update a post group.
+type RequestPostGroupUpdate struct {
+	Event  string                `json:"event"`
+	Params ParamsPostGroupUpdate `json:"params"`
+}
+
+// ParamsPostGroupUpdate contains the parameters for updating a post group.
+type ParamsPostGroupUpdate struct {
+	BoardID string `json:"board_id" validate:"required,uuid"`
+	post.UpdatePostGroupInput
+}
+
 // ResponseBase represents the base response structure.
 type ResponseBase struct {
 	Event        string `json:"event"`
@@ -209,6 +224,12 @@ type ResultPostFocus struct {
 	ID      string      `json:"id"`
 	BoardID string      `json:"board_id"`
 	User    models.User `json:"user"`
+}
+
+// ResponsePostGroup represents the response for post group.
+type ResponsePostGroup struct {
+	ResponseBase
+	Result models.PostGroup `json:"result,omitempty"`
 }
 
 // ResponseUserDisconnect represents the response for user disconnection.

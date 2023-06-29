@@ -28,7 +28,7 @@ func (i *CreatePostInput) Validate() error {
 	return validator.Struct(i)
 }
 
-// UpdatePostInput defines the structure of a request to create a post
+// UpdatePostInput defines the structure of a request to update a post.
 type UpdatePostInput struct {
 	ID          string   `json:"id" validate:"required,uuid"`
 	Content     *string  `json:"content"`
@@ -40,6 +40,21 @@ type UpdatePostInput struct {
 
 // Validate validates the update post payload.
 func (i *UpdatePostInput) Validate() error {
+	validator := validator.New()
+	return validator.Struct(i)
+}
+
+// UpdatePostGroupInput defines the structure of a request to update a group post.
+type UpdatePostGroupInput struct {
+	ID     string  `json:"id" validate:"required,uuid"`
+	Title  *string `json:"title"`
+	PosX   *int    `json:"pos_x"`
+	PosY   *int    `json:"pos_y"`
+	ZIndex *int    `json:"z_index"`
+}
+
+// Validate validates the update post group payload.
+func (i *UpdatePostGroupInput) Validate() error {
 	validator := validator.New()
 	return validator.Struct(i)
 }

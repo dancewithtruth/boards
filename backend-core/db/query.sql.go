@@ -330,6 +330,27 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 	return i, err
 }
 
+const getPostGroup = `-- name: GetPostGroup :one
+SELECT id, board_id, title, pos_x, pos_y, z_index, created_at, updated_at FROM post_groups
+WHERE post_groups.id = $1
+`
+
+func (q *Queries) GetPostGroup(ctx context.Context, id pgtype.UUID) (PostGroup, error) {
+	row := q.db.QueryRow(ctx, getPostGroup, id)
+	var i PostGroup
+	err := row.Scan(
+		&i.ID,
+		&i.BoardID,
+		&i.Title,
+		&i.PosX,
+		&i.PosY,
+		&i.ZIndex,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
 WHERE users.id = $1
@@ -766,6 +787,37 @@ func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
 		arg.UpdatedAt,
 		arg.PostOrder,
 		arg.PostGroupID,
+	)
+	return err
+}
+
+const updatePostGroup = `-- name: UpdatePostGroup :exec
+UPDATE post_groups SET
+(id, board_id, title, pos_x, pos_y, z_index, created_at, updated_at) =
+($1, $2, $3, $4, $5, $6, $7, $8) WHERE id = $1
+`
+
+type UpdatePostGroupParams struct {
+	ID        pgtype.UUID
+	BoardID   pgtype.UUID
+	Title     pgtype.Text
+	PosX      pgtype.Int4
+	PosY      pgtype.Int4
+	ZIndex    pgtype.Int4
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+func (q *Queries) UpdatePostGroup(ctx context.Context, arg UpdatePostGroupParams) error {
+	_, err := q.db.Exec(ctx, updatePostGroup,
+		arg.ID,
+		arg.BoardID,
+		arg.Title,
+		arg.PosX,
+		arg.PosY,
+		arg.ZIndex,
+		arg.CreatedAt,
+		arg.UpdatedAt,
 	)
 	return err
 }
