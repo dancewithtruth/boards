@@ -10,6 +10,8 @@ import { memo } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import Avatar from '../avatar';
 import { PostUI } from './board';
+import { DragSourceMonitor, useDrag } from 'react-dnd';
+import { ItemTypes } from './itemTypes';
 
 type PostProps = {
   user: User;
@@ -30,13 +32,29 @@ export const Post: FC<PostProps> = memo(function Post({
   setColorSetting,
   typingBy,
   autoFocus,
+  pos_x,
+  pos_y,
+  z_index,
 }) {
   const [textareaValue, setTextareaValue] = useState(content);
   const [textareaHeight, setTextareaHeight] = useState(height);
   const [isHovered, setIsHovered] = useState(false);
+  const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const allMembers = board.members;
   const authorName = getName(user_id, allMembers) || 'Unknown';
+
+  const [{ isDragging }, drag] = useDrag(
+    () => ({
+      type: ItemTypes.POST,
+      item: { id, pos_x, pos_y, content },
+      collect: (monitor: DragSourceMonitor) => ({
+        isDragging: monitor.isDragging(),
+      }),
+      canDrag: !typingBy && !isFocused,
+    }),
+    [id, pos_x, pos_y, content]
+  );
 
   useEffect(() => {
     setTextareaValue(content);
@@ -53,6 +71,7 @@ export const Post: FC<PostProps> = memo(function Post({
   };
 
   const handleFocus = () => {
+    setIsFocused(true)
     focusPost({ id, board_id: board.id }, send);
   };
 
@@ -74,6 +93,7 @@ export const Post: FC<PostProps> = memo(function Post({
   };
 
   const handleBlur = () => {
+    setIsFocused(false)
     updatePost({ id, board_id: board.id, content: textareaValue, height: textareaHeight }, send);
   };
 
@@ -121,8 +141,14 @@ export const Post: FC<PostProps> = memo(function Post({
   };
   return (
     <div
+    ref={drag}
+    style={getStyles(pos_x, pos_y, z_index, isHovered, isDragging, color)}
+    role="DraggablePost"
+    onMouseEnter={handleMouseEnter}
+    onMouseLeave={handleMouseLeave}
+  >
+    <div
       className="card card-compact border border-gray-500 cursor-move shadow-md"
-      style={{ ...getStyles(color) }}
       role="Post"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -152,16 +178,41 @@ export const Post: FC<PostProps> = memo(function Post({
         </div>
       </div>
     </div>
+    </div>
   );
 });
 
-function getStyles(color: string): CSSProperties {
+function getStyles(
+  pos_x: number,
+  pos_y: number,
+  z_index: number,
+  isHovered: boolean,
+  isDragging: boolean,
+  color: string
+): CSSProperties {
+  const transform = `translate3d(${pos_x}px, ${pos_y}px, 0)`;
   return {
+    position: 'absolute',
+    transform,
+    WebkitTransform: transform,
+    // IE fallback: hide the real node using CSS when dragging
+    // because IE will ignore our custom "empty image" drag preview.
+    opacity: isDragging ? 0 : 1,
+    height: isDragging ? 0 : '',
+    zIndex: isHovered ? '10000' : z_index,
     minHeight: POST_HEIGHT,
     width: POST_WIDTH,
     background: color,
   };
 }
+
+// function getStyles(color: string): CSSProperties {
+//   return {
+//     minHeight: POST_HEIGHT,
+//     width: POST_WIDTH,
+//     background: color,
+//   };
+// }
 
 function getName(userID: string, boardMembers: User[]): string | undefined {
   let name;

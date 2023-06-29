@@ -5,7 +5,6 @@ import { FC, useEffect } from 'react';
 import { useState } from 'react';
 import { useDrop } from 'react-dnd';
 
-import { DraggablePost } from './draggablePost';
 import type { DragItem } from './interfaces';
 import { ItemTypes } from './itemTypes';
 import { snapToGrid as doSnapToGrid } from './snapToGrid';
@@ -41,6 +40,7 @@ import { toast } from 'react-toastify';
 import { BoardWithMembers } from '@/api/board';
 import Sidebar from '../sidebar';
 import { User } from '@/api';
+import { Post as PostUI } from './post';
 
 export type PostUI = {
   typingBy: User | null;
@@ -259,7 +259,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, posts: initialPosts }
       >
         {user
           ? Object.keys(posts).map((key) => (
-              <DraggablePost
+              <PostUI
                 key={key}
                 user={user}
                 board={board}
