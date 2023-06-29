@@ -1,6 +1,12 @@
 package post
 
-import "github.com/Wave-95/boards/backend-core/pkg/validator"
+import (
+	"time"
+
+	"github.com/Wave-95/boards/backend-core/internal/models"
+	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/google/uuid"
+)
 
 // CreatePostInput defines the structure of a request to create a post
 type CreatePostInput struct {
@@ -36,4 +42,23 @@ type UpdatePostInput struct {
 func (i *UpdatePostInput) Validate() error {
 	validator := validator.New()
 	return validator.Struct(i)
+}
+
+// GroupAndPost is a struct that encapsulates data returned from a joined post group and child post.
+type GroupAndPost struct {
+	PostGroup models.PostGroup
+	Post      models.Post
+}
+
+// GroupWithPostsDTO is a nested struct describing a post group with associated child posts.
+type GroupWithPostsDTO struct {
+	ID        uuid.UUID     `json:"id"`
+	BoardID   uuid.UUID     `json:"board_id"`
+	Title     string        `json:"title"`
+	PosX      int           `json:"pos_x"`
+	PosY      int           `json:"pos_y"`
+	ZIndex    int           `json:"z_index"`
+	Posts     []models.Post `json:"posts"`
+	CreatedAt time.Time     `json:"created_at"`
+	UpdatedAt time.Time     `json:"updated_at"`
 }

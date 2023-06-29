@@ -29,6 +29,24 @@ func (r *mockRepository) CreatePostGroup(ctx context.Context, postGroup models.P
 	return nil
 }
 
+func (r *mockRepository) ListPostGroups(ctx context.Context, boardID uuid.UUID) ([]GroupAndPost, error) {
+	list := []GroupAndPost{}
+	for _, postGroup := range r.postGroups {
+		if postGroup.BoardID == boardID {
+			for _, post := range r.posts {
+				if post.PostGroupID == postGroup.ID {
+					item := GroupAndPost{
+						PostGroup: postGroup,
+						Post:      post,
+					}
+					list = append(list, item)
+				}
+			}
+		}
+	}
+	return list, nil
+}
+
 func (r *mockRepository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
 	if post, ok := r.posts[postID]; ok {
 		return post, nil
@@ -44,14 +62,4 @@ func (r *mockRepository) UpdatePost(ctx context.Context, post models.Post) error
 func (r *mockRepository) DeletePost(ctx context.Context, postID uuid.UUID) error {
 	delete(r.posts, postID)
 	return nil
-}
-
-func (r *mockRepository) ListPosts(ctx context.Context, boardID uuid.UUID) ([]models.Post, error) {
-	posts := []models.Post{}
-	for _, post := range r.posts {
-		if post.BoardID == boardID {
-			posts = append(posts, post)
-		}
-	}
-	return posts, nil
 }

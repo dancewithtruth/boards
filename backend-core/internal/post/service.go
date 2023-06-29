@@ -14,7 +14,7 @@ import (
 type Service interface {
 	CreatePost(ctx context.Context, input CreatePostInput) (models.Post, error)
 	GetPost(ctx context.Context, postID string) (models.Post, error)
-	ListPosts(ctx context.Context, boardID string) ([]models.Post, error)
+	ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error)
 	UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error)
 	DeletePost(ctx context.Context, postID string) error
 }
@@ -38,7 +38,6 @@ func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models
 	// Prepare post
 	postUUID := uuid.New()
 	userUUID, err := uuid.Parse(input.UserID)
-	boardUUID, err := uuid.Parse(input.BoardID)
 	if err != nil {
 		logger.Errorf("service: failed to parse strings into UUIDs")
 		return models.Post{}, err
@@ -48,16 +47,20 @@ func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models
 
 	// Generate post group if post group ID not provided in input
 	if input.PostGroupID == "" {
+		boardUUID, err := uuid.Parse(input.BoardID)
+		if err != nil {
+			return models.Post{}, fmt.Errorf("service: failed to parse board ID: %w", err)
+		}
 		postGroup := models.PostGroup{
 			ID:        uuid.New(),
+			BoardID:   boardUUID,
 			PosX:      input.PosX,
 			PosY:      input.PosY,
 			ZIndex:    input.ZIndex,
 			CreatedAt: now,
 			UpdatedAt: now,
 		}
-		err := s.repo.CreatePostGroup(ctx, postGroup)
-		if err != nil {
+		if err = s.repo.CreatePostGroup(ctx, postGroup); err != nil {
 			return models.Post{}, fmt.Errorf("service: failed to auto-generate post group: %w", err)
 		}
 		postGroupUUID = postGroup.ID
@@ -71,7 +74,6 @@ func (s *service) CreatePost(ctx context.Context, input CreatePostInput) (models
 	// Create post
 	post := models.Post{
 		ID:          postUUID,
-		BoardID:     boardUUID,
 		UserID:      userUUID,
 		Content:     input.Content,
 		Color:       input.Color,
@@ -102,17 +104,18 @@ func (s *service) GetPost(ctx context.Context, postID string) (models.Post, erro
 	return s.repo.GetPost(ctx, postUUID)
 }
 
-// ListPosts returns a list of posts for a given board ID.
-func (s *service) ListPosts(ctx context.Context, boardID string) ([]models.Post, error) {
-	logger := logger.FromContext(ctx)
+// ListPostGroups returns a list of post groups and their associated posts for a given board ID.
+func (s *service) ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error) {
 	// Validate input
 	boardUUID, err := uuid.Parse(boardID)
 	if err != nil {
-		logger.Errorf("service: failed to parse boardID into UUID")
-		return []models.Post{}, err
+		return []GroupWithPostsDTO{}, fmt.Errorf("service: failed to parse boardID into UUID: %w", err)
 	}
-	//TODO: Handle error in service layer
-	return s.repo.ListPosts(ctx, boardUUID)
+	rows, err := s.repo.ListPostGroups(ctx, boardUUID)
+	if err != nil {
+		return []GroupWithPostsDTO{}, fmt.Errorf("service: failed to list post groups by board ID: %w", err)
+	}
+	return toDTOListPostGroups(rows), nil
 }
 
 // UpdatePost takes an update request and applies the updates to an exisitng post.
@@ -170,4 +173,32 @@ func (s *service) DeletePost(ctx context.Context, postID string) error {
 		return err
 	}
 	return s.repo.DeletePost(ctx, postUUID)
+}
+
+// toDTOListPostGroups converts the repository data structure into a nested DTO structure.
+func toDTOListPostGroups(rows []GroupAndPost) []GroupWithPostsDTO {
+	listDTO := []GroupWithPostsDTO{}
+	parentIndex := make(map[uuid.UUID]int)
+	for _, row := range rows {
+		// If parent does not exist in list, add it to the list
+		if _, ok := parentIndex[row.PostGroup.ID]; !ok {
+			parentIndex[row.PostGroup.ID] = len(parentIndex)
+			item := GroupWithPostsDTO{
+				ID:        row.PostGroup.ID,
+				BoardID:   row.PostGroup.BoardID,
+				Title:     row.PostGroup.Title,
+				PosX:      row.PostGroup.PosX,
+				PosY:      row.PostGroup.PosY,
+				ZIndex:    row.PostGroup.ZIndex,
+				Posts:     []models.Post{},
+				CreatedAt: row.PostGroup.CreatedAt,
+				UpdatedAt: row.PostGroup.UpdatedAt,
+			}
+			listDTO = append(listDTO, item)
+		}
+		// Nest child into parent
+		index := parentIndex[row.PostGroup.ID]
+		listDTO[index].Posts = append(listDTO[index].Posts, row.Post)
+	}
+	return listDTO
 }

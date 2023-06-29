@@ -8,12 +8,11 @@ import (
 )
 
 // NewPost generates a new test post.
-func NewPost(boardID uuid.UUID, userID uuid.UUID, postGroupID uuid.UUID) models.Post {
+func NewPost(userID uuid.UUID, postGroupID uuid.UUID) models.Post {
 	postID := uuid.New()
 	now := time.Now()
 	testPost := models.Post{
 		ID:          postID,
-		BoardID:     boardID,
 		UserID:      userID,
 		Content:     "This is a post!",
 		Color:       models.PostColorLightPink,
@@ -26,11 +25,12 @@ func NewPost(boardID uuid.UUID, userID uuid.UUID, postGroupID uuid.UUID) models.
 }
 
 // NewPostGroup generates a new test post group.
-func NewPostGroup() models.PostGroup {
+func NewPostGroup(boardID uuid.UUID) models.PostGroup {
 	ID := uuid.New()
 	now := time.Now()
 	return models.PostGroup{
 		ID:        ID,
+		BoardID:   boardID,
 		PosX:      10,
 		PosY:      10,
 		CreatedAt: now,

@@ -19,7 +19,7 @@ type Repository interface {
 	CreatePost(ctx context.Context, post models.Post) error
 	CreatePostGroup(ctx context.Context, post models.PostGroup) error
 	GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error)
-	ListPosts(ctx context.Context, postID uuid.UUID) ([]models.Post, error)
+	ListPostGroups(ctx context.Context, boardID uuid.UUID) ([]GroupAndPost, error)
 	UpdatePost(ctx context.Context, post models.Post) error
 	DeletePost(ctx context.Context, postID uuid.UUID) error
 }
@@ -39,7 +39,6 @@ func NewRepository(conn *db.DB) *repository {
 func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 	arg := db.CreatePostParams{
 		ID:          pgtype.UUID{Bytes: post.ID, Valid: true},
-		BoardID:     pgtype.UUID{Bytes: post.BoardID, Valid: true},
 		UserID:      pgtype.UUID{Bytes: post.UserID, Valid: true},
 		Content:     pgtype.Text{String: post.Content, Valid: true},
 		Color:       pgtype.Text{String: post.Color, Valid: true},
@@ -56,6 +55,7 @@ func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 func (r *repository) CreatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
 	arg := db.CreatePostGroupParams{
 		ID:        pgtype.UUID{Bytes: postGroup.ID, Valid: true},
+		BoardID:   pgtype.UUID{Bytes: postGroup.BoardID, Valid: true},
 		Title:     pgtype.Text{String: postGroup.Title, Valid: true},
 		PosX:      pgtype.Int4{Int32: int32(postGroup.PosX), Valid: true},
 		PosY:      pgtype.Int4{Int32: int32(postGroup.PosY), Valid: true},
@@ -75,24 +75,29 @@ func (r *repository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post
 	return toPost(postDB), nil
 }
 
-// ListPosts returns a list of posts for a given board ID.
-func (r *repository) ListPosts(ctx context.Context, boardID uuid.UUID) ([]models.Post, error) {
-	postsDB, err := r.q.ListPosts(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
+// ListPostGroups returns a list of post groups belonging to a board and its associated child posts.
+func (r *repository) ListPostGroups(ctx context.Context, boardID uuid.UUID) ([]GroupAndPost, error) {
+	rows, err := r.q.ListPostGroups(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
 	if err != nil {
-		return []models.Post{}, err
+		return []GroupAndPost{}, err
 	}
-	posts := []models.Post{}
-	for _, postDB := range postsDB {
-		posts = append(posts, toPost(postDB))
+	var list []GroupAndPost
+	for _, row := range rows {
+		post := toPost(row.Post)
+		postGroup := toPostGroup(row.PostGroup)
+		item := GroupAndPost{
+			Post:      post,
+			PostGroup: postGroup,
+		}
+		list = append(list, item)
 	}
-	return posts, nil
+	return list, nil
 }
 
 // UpdatePost takes a post model and updates an existing post.
 func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
 	arg := db.UpdatePostParams{
 		ID:          pgtype.UUID{Bytes: post.ID, Valid: true},
-		BoardID:     pgtype.UUID{Bytes: post.BoardID, Valid: true},
 		UserID:      pgtype.UUID{Bytes: post.UserID, Valid: true},
 		Content:     pgtype.Text{String: post.Content, Valid: true},
 		Color:       pgtype.Text{String: post.Color, Valid: true},
@@ -114,7 +119,6 @@ func (r *repository) DeletePost(ctx context.Context, postID uuid.UUID) error {
 func toPost(postDB db.Post) models.Post {
 	return models.Post{
 		ID:          postDB.ID.Bytes,
-		BoardID:     postDB.BoardID.Bytes,
 		UserID:      postDB.UserID.Bytes,
 		Content:     postDB.Content.String,
 		Color:       postDB.Color.String,
@@ -123,5 +127,19 @@ func toPost(postDB db.Post) models.Post {
 		UpdatedAt:   postDB.UpdatedAt.Time,
 		PostOrder:   postDB.PostOrder.Float64,
 		PostGroupID: postDB.PostGroupID.Bytes,
+	}
+}
+
+// toPostGroup maps a db post group to a domain post group
+func toPostGroup(postGroupDB db.PostGroup) models.PostGroup {
+	return models.PostGroup{
+		ID:        postGroupDB.ID.Bytes,
+		BoardID:   postGroupDB.BoardID.Bytes,
+		Title:     postGroupDB.Title.String,
+		PosX:      int(postGroupDB.PosX.Int32),
+		PosY:      int(postGroupDB.PosY.Int32),
+		ZIndex:    int(postGroupDB.ZIndex.Int32),
+		CreatedAt: postGroupDB.CreatedAt.Time,
+		UpdatedAt: postGroupDB.UpdatedAt.Time,
 	}
 }

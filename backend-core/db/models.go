@@ -38,7 +38,6 @@ type BoardMembership struct {
 
 type Post struct {
 	ID          pgtype.UUID
-	BoardID     pgtype.UUID
 	UserID      pgtype.UUID
 	Content     pgtype.Text
 	Color       pgtype.Text
@@ -51,6 +50,7 @@ type Post struct {
 
 type PostGroup struct {
 	ID        pgtype.UUID
+	BoardID   pgtype.UUID
 	Title     pgtype.Text
 	PosX      pgtype.Int4
 	PosY      pgtype.Int4

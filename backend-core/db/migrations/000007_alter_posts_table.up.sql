@@ -1,4 +1,5 @@
 ALTER TABLE IF EXISTS posts
+DROP COLUMN board_id,
 DROP COLUMN pos_x,
 DROP COLUMN pos_y,
 DROP COLUMN z_index;

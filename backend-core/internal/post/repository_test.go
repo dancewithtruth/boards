@@ -23,12 +23,12 @@ func TestRepository(t *testing.T) {
 
 	t.Run("Create, get, update, and delete post", func(t *testing.T) {
 		// Create
-		postGroup := test.NewPostGroup()
+		postGroup := test.NewPostGroup(testBoard.ID)
 		err := repo.CreatePostGroup(context.Background(), postGroup)
 		if err != nil {
 			assert.FailNow(t, "Failed to create post group")
 		}
-		testPost := test.NewPost(testBoard.ID, testUser.ID, postGroup.ID)
+		testPost := test.NewPost(testUser.ID, postGroup.ID)
 		err = repo.CreatePost(context.Background(), testPost)
 		assert.NoError(t, err)
 

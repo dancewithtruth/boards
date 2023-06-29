@@ -96,13 +96,12 @@ func (q *Queries) CreateMembership(ctx context.Context, arg CreateMembershipPara
 
 const createPost = `-- name: CreatePost :exec
 INSERT INTO posts
-(id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+(id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 `
 
 type CreatePostParams struct {
 	ID          pgtype.UUID
-	BoardID     pgtype.UUID
 	UserID      pgtype.UUID
 	Content     pgtype.Text
 	Color       pgtype.Text
@@ -116,7 +115,6 @@ type CreatePostParams struct {
 func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 	_, err := q.db.Exec(ctx, createPost,
 		arg.ID,
-		arg.BoardID,
 		arg.UserID,
 		arg.Content,
 		arg.Color,
@@ -131,12 +129,13 @@ func (q *Queries) CreatePost(ctx context.Context, arg CreatePostParams) error {
 
 const createPostGroup = `-- name: CreatePostGroup :exec
 INSERT INTO post_groups
-(id, title, pos_x, pos_y, z_index, created_at, updated_at) 
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+(id, board_id, title, pos_x, pos_y, z_index, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 `
 
 type CreatePostGroupParams struct {
 	ID        pgtype.UUID
+	BoardID   pgtype.UUID
 	Title     pgtype.Text
 	PosX      pgtype.Int4
 	PosY      pgtype.Int4
@@ -148,6 +147,7 @@ type CreatePostGroupParams struct {
 func (q *Queries) CreatePostGroup(ctx context.Context, arg CreatePostGroupParams) error {
 	_, err := q.db.Exec(ctx, createPostGroup,
 		arg.ID,
+		arg.BoardID,
 		arg.Title,
 		arg.PosX,
 		arg.PosY,
@@ -309,7 +309,7 @@ func (q *Queries) GetInvite(ctx context.Context, id pgtype.UUID) (BoardInvite, e
 }
 
 const getPost = `-- name: GetPost :one
-SELECT id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id FROM posts
+SELECT id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id FROM posts
 WHERE posts.id = $1
 `
 
@@ -318,7 +318,6 @@ func (q *Queries) GetPost(ctx context.Context, id pgtype.UUID) (Post, error) {
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.BoardID,
 		&i.UserID,
 		&i.Content,
 		&i.Color,
@@ -572,31 +571,44 @@ func (q *Queries) ListOwnedBoards(ctx context.Context, userID pgtype.UUID) ([]Bo
 	return items, nil
 }
 
-const listPosts = `-- name: ListPosts :many
-SELECT id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id FROM posts
-WHERE posts.board_id = $1
+const listPostGroups = `-- name: ListPostGroups :many
+SELECT post_groups.id, post_groups.board_id, post_groups.title, post_groups.pos_x, post_groups.pos_y, post_groups.z_index, post_groups.created_at, post_groups.updated_at, posts.id, posts.user_id, posts.content, posts.color, posts.height, posts.created_at, posts.updated_at, posts.post_order, posts.post_group_id FROM post_groups
+INNER JOIN posts on posts.post_group_id = post_groups.id
+WHERE post_groups.board_id = $1
 `
 
-func (q *Queries) ListPosts(ctx context.Context, boardID pgtype.UUID) ([]Post, error) {
-	rows, err := q.db.Query(ctx, listPosts, boardID)
+type ListPostGroupsRow struct {
+	PostGroup PostGroup
+	Post      Post
+}
+
+func (q *Queries) ListPostGroups(ctx context.Context, boardID pgtype.UUID) ([]ListPostGroupsRow, error) {
+	rows, err := q.db.Query(ctx, listPostGroups, boardID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Post
+	var items []ListPostGroupsRow
 	for rows.Next() {
-		var i Post
+		var i ListPostGroupsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.BoardID,
-			&i.UserID,
-			&i.Content,
-			&i.Color,
-			&i.Height,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.PostOrder,
-			&i.PostGroupID,
+			&i.PostGroup.ID,
+			&i.PostGroup.BoardID,
+			&i.PostGroup.Title,
+			&i.PostGroup.PosX,
+			&i.PostGroup.PosY,
+			&i.PostGroup.ZIndex,
+			&i.PostGroup.CreatedAt,
+			&i.PostGroup.UpdatedAt,
+			&i.Post.ID,
+			&i.Post.UserID,
+			&i.Post.Content,
+			&i.Post.Color,
+			&i.Post.Height,
+			&i.Post.CreatedAt,
+			&i.Post.UpdatedAt,
+			&i.Post.PostOrder,
+			&i.Post.PostGroupID,
 		); err != nil {
 			return nil, err
 		}
@@ -727,13 +739,12 @@ func (q *Queries) UpdateInvite(ctx context.Context, arg UpdateInviteParams) erro
 
 const updatePost = `-- name: UpdatePost :exec
 UPDATE posts SET
-(id, board_id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) =
-($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) WHERE id = $1
+(id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) =
+($1, $2, $3, $4, $5, $6, $7, $8, $9) WHERE id = $1
 `
 
 type UpdatePostParams struct {
 	ID          pgtype.UUID
-	BoardID     pgtype.UUID
 	UserID      pgtype.UUID
 	Content     pgtype.Text
 	Color       pgtype.Text
@@ -747,7 +758,6 @@ type UpdatePostParams struct {
 func (q *Queries) UpdatePost(ctx context.Context, arg UpdatePostParams) error {
 	_, err := q.db.Exec(ctx, updatePost,
 		arg.ID,
-		arg.BoardID,
 		arg.UserID,
 		arg.Content,
 		arg.Color,

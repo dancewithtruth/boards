@@ -14,7 +14,6 @@ const (
 // Post defines the domain model for a post entity.
 type Post struct {
 	ID          uuid.UUID `json:"id"`
-	BoardID     uuid.UUID `json:"board_id"`
 	UserID      uuid.UUID `json:"user_id"`
 	Content     string    `json:"content"`
 	Color       string    `json:"color"`
@@ -28,6 +27,7 @@ type Post struct {
 // PostGroup defines the domain model for a post group entity.
 type PostGroup struct {
 	ID        uuid.UUID `json:"id"`
+	BoardID   uuid.UUID `json:"board_id"`
 	Title     string    `json:"title"`
 	PosX      int       `json:"pos_x"`
 	PosY      int       `json:"pos_y"`
