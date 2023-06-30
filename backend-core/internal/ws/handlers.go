@@ -61,9 +61,7 @@ func handleDestroy(destroy chan string, boardHubs map[string]*Hub) {
 func handleUserAuthenticate(c *Client, msgReq Request) {
 	// Unmarshal params
 	var params ParamsUserAuthenticate
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	// Verify user
@@ -104,9 +102,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 	}
 	// Unmarshal params
 	var params ParamsBoardConnect
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	// Check if user has access to board
@@ -167,9 +163,7 @@ func handlePostCreate(c *Client, msgReq Request) {
 		return
 	}
 	var params ParamsPostCreate
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	boardID := params.BoardID
@@ -221,9 +215,7 @@ func handlePostFocus(c *Client, msgReq Request) {
 		return
 	}
 	var params ParamsPostFocus
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	postID := params.ID
@@ -259,9 +251,7 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		return
 	}
 	var params ParamsPostUpdate
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	boardID := params.BoardID
@@ -310,9 +300,7 @@ func handlePostDelete(c *Client, msgReq Request) {
 		return
 	}
 	var params ParamsPostDelete
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	postID := params.PostID
@@ -322,8 +310,7 @@ func handlePostDelete(c *Client, msgReq Request) {
 		sendErrorMessage(c, msgRes)
 		return
 	}
-	err = c.ws.postService.DeletePost(context.Background(), postID)
-	if err != nil {
+	if err := c.ws.postService.DeletePost(context.Background(), postID); err != nil {
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 		return
 	}
@@ -352,9 +339,7 @@ func handlePostGroupUpdate(c *Client, msgReq Request) {
 		return
 	}
 	var params ParamsPostGroupUpdate
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	boardID := params.BoardID
@@ -405,9 +390,7 @@ func handlePostGroupDelete(c *Client, msgReq Request) {
 	}
 	// Unmarshal request
 	var params ParamsPostGroupDelete
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	// Get post group and check if user has write permissions
@@ -447,6 +430,17 @@ func handlePostGroupDelete(c *Client, msgReq Request) {
 	}
 	// Broadcast response
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+}
+
+// unmarshalParams is a helper function that unmarshals a message request's params and sends
+// out a close connection message if any errors are encountered.
+func unmarshalParams(msgReq Request, v any, c *Client) error {
+	err := json.Unmarshal(msgReq.Params, v)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return err
+	}
+	return nil
 }
 
 // handleMarshalError checks to see if there are any errors when marshalling the WebSocket message response into JSON.
