@@ -17,6 +17,7 @@ type Service interface {
 	ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error)
 	UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error)
 	DeletePost(ctx context.Context, postID string) error
+	GetPostGroup(ctx context.Context, postGroupID string) (models.PostGroup, error)
 	UpdatePostGroup(ctx context.Context, input UpdatePostGroupInput) (models.PostGroup, error)
 	DeletePostGroup(ctx context.Context, postGroupID string) error
 }
@@ -105,20 +106,6 @@ func (s *service) GetPost(ctx context.Context, postID string) (models.Post, erro
 	return s.repo.GetPost(ctx, postUUID)
 }
 
-// ListPostGroups returns a list of post groups and their associated posts for a given board ID.
-func (s *service) ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error) {
-	// Validate input
-	boardUUID, err := uuid.Parse(boardID)
-	if err != nil {
-		return []GroupWithPostsDTO{}, fmt.Errorf("service: failed to parse boardID into UUID: %w", err)
-	}
-	rows, err := s.repo.ListPostGroups(ctx, boardUUID)
-	if err != nil {
-		return []GroupWithPostsDTO{}, fmt.Errorf("service: failed to list post groups by board ID: %w", err)
-	}
-	return toDTOListPostGroups(rows), nil
-}
-
 // UpdatePost takes an update request and applies the updates to an exisitng post.
 func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error) {
 	logger := logger.FromContext(ctx)
@@ -178,14 +165,26 @@ func (s *service) DeletePost(ctx context.Context, postID string) error {
 
 // GetPostGroup returns a single post group.
 func (s *service) GetPostGroup(ctx context.Context, postGroupID string) (models.PostGroup, error) {
-	logger := logger.FromContext(ctx)
 	// Validate input
 	postGroupUUID, err := uuid.Parse(postGroupID)
 	if err != nil {
-		logger.Errorf("service: failed to parse post group ID into UUID")
-		return models.PostGroup{}, err
+		return models.PostGroup{}, fmt.Errorf("service: failed to parse post group ID into UUID: %w", err)
 	}
 	return s.repo.GetPostGroup(ctx, postGroupUUID)
+}
+
+// ListPostGroups returns a list of post groups and their associated posts for a given board ID.
+func (s *service) ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error) {
+	// Validate input
+	boardUUID, err := uuid.Parse(boardID)
+	if err != nil {
+		return []GroupWithPostsDTO{}, fmt.Errorf("service: failed to parse boardID into UUID: %w", err)
+	}
+	rows, err := s.repo.ListPostGroups(ctx, boardUUID)
+	if err != nil {
+		return []GroupWithPostsDTO{}, fmt.Errorf("service: failed to list post groups by board ID: %w", err)
+	}
+	return toDTOListPostGroups(rows), nil
 }
 
 // UpdatePostGroup takes an update request and applies the updates to an exisitng post group.

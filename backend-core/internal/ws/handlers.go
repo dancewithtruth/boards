@@ -11,6 +11,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/post"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -391,6 +392,60 @@ func handlePostGroupUpdate(c *Client, msgReq Request) {
 	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
 		return
 	}
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+}
+
+// handlePostGroupDelete handles a message request to delete a post group.
+func handlePostGroupDelete(c *Client, msgReq Request) {
+	// Authenticate user
+	user := c.user
+	if user.ID.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	// Unmarshal request
+	var params ParamsPostGroupDelete
+	err := json.Unmarshal(msgReq.Params, &params)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return
+	}
+	// Get post group and check if user has write permissions
+	postGroupID := params.PostGroupID
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), postGroupID)
+	if err != nil {
+		log.Printf("handler: failed to get post group: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		return
+	}
+	boardID := postGroup.BoardID.String()
+	if !c.boards[boardID].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	// Delete post group
+	err = c.ws.postService.DeletePostGroup(context.Background(), postGroupID)
+	if err != nil {
+		log.Printf("handler: failed to delete post group: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		return
+	}
+	// Prepare response
+	msgRes := ResponsePostGroupDeleted{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: struct {
+			ID uuid.UUID `json:"id"`
+		}{postGroup.ID},
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
+		return
+	}
+	// Broadcast response
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 

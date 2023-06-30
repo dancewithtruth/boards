@@ -5,6 +5,7 @@ import (
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/post"
+	"github.com/google/uuid"
 )
 
 const (
@@ -33,6 +34,9 @@ const (
 
 	// EventPostGroupUpdate is when a post group is updated.
 	EventPostGroupUpdate = "post_group.update"
+
+	// EventPostGroupDelete is when a post group is deleted.
+	EventPostGroupDelete = "post_group.delete"
 
 	// Close Reasons
 
@@ -162,6 +166,17 @@ type ParamsPostGroupUpdate struct {
 	post.UpdatePostGroupInput
 }
 
+// RequestPostGroupDelete represents a request to delete a post group.
+type RequestPostGroupDelete struct {
+	Event  string                `json:"event"`
+	Params ParamsPostGroupDelete `json:"params"`
+}
+
+// ParamsPostGroupDelete contains the parameters for deleting a post group.
+type ParamsPostGroupDelete struct {
+	PostGroupID string `json:"post_group_id" validate:"required,uuid"`
+}
+
 // ResponseBase represents the base response structure.
 type ResponseBase struct {
 	Event        string `json:"event"`
@@ -230,6 +245,14 @@ type ResultPostFocus struct {
 type ResponsePostGroup struct {
 	ResponseBase
 	Result models.PostGroup `json:"result,omitempty"`
+}
+
+// ResponsePostGroupDeleted represents the response for post group.
+type ResponsePostGroupDeleted struct {
+	ResponseBase
+	Result struct {
+		ID uuid.UUID `json:"id"`
+	} `json:"result,omitempty"`
 }
 
 // ResponseUserDisconnect represents the response for user disconnection.
