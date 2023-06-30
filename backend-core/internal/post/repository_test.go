@@ -46,11 +46,11 @@ func TestRepository(t *testing.T) {
 		updatedPost, err = repo.GetPost(context.Background(), updatedPost.ID)
 		assert.Equal(t, updatedContent, updatedPost.Content)
 
-		// Delete
-		err = repo.DeletePost(context.Background(), testPost.ID)
+		// Delete post group to cascade delete on post
+		err = repo.DeletePostGroup(context.Background(), postGroup.ID)
 		assert.NoError(t, err)
 		_, err = repo.GetPost(context.Background(), testPost.ID)
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, errPostNotFound)
 	})
 }
 

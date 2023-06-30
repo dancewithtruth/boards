@@ -205,6 +205,15 @@ func (q *Queries) DeletePost(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const deletePostGroup = `-- name: DeletePostGroup :exec
+DELETE from post_groups WHERE id = $1
+`
+
+func (q *Queries) DeletePostGroup(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deletePostGroup, id)
+	return err
+}
+
 const deleteUser = `-- name: DeleteUser :exec
 DELETE FROM users
 WHERE users.id = $1

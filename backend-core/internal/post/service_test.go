@@ -44,9 +44,8 @@ func TestService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, updatedContent, updatedPost.Content)
 
-		// Delete
+		// Delete post
 		err = service.DeletePost(context.Background(), post.ID.String())
 		assert.NoError(t, err)
-
 	})
 }

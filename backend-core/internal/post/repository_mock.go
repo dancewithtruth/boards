@@ -75,3 +75,8 @@ func (r *mockRepository) UpdatePostGroup(ctx context.Context, postGroup models.P
 	r.postGroups[postGroup.ID] = postGroup
 	return nil
 }
+
+func (r *mockRepository) DeletePostGroup(ctx context.Context, postGroupID uuid.UUID) error {
+	delete(r.postGroups, postGroupID)
+	return nil
+}

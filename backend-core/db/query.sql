@@ -95,6 +95,9 @@ UPDATE post_groups SET
 (id, board_id, title, pos_x, pos_y, z_index, created_at, updated_at) =
 ($1, $2, $3, $4, $5, $6, $7, $8) WHERE id = $1;
 
+-- name: DeletePostGroup :exec
+DELETE from post_groups WHERE id = $1;
+
 -- name: ListUsersByFuzzyEmail :many
 SELECT * FROM users
 ORDER BY levenshtein(users.email, $1) LIMIT 10;

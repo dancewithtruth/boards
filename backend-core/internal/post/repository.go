@@ -3,10 +3,12 @@ package post
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Wave-95/boards/backend-core/db"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
@@ -24,6 +26,7 @@ type Repository interface {
 	DeletePost(ctx context.Context, postID uuid.UUID) error
 	GetPostGroup(ctx context.Context, postGroupID uuid.UUID) (models.PostGroup, error)
 	UpdatePostGroup(ctx context.Context, postGroup models.PostGroup) error
+	DeletePostGroup(context.Context, uuid.UUID) error
 }
 
 type repository struct {
@@ -72,6 +75,9 @@ func (r *repository) CreatePostGroup(ctx context.Context, postGroup models.PostG
 func (r *repository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
 	postDB, err := r.q.GetPost(ctx, pgtype.UUID{Bytes: postID, Valid: true})
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return models.Post{}, errPostNotFound
+		}
 		return models.Post{}, err
 	}
 	return toPost(postDB), nil
@@ -139,6 +145,15 @@ func (r *repository) UpdatePostGroup(ctx context.Context, postGroup models.PostG
 		UpdatedAt: pgtype.Timestamp{Time: postGroup.UpdatedAt, Valid: true},
 	}
 	return r.q.UpdatePostGroup(ctx, arg)
+}
+
+// DeletePostGroup deletes a post group.
+func (r *repository) DeletePostGroup(ctx context.Context, postGroupID uuid.UUID) error {
+	arg := pgtype.UUID{Bytes: postGroupID, Valid: true}
+	if err := r.q.DeletePostGroup(ctx, arg); err != nil {
+		return fmt.Errorf("repository: failed to delete post group: %w", err)
+	}
+	return nil
 }
 
 // toPost maps a db post to a domain post

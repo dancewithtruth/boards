@@ -16,8 +16,9 @@ type Service interface {
 	GetPost(ctx context.Context, postID string) (models.Post, error)
 	ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error)
 	UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error)
-	UpdatePostGroup(ctx context.Context, input UpdatePostGroupInput) (models.PostGroup, error)
 	DeletePost(ctx context.Context, postID string) error
+	UpdatePostGroup(ctx context.Context, input UpdatePostGroupInput) (models.PostGroup, error)
+	DeletePostGroup(ctx context.Context, postGroupID string) error
 }
 
 type service struct {
@@ -101,7 +102,6 @@ func (s *service) GetPost(ctx context.Context, postID string) (models.Post, erro
 		logger.Errorf("service: failed to parse postID into UUID")
 		return models.Post{}, err
 	}
-	//TODO: Handle error in service layer
 	return s.repo.GetPost(ctx, postUUID)
 }
 
@@ -224,6 +224,15 @@ func (s *service) UpdatePostGroup(ctx context.Context, input UpdatePostGroupInpu
 		return models.PostGroup{}, err
 	}
 	return postGroup, nil
+}
+
+// DeletePostGroup deletes a post group for a given ID.
+func (s *service) DeletePostGroup(ctx context.Context, postGroupID string) error {
+	postGroupUUID, err := uuid.Parse(postGroupID)
+	if err != nil {
+		return fmt.Errorf("service: failed to parse ID into UUID: %w", err)
+	}
+	return s.repo.DeletePostGroup(ctx, postGroupUUID)
 }
 
 // toDTOListPostGroups converts the repository data structure into a nested DTO structure.
