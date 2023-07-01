@@ -6,3 +6,4 @@ export const EVENT_POST_UPDATE = 'post.update';
 export const EVENT_POST_DELETE = 'post.delete';
 export const EVENT_POST_FOCUS = 'post.focus';
 export const EVENT_POST_GROUP_UPDATE = 'post_group.update';
+export const EVENT_POST_GROUP_DELETE = 'post_group.delete';

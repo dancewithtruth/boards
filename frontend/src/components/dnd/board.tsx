@@ -17,6 +17,7 @@ import {
   EVENT_POST_CREATE,
   EVENT_POST_DELETE,
   EVENT_POST_FOCUS,
+  EVENT_POST_GROUP_DELETE,
   EVENT_POST_UPDATE,
   EVENT_USER_AUTHENTICATE,
   NAVBAR_HEIGHT,
@@ -34,6 +35,8 @@ import {
   createPost as createPostWS,
   updatePost as updatePostWS,
   updatePostGroup as updatePostGroupWS,
+  deletePost,
+  deletePostGroup as deletePostGroupWS,
 } from '@/ws/events';
 import { Overlay } from '../overlay';
 import { getMaxFieldFromObj } from '@/utils';
@@ -41,10 +44,10 @@ import { toast } from 'react-toastify';
 import { BoardWithMembers } from '@/api/board';
 import Sidebar from '../sidebar';
 import { User } from '@/api';
-import { Post as PostUI } from './post';
+import { PostUI as PostUI } from './post';
 import PostGroup from './postGroup';
 
-export type PostUI = {
+export type PostWithTypingBy = {
   typingBy: User | null;
   autoFocus: boolean;
 } & Post;
@@ -105,50 +108,32 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       return;
     }
     messages.forEach(({ event, result, success, error_message }) => {
-      try {
+      if (success) {
         switch (event) {
           case EVENT_USER_AUTHENTICATE:
             setUser(result.user);
             connectBoardWS(board.id, send);
             break;
           case EVENT_BOARD_CONNECT:
-            if (success) {
-              setShowOverlay(false);
-              setConnectedUsers(result.connected_users.concat([result.new_user]));
-            } else {
-              toast.error(error_message);
-            }
+            setShowOverlay(false);
+            setConnectedUsers(result.connected_users.concat([result.new_user]));
             break;
           case EVENT_BOARD_DISCONNECT:
-            if (success) {
-              const userID = result.user_id;
-              const newConnectedUsers = connectedUsers.filter((user) => user.id != userID);
-              setConnectedUsers(newConnectedUsers);
-            }
+            const userID = result.user_id;
+            const newConnectedUsers = connectedUsers.filter((user) => user.id != userID);
+            setConnectedUsers(newConnectedUsers);
             break;
           case EVENT_POST_CREATE:
-            if (success) {
-              if (result.user_id == user?.id) {
-                result.autoFocus = true;
-              }
-              addPostGroup(result);
-            } else {
-              toast.error(error_message);
+            if (result.user_id == user?.id) {
+              result.autoFocus = true;
             }
+            addPostGroup(result);
             break;
           case EVENT_POST_UPDATE:
-            if (success) {
-              updatePostGroup({ ...result, typingBy: null });
-            } else {
-              toast.error(error_message);
-            }
+            updatePostGroup({ ...result, typingBy: null });
             break;
-          case EVENT_POST_DELETE:
-            if (success) {
-              deletePostGroup(result.post_id);
-            } else {
-              toast.error(error_message);
-            }
+          case EVENT_POST_GROUP_DELETE:
+            deletePostGroup(result.id);
             break;
           // case EVENT_POST_FOCUS:
           //   if (success) {
@@ -163,9 +148,8 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
           default:
             break;
         }
-      } catch (e) {
-        console.log(e);
       }
+      toast.error(error_message);
     });
   }, [messages]);
 
@@ -185,6 +169,16 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       createPostWS(params, send);
       setHighestZ(newZIndex);
     }
+  };
+
+  const handleDeletePost = (post: Post) => {
+    if (postGroups[post.post_group_id]?.posts.length >= 2) {
+      // Delete post
+      const params = { post_id: post.id, board_id: board.id };
+      deletePost(params, send);
+      return;
+    }
+    deletePostGroupWS(post.post_group_id, send)
   };
 
   const addPostGroup = (postGroup: PostGroupWithPosts) => {
@@ -241,7 +235,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
         // pre-emptively update post on frontend before waiting on websocket to smoothen out experience
         updatePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
-        console.log(newParams)
+        console.log(newParams);
         sendUpdatePostGroup(newParams);
         return undefined;
       },
@@ -273,6 +267,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
                 postGroup={postGroup}
                 send={send}
                 setColorSetting={setColorSetting}
+                handleDeletePost={handleDeletePost}
               />
             ))
           : null}

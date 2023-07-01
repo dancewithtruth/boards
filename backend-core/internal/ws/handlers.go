@@ -157,30 +157,36 @@ func handleBoardConnect(c *Client, msgReq Request) {
 }
 
 func handlePostCreate(c *Client, msgReq Request) {
+	// Authenticate user
 	user := c.user
 	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
+	// Unmarshal message request
 	var params ParamsPostCreate
 	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
+	// Check if user has write permissions
 	boardID := params.BoardID
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
+	// Prepare create post input
 	createPostInput := post.CreatePostInput{
-		UserID:  user.ID.String(),
-		BoardID: boardID,
-		Content: params.Content,
-		PosX:    params.PosX,
-		PosY:    params.PosY,
-		Color:   params.Color,
-		Height:  params.Height,
-		ZIndex:  params.ZIndex,
+		UserID:      user.ID.String(),
+		BoardID:     boardID,
+		Content:     params.Content,
+		PosX:        params.PosX,
+		PosY:        params.PosY,
+		Color:       params.Color,
+		Height:      params.Height,
+		ZIndex:      params.ZIndex,
+		PostOrder:   params.PostOrder,
+		PostGroupID: params.PostGroupID,
 	}
 	post, err := c.ws.postService.CreatePost(context.Background(), createPostInput)
 	if err != nil {
@@ -193,18 +199,29 @@ func handlePostCreate(c *Client, msgReq Request) {
 		}
 		return
 	}
-	msgRes := ResponsePost{
+	// Get parent post group
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), post.PostGroupID.String())
+	if err != nil {
+		log.Printf("handler: failed to get post group: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		return
+	}
+	// Prepare message response
+	msgRes := ResponsePostCreate{
 		ResponseBase: ResponseBase{
 			Event:   msgReq.Event,
 			Success: true,
 		},
-		Result: post,
+		Result: ResultPostCreate{
+			Post:      post,
+			PostGroup: postGroup,
+		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
-
 	if err := handleMarshalError(err, "handlePostCreate", c); err != nil {
 		return
 	}
+	// Broadcast message response
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
@@ -245,21 +262,25 @@ func handlePostFocus(c *Client, msgReq Request) {
 }
 
 func handlePostUpdate(c *Client, msgReq Request) {
+	// Authenticate user
 	user := c.user
 	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
+	// Unmarshal message request
 	var params ParamsPostUpdate
 	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
+	// Check if user has write permissions
 	boardID := params.BoardID
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
+	// Prepare update post input
 	updatePostInput := post.UpdatePostInput{
 		ID:          params.ID,
 		Content:     params.Content,
@@ -279,7 +300,8 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		}
 		return
 	}
-	msgRes := ResponsePost{
+	// Prepare update post message response
+	msgRes := ResponsePostUpdate{
 		ResponseBase: ResponseBase{
 			Event:   msgReq.Event,
 			Success: true,
@@ -290,6 +312,7 @@ func handlePostUpdate(c *Client, msgReq Request) {
 	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
 		return
 	}
+	// Broadcast message response
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 

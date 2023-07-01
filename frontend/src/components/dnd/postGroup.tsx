@@ -1,10 +1,10 @@
 'use client';
 
-import { PostGroupWithPosts } from '@/api/post';
-import { PostUI } from './board';
+import { Post, PostGroupWithPosts } from '@/api/post';
+import { PostWithTypingBy } from './board';
 import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
-import { Post } from './post';
+import { PostUI as PostUI } from './post';
 import { CSSProperties, useState } from 'react';
 import { DragSourceMonitor, useDrag } from 'react-dnd';
 import { ItemTypes } from './itemTypes';
@@ -15,9 +15,10 @@ type PostGroupProps = {
   board: BoardWithMembers;
   send: Send;
   setColorSetting: (color: string) => void;
+  handleDeletePost: (post: Post) => void;
 };
 
-const PostGroup = ({ postGroup, user, board, send, setColorSetting }: PostGroupProps) => {
+const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDeletePost }: PostGroupProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const { id, pos_x, pos_y, z_index } = postGroup;
 
@@ -58,13 +59,14 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting }: PostGroupP
         </div>
       ) : null}
       {postGroup.posts.map((post, index) => (
-        <Post
+        <PostUI
           key={index}
           user={user}
           board={board}
-          {...(post as PostUI)}
+          post={post as PostWithTypingBy}
           send={send}
           setColorSetting={setColorSetting}
+          handleDeletePost={handleDeletePost}
         />
       ))}
     </div>

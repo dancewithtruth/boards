@@ -9,30 +9,29 @@ import { CSSProperties, ChangeEvent, FC, useEffect, useRef, useState } from 'rea
 import { memo } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import Avatar from '../avatar';
-import { PostUI } from './board';
+import { PostWithTypingBy } from './board';
 import { DragSourceMonitor, useDrag } from 'react-dnd';
 import { ItemTypes } from './itemTypes';
+import { Post } from '@/api/post';
 
 type PostProps = {
   user: User;
   board: BoardWithMembers;
   send: Send;
+  post: PostWithTypingBy;
   setColorSetting: (color: string) => void;
-} & PostUI;
+  handleDeletePost: (post: Post) => void;
+};
 
-export const Post: FC<PostProps> = memo(function Post({
+export const PostUI: FC<PostProps> = memo(function Post({
   user,
-  id,
-  user_id,
   board,
-  content,
-  color,
-  height,
   send,
+  post,
   setColorSetting,
-  typingBy,
-  autoFocus,
+  handleDeletePost,
 }) {
+  const { id, user_id, color, content, height, typingBy, autoFocus } = post;
   const [textareaValue, setTextareaValue] = useState(content);
   const [textareaHeight, setTextareaHeight] = useState(height);
   const [isHovered, setIsHovered] = useState(false);
@@ -94,10 +93,6 @@ export const Post: FC<PostProps> = memo(function Post({
     updatePost({ id, board_id: board.id, content: textareaValue, height: textareaHeight }, send);
   };
 
-  const handleDelete = () => {
-    deletePost({ post_id: id, board_id: board.id }, send);
-  };
-
   const handlePickColor = (color: string) => {
     updatePost({ id, board_id: board.id, color }, send);
     setColorSetting(color);
@@ -130,7 +125,7 @@ export const Post: FC<PostProps> = memo(function Post({
         style={{ visibility: isHovered ? 'visible' : 'hidden' }}
       >
         <ColorPicker />
-        <button className="text-gray-500 hover:text-gray-700" onClick={handleDelete}>
+        <button className="text-gray-500 hover:text-gray-700" onClick={() => handleDeletePost(post)}>
           <FaRegTrashAlt />
         </button>
       </div>

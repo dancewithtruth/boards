@@ -109,13 +109,15 @@ type RequestPostCreate struct {
 
 // ParamsPostCreate contains the parameters for post creation.
 type ParamsPostCreate struct {
-	BoardID string `json:"board_id" validate:"required,uuid"`
-	Content string `json:"content"`
-	PosX    int    `json:"pos_x" validate:"required,min=0"`
-	PosY    int    `json:"pos_y" validate:"required,min=0"`
-	Color   string `json:"color" validate:"required,min=7,max=7"`
-	Height  int    `json:"height" validate:"min=0"`
-	ZIndex  int    `json:"z_index" validate:"min=1"`
+	BoardID     string  `json:"board_id" validate:"required,uuid"`
+	Content     string  `json:"content"`
+	PosX        int     `json:"pos_x" validate:"required,min=0"`
+	PosY        int     `json:"pos_y" validate:"required,min=0"`
+	Color       string  `json:"color" validate:"required,min=7,max=7"`
+	Height      int     `json:"height" validate:"min=0"`
+	ZIndex      int     `json:"z_index" validate:"min=1"`
+	PostOrder   float64 `json:"post_order"`
+	PostGroupID string  `json:"post_group_id"`
 }
 
 // RequestPostUpdate represents a request to update a post.
@@ -210,8 +212,19 @@ type ResultBoardConnect struct {
 	ConnectedUsers []models.User `json:"connected_users"`
 }
 
-// ResponsePost represents the response for post operations.
-type ResponsePost struct {
+// ResponsePostCreate represents the response for creating a new post.
+type ResponsePostCreate struct {
+	ResponseBase
+	Result ResultPostCreate `json:"result,omitempty"`
+}
+
+type ResultPostCreate struct {
+	Post      models.Post      `json:"post,omitempty"`
+	PostGroup models.PostGroup `json:"post_group,omitempty"`
+}
+
+// ResponsePostUpdate represents the response for updating a new post.
+type ResponsePostUpdate struct {
 	ResponseBase
 	Result models.Post `json:"result,omitempty"`
 }
