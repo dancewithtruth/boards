@@ -236,7 +236,17 @@ func handlePostFocus(c *Client, msgReq Request) {
 		return
 	}
 	postID := params.ID
-	boardID := params.BoardID
+	post, err := c.ws.postService.GetPost(context.Background(), postID)
+	if err != nil {
+		log.Printf("handler: failed to get post during post focus request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), post.PostGroupID.String())
+	if err != nil {
+		log.Printf("handler: failed to get post group during post focus request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	boardID := postGroup.BoardID.String()
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
@@ -248,9 +258,8 @@ func handlePostFocus(c *Client, msgReq Request) {
 			Success: true,
 		},
 		Result: ResultPostFocus{
-			ID:      postID,
-			BoardID: boardID,
-			User:    *c.user,
+			Post: post,
+			User: *c.user,
 		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
@@ -327,7 +336,17 @@ func handlePostDelete(c *Client, msgReq Request) {
 		return
 	}
 	postID := params.PostID
-	boardID := params.BoardID
+	post, err := c.ws.postService.GetPost(context.Background(), postID)
+	if err != nil {
+		log.Printf("handler: failed to get post during post delete request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), post.PostGroupID.String())
+	if err != nil {
+		log.Printf("handler: failed to get post group during post delete request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	boardID := postGroup.BoardID.String()
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
@@ -342,10 +361,7 @@ func handlePostDelete(c *Client, msgReq Request) {
 			Event:   msgReq.Event,
 			Success: true,
 		},
-		Result: ResultPostDelete{
-			PostID:  postID,
-			BoardID: boardID,
-		},
+		Result: post,
 	}
 	msgResBytes, err := json.Marshal(msgRes)
 	if err := handleMarshalError(err, "handlePostDelete", c); err != nil {

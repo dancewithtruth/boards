@@ -18,6 +18,7 @@ import {
   EVENT_POST_DELETE,
   EVENT_POST_FOCUS,
   EVENT_POST_GROUP_DELETE,
+  EVENT_POST_GROUP_UPDATE,
   EVENT_POST_UPDATE,
   EVENT_USER_AUTHENTICATE,
   NAVBAR_HEIGHT,
@@ -33,9 +34,8 @@ import {
   authenticateUser as authenticateUserWS,
   connectBoard as connectBoardWS,
   createPost as createPostWS,
-  updatePost as updatePostWS,
   updatePostGroup as updatePostGroupWS,
-  deletePost,
+  deletePost as deletePostWS,
   deletePostGroup as deletePostGroupWS,
 } from '@/ws/events';
 import { Overlay } from '../overlay';
@@ -44,7 +44,6 @@ import { toast } from 'react-toastify';
 import { BoardWithMembers } from '@/api/board';
 import Sidebar from '../sidebar';
 import { User } from '@/api';
-import { PostUI as PostUI } from './post';
 import PostGroup from './postGroup';
 
 export type PostWithTypingBy = {
@@ -124,27 +123,35 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
             setConnectedUsers(newConnectedUsers);
             break;
           case EVENT_POST_CREATE:
-            if (result.user_id == user?.id) {
-              result.autoFocus = true;
+            if (result.post.user_id == user?.id) {
+              result.post.autoFocus = true;
             }
-            addPostGroup(result);
+            // If post group does not exist, create a new post group with post child.
+            if (!postGroups[result.post_group.id]) {
+              const postGroup = result.post_group;
+              postGroup.posts = [result.post];
+              addPostGroup(postGroup);
+              break;
+            }
+            addPost(result.post);
             break;
           case EVENT_POST_UPDATE:
+            updatePost(result);
+            break;
+          case EVENT_POST_DELETE:
+            deletePost(result);
+            break;
+          case EVENT_POST_GROUP_UPDATE:
             updatePostGroup({ ...result, typingBy: null });
             break;
           case EVENT_POST_GROUP_DELETE:
             deletePostGroup(result.id);
             break;
-          // case EVENT_POST_FOCUS:
-          //   if (success) {
-          //     if (result.user.id != user?.id) {
-          //       updatePostGroup({ id: result.id, typingBy: result.user });
-          //     }
-          //   } else {
-          //     toast.error(error_message);
-          //   }
-          //   break;
-
+          case EVENT_POST_FOCUS:
+            if (result.user.id != user?.id) {
+              updatePost({ ...result.post, typingBy: result.user });
+            }
+            break;
           default:
             break;
         }
@@ -175,10 +182,10 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     if (postGroups[post.post_group_id]?.posts.length >= 2) {
       // Delete post
       const params = { post_id: post.id, board_id: board.id };
-      deletePost(params, send);
+      deletePostWS(params, send);
       return;
     }
-    deletePostGroupWS(post.post_group_id, send)
+    deletePostGroupWS(post.post_group_id, send);
   };
 
   const addPostGroup = (postGroup: PostGroupWithPosts) => {
@@ -186,6 +193,18 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       update(postGroups, {
         [postGroup.id]: {
           $set: postGroup,
+        },
+      })
+    );
+  };
+
+  const addPost = (post: Post) => {
+    setPostGroups(
+      update(postGroups, {
+        [post.post_group_id]: {
+          posts: {
+            $push: [post],
+          },
         },
       })
     );
@@ -201,6 +220,19 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     );
   };
 
+  const updatePost = (post: Post) => {
+    const index = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
+    setPostGroups(
+      update(postGroups, {
+        [post.post_group_id]: {
+          posts: {
+            $splice: [[index, 1, post]],
+          },
+        },
+      })
+    );
+  };
+
   const deletePostGroup = (id: string) => {
     setPostGroups(
       update(postGroups, {
@@ -209,12 +241,17 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     );
   };
 
-  const sendUpdatePost = (post: Partial<Post>) => {
-    updatePostWS(post, send);
-  };
-
-  const sendUpdatePostGroup = (post: Partial<PostGroupWithPosts>) => {
-    updatePostGroupWS(post, send);
+  const deletePost = (post: Post) => {
+    const index = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
+    setPostGroups(
+      update(postGroups, {
+        [post.post_group_id]: {
+          posts: {
+            $splice: [[index, 1]],
+          },
+        },
+      })
+    );
   };
 
   const [, drop] = useDrop(
@@ -235,8 +272,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
         // pre-emptively update post on frontend before waiting on websocket to smoothen out experience
         updatePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
-        console.log(newParams);
-        sendUpdatePostGroup(newParams);
+        updatePostGroupWS(newParams, send);
         return undefined;
       },
     }),

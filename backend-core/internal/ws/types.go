@@ -232,13 +232,7 @@ type ResponsePostUpdate struct {
 // ResponsePostDelete represents the response for post deletion.
 type ResponsePostDelete struct {
 	ResponseBase
-	Result ResultPostDelete `json:"result,omitempty"`
-}
-
-// ResultPostDelete contains the result of post deletion.
-type ResultPostDelete struct {
-	PostID  string `json:"post_id"`
-	BoardID string `json:"board_id"`
+	Result models.Post `json:"result,omitempty"`
 }
 
 // ResponsePostFocus represents the response for post focusing.
@@ -249,9 +243,8 @@ type ResponsePostFocus struct {
 
 // ResultPostFocus contains the result of post focusing.
 type ResultPostFocus struct {
-	ID      string      `json:"id"`
-	BoardID string      `json:"board_id"`
-	User    models.User `json:"user"`
+	Post models.Post `json:"post"`
+	User models.User `json:"user"`
 }
 
 // ResponsePostGroup represents the response for post group.
