@@ -87,8 +87,6 @@ export async function sendPatchRequest<T>(url: string, body: object, authToken?:
       next: { revalidate: 0 },
     });
 
-    console.log(response);
-
     if (!response.ok) {
       const errorData: APIErrorResponse = await response.json();
       throw new APIError(errorData.message, errorData.status);
