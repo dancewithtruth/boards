@@ -33,4 +33,8 @@ migrate-create:
 .PHONY: test
 test:
 	@docker exec backend-core go test ./...
-	
+
+.PHONY: coverage
+coverage:
+	docker exec backend-core /bin/bash -c "if [ ! -d 'coverage' ]; then mkdir coverage; fi && go test -v -coverprofile coverage/cover.out ./... && go tool cover -html coverage/cover.out -o coverage/cover.html"
+	open ./coverage/cover.html
