@@ -8,18 +8,43 @@ import (
 )
 
 type mockRepository struct {
-	posts map[uuid.UUID]models.Post
+	posts      map[uuid.UUID]models.Post
+	postGroups map[uuid.UUID]models.PostGroup
 }
 
 // NewMockRepository returns a mock post repository.
 func NewMockRepository() *mockRepository {
 	posts := make(map[uuid.UUID]models.Post)
-	return &mockRepository{posts: posts}
+	postGroups := make(map[uuid.UUID]models.PostGroup)
+	return &mockRepository{posts: posts, postGroups: postGroups}
 }
 
 func (r *mockRepository) CreatePost(ctx context.Context, post models.Post) error {
 	r.posts[post.ID] = post
 	return nil
+}
+
+func (r *mockRepository) CreatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
+	r.postGroups[postGroup.ID] = postGroup
+	return nil
+}
+
+func (r *mockRepository) ListPostGroups(ctx context.Context, boardID uuid.UUID) ([]GroupAndPost, error) {
+	list := []GroupAndPost{}
+	for _, postGroup := range r.postGroups {
+		if postGroup.BoardID == boardID {
+			for _, post := range r.posts {
+				if post.PostGroupID == postGroup.ID {
+					item := GroupAndPost{
+						PostGroup: postGroup,
+						Post:      post,
+					}
+					list = append(list, item)
+				}
+			}
+		}
+	}
+	return list, nil
 }
 
 func (r *mockRepository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
@@ -39,12 +64,19 @@ func (r *mockRepository) DeletePost(ctx context.Context, postID uuid.UUID) error
 	return nil
 }
 
-func (r *mockRepository) ListPosts(ctx context.Context, boardID uuid.UUID) ([]models.Post, error) {
-	posts := []models.Post{}
-	for _, post := range r.posts {
-		if post.BoardID == boardID {
-			posts = append(posts, post)
-		}
+func (r *mockRepository) GetPostGroup(ctx context.Context, postGroupID uuid.UUID) (models.PostGroup, error) {
+	if postGroup, ok := r.postGroups[postGroupID]; ok {
+		return postGroup, nil
 	}
-	return posts, nil
+	return models.PostGroup{}, errPostNotFound
+}
+
+func (r *mockRepository) UpdatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
+	r.postGroups[postGroup.ID] = postGroup
+	return nil
+}
+
+func (r *mockRepository) DeletePostGroup(ctx context.Context, postGroupID uuid.UUID) error {
+	delete(r.postGroups, postGroupID)
+	return nil
 }

@@ -61,24 +61,42 @@ DELETE from boards WHERE id = $1;
 
 -- name: CreatePost :exec
 INSERT INTO posts
-(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11);
+(id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+
+-- name: CreatePostGroup :exec
+INSERT INTO post_groups
+(id, board_id, title, pos_x, pos_y, z_index, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8);
 
 -- name: GetPost :one
 SELECT * FROM posts
 WHERE posts.id = $1;
 
--- name: ListPosts :many
-SELECT * FROM posts
-WHERE posts.board_id = $1;
+-- name: ListPostGroups :many
+SELECT sqlc.embed(post_groups), sqlc.embed(posts) FROM post_groups
+INNER JOIN posts on posts.post_group_id = post_groups.id
+WHERE post_groups.board_id = $1;
 
 -- name: UpdatePost :exec
 UPDATE posts SET
-(id, board_id, user_id, content, pos_x, pos_y, color, height, z_index, created_at, updated_at) =
-($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) WHERE id = $1;
+(id, user_id, content, color, height, created_at, updated_at, post_order, post_group_id) =
+($1, $2, $3, $4, $5, $6, $7, $8, $9) WHERE id = $1;
 
 -- name: DeletePost :exec
 DELETE from posts WHERE id = $1;
+
+-- name: GetPostGroup :one
+SELECT * FROM post_groups
+WHERE post_groups.id = $1;
+
+-- name: UpdatePostGroup :exec
+UPDATE post_groups SET
+(id, board_id, title, pos_x, pos_y, z_index, created_at, updated_at) =
+($1, $2, $3, $4, $5, $6, $7, $8) WHERE id = $1;
+
+-- name: DeletePostGroup :exec
+DELETE from post_groups WHERE id = $1;
 
 -- name: ListUsersByFuzzyEmail :many
 SELECT * FROM users

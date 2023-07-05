@@ -11,6 +11,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/post"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
@@ -60,9 +61,7 @@ func handleDestroy(destroy chan string, boardHubs map[string]*Hub) {
 func handleUserAuthenticate(c *Client, msgReq Request) {
 	// Unmarshal params
 	var params ParamsUserAuthenticate
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	// Verify user
@@ -103,9 +102,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 	}
 	// Unmarshal params
 	var params ParamsBoardConnect
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	// Check if user has access to board
@@ -160,32 +157,36 @@ func handleBoardConnect(c *Client, msgReq Request) {
 }
 
 func handlePostCreate(c *Client, msgReq Request) {
+	// Authenticate user
 	user := c.user
 	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
+	// Unmarshal message request
 	var params ParamsPostCreate
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
+	// Check if user has write permissions
 	boardID := params.BoardID
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
+	// Prepare create post input
 	createPostInput := post.CreatePostInput{
-		UserID:  user.ID.String(),
-		BoardID: boardID,
-		Content: params.Content,
-		PosX:    params.PosX,
-		PosY:    params.PosY,
-		Color:   params.Color,
-		Height:  params.Height,
-		ZIndex:  params.ZIndex,
+		UserID:      user.ID.String(),
+		BoardID:     boardID,
+		Content:     params.Content,
+		PosX:        params.PosX,
+		PosY:        params.PosY,
+		Color:       params.Color,
+		Height:      params.Height,
+		ZIndex:      params.ZIndex,
+		PostOrder:   params.PostOrder,
+		PostGroupID: params.PostGroupID,
 	}
 	post, err := c.ws.postService.CreatePost(context.Background(), createPostInput)
 	if err != nil {
@@ -198,18 +199,29 @@ func handlePostCreate(c *Client, msgReq Request) {
 		}
 		return
 	}
-	msgRes := ResponsePost{
+	// Get parent post group
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), post.PostGroupID.String())
+	if err != nil {
+		log.Printf("handler: failed to get post group: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		return
+	}
+	// Prepare message response
+	msgRes := ResponsePostCreate{
 		ResponseBase: ResponseBase{
 			Event:   msgReq.Event,
 			Success: true,
 		},
-		Result: post,
+		Result: ResultPostCreate{
+			Post:      post,
+			PostGroup: postGroup,
+		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
-
 	if err := handleMarshalError(err, "handlePostCreate", c); err != nil {
 		return
 	}
+	// Broadcast message response
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
@@ -220,13 +232,21 @@ func handlePostFocus(c *Client, msgReq Request) {
 		return
 	}
 	var params ParamsPostFocus
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	postID := params.ID
-	boardID := params.BoardID
+	post, err := c.ws.postService.GetPost(context.Background(), postID)
+	if err != nil {
+		log.Printf("handler: failed to get post during post focus request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), post.PostGroupID.String())
+	if err != nil {
+		log.Printf("handler: failed to get post group during post focus request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	boardID := postGroup.BoardID.String()
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
@@ -238,9 +258,8 @@ func handlePostFocus(c *Client, msgReq Request) {
 			Success: true,
 		},
 		Result: ResultPostFocus{
-			ID:      postID,
-			BoardID: boardID,
-			User:    *c.user,
+			Post: post,
+			User: *c.user,
 		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
@@ -252,31 +271,32 @@ func handlePostFocus(c *Client, msgReq Request) {
 }
 
 func handlePostUpdate(c *Client, msgReq Request) {
+	// Authenticate user
 	user := c.user
 	if user.ID.String() == "" {
 		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
 		return
 	}
+	// Unmarshal message request
 	var params ParamsPostUpdate
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
+	// Check if user has write permissions
 	boardID := params.BoardID
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
+	// Prepare update post input
 	updatePostInput := post.UpdatePostInput{
-		ID:      params.ID,
-		Content: params.Content,
-		PosX:    params.PosX,
-		PosY:    params.PosY,
-		Color:   params.Color,
-		Height:  params.Height,
-		ZIndex:  params.ZIndex,
+		ID:          params.ID,
+		Content:     params.Content,
+		Color:       params.Color,
+		Height:      params.Height,
+		PostOrder:   params.PostOrder,
+		PostGroupID: params.PostGroupID,
 	}
 	post, err := c.ws.postService.UpdatePost(context.Background(), updatePostInput)
 	if err != nil {
@@ -289,7 +309,8 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		}
 		return
 	}
-	msgRes := ResponsePost{
+	// Prepare update post message response
+	msgRes := ResponsePostUpdate{
 		ResponseBase: ResponseBase{
 			Event:   msgReq.Event,
 			Success: true,
@@ -300,6 +321,7 @@ func handlePostUpdate(c *Client, msgReq Request) {
 	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
 		return
 	}
+	// Broadcast message response
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
@@ -310,20 +332,27 @@ func handlePostDelete(c *Client, msgReq Request) {
 		return
 	}
 	var params ParamsPostDelete
-	err := json.Unmarshal(msgReq.Params, &params)
-	if err != nil {
-		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
 	postID := params.PostID
-	boardID := params.BoardID
+	post, err := c.ws.postService.GetPost(context.Background(), postID)
+	if err != nil {
+		log.Printf("handler: failed to get post during post delete request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), post.PostGroupID.String())
+	if err != nil {
+		log.Printf("handler: failed to get post group during post delete request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	boardID := postGroup.BoardID.String()
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
 		return
 	}
-	err = c.ws.postService.DeletePost(context.Background(), postID)
-	if err != nil {
+	if err := c.ws.postService.DeletePost(context.Background(), postID); err != nil {
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 		return
 	}
@@ -332,16 +361,125 @@ func handlePostDelete(c *Client, msgReq Request) {
 			Event:   msgReq.Event,
 			Success: true,
 		},
-		Result: ResultPostDelete{
-			PostID:  postID,
-			BoardID: boardID,
-		},
+		Result: post,
 	}
 	msgResBytes, err := json.Marshal(msgRes)
 	if err := handleMarshalError(err, "handlePostDelete", c); err != nil {
 		return
 	}
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+}
+
+// handlePostGroupUpdate handles a message request to update a post group.
+func handlePostGroupUpdate(c *Client, msgReq Request) {
+	user := c.user
+	if user.ID.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	var params ParamsPostGroupUpdate
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
+		return
+	}
+	boardID := params.BoardID
+	if !c.boards[boardID].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	updatePostInput := post.UpdatePostGroupInput{
+		ID:     params.ID,
+		Title:  params.Title,
+		PosX:   params.PosX,
+		PosY:   params.PosY,
+		ZIndex: params.ZIndex,
+	}
+	postGroup, err := c.ws.postService.UpdatePostGroup(context.Background(), updatePostInput)
+	if err != nil {
+		switch {
+		case validator.IsValidationError(err):
+			validationErrMsg := validator.GetValidationErrMsg(updatePostInput, err)
+			sendErrorMessage(c, buildErrorResponse(msgReq, validationErrMsg))
+		default:
+			sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		}
+		return
+	}
+	msgRes := ResponsePostGroup{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: postGroup,
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
+		return
+	}
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+}
+
+// handlePostGroupDelete handles a message request to delete a post group.
+func handlePostGroupDelete(c *Client, msgReq Request) {
+	// Authenticate user
+	user := c.user
+	if user.ID.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	// Unmarshal request
+	var params ParamsPostGroupDelete
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
+		return
+	}
+	// Get post group and check if user has write permissions
+	postGroupID := params.PostGroupID
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), postGroupID)
+	if err != nil {
+		log.Printf("handler: failed to get post group: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		return
+	}
+	boardID := postGroup.BoardID.String()
+	if !c.boards[boardID].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	// Delete post group
+	err = c.ws.postService.DeletePostGroup(context.Background(), postGroupID)
+	if err != nil {
+		log.Printf("handler: failed to delete post group: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		return
+	}
+	// Prepare response
+	msgRes := ResponsePostGroupDeleted{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: struct {
+			ID uuid.UUID `json:"id"`
+		}{postGroup.ID},
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
+		return
+	}
+	// Broadcast response
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+}
+
+// unmarshalParams is a helper function that unmarshals a message request's params and sends
+// out a close connection message if any errors are encountered.
+func unmarshalParams(msgReq Request, v any, c *Client) error {
+	err := json.Unmarshal(msgReq.Params, v)
+	if err != nil {
+		closeConnection(c, websocket.CloseInvalidFramePayloadData, CloseReasonBadParams)
+		return err
+	}
+	return nil
 }
 
 // handleMarshalError checks to see if there are any errors when marshalling the WebSocket message response into JSON.

@@ -334,7 +334,34 @@ paths:
           description: Successfully updated board invite
       security:
         - bearerAuth: []
-
+  /post-groups/:
+    get:
+      tags:
+        - posts
+      summary: List post groups
+      description: List post groups and associated posts
+      parameters:
+        - name: boardID
+          in: query
+          description: Board ID that post groups belong to
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully listed post groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostGroupWithItems'
+      security:
+        - bearerAuth: []
 components:
   securitySchemes:
     bearerAuth:
@@ -540,6 +567,72 @@ components:
         updated_at:
           type: string
           format: date-time
+    PostGroupWithItems:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        board_id:
+          type: string
+          format: uuid
+          example: b9e95ae4-9c3f-412f-8b3b-201bd7083fc1
+        title:
+          type: string
+          example: "Summary of post group"
+        pos_x:
+          type: integer
+          example: 10
+        pos_y:
+          type: integer
+          example: 15
+        z_index:
+          type: integer
+          example: 3
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        user_id:
+          type: string
+          format: uuid
+          example: b9e95ae4-9c3f-412f-8b3b-201bd7083fc1
+        content:
+          type: string
+          example: 'This is my first post!'
+        color:
+          type: string
+          example: 'light_pink'
+        height:
+          type: integer
+          example: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        post_order:
+          type: number
+          format: float
+        post_group_id:
+          type: string
+          format: uuid
+          example: e04f3273-2d62-4c62-8d79-638e61c3b3ae
   requestBodies:
     UserArray:
       description: List of user object

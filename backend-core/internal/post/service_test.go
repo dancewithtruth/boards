@@ -32,12 +32,9 @@ func TestService(t *testing.T) {
 
 		// Update
 		updatedContent := "This content has been updated"
-		updatedPos := 20
 		updateInput := UpdatePostInput{
 			ID:      post.ID.String(),
 			Content: &updatedContent,
-			PosX:    &updatedPos,
-			PosY:    &updatedPos,
 		}
 		_, err = service.UpdatePost(context.Background(), updateInput)
 		assert.NoError(t, err)
@@ -46,11 +43,9 @@ func TestService(t *testing.T) {
 		updatedPost, err := service.GetPost(context.Background(), post.ID.String())
 		assert.NoError(t, err)
 		assert.Equal(t, updatedContent, updatedPost.Content)
-		assert.Equal(t, updatedPos, updatedPost.PosX)
 
-		// Delete
+		// Delete post
 		err = service.DeletePost(context.Background(), post.ID.String())
 		assert.NoError(t, err)
-
 	})
 }

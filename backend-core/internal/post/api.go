@@ -6,7 +6,6 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/board"
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
-	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
 	"github.com/go-chi/chi/v5"
@@ -34,9 +33,9 @@ func NewAPI(postService Service, boardService board.Service, validator validator
 	}
 }
 
-// HandleListPosts is a handler for listing posts that belong to a board. The handler will check
+// HandleListPostGroups is a handler for listing post groups that belong to a board. The handler will check
 // if the requesting user has access to the board.
-func (api *API) HandleListPosts(w http.ResponseWriter, r *http.Request) {
+func (api *API) HandleListPostGroups(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
@@ -60,24 +59,24 @@ func (api *API) HandleListPosts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	posts, err := api.postService.ListPosts(ctx, boardID)
+	postGroups, err := api.postService.ListPostGroups(ctx, boardID)
 	if err != nil {
-		logger.Errorf("handler: failed to list posts: %v", err)
+		logger.Errorf("handler: failed to list post groups: %v", err)
 		endpoint.WriteWithError(w, http.StatusInternalServerError, errMsgInternalServer)
 		return
 	}
 
 	endpoint.WriteWithStatus(w, http.StatusOK, struct {
-		Data []models.Post `json:"data"`
-	}{Data: posts})
+		Result []GroupWithPostsDTO `json:"result"`
+	}{Result: postGroups})
 }
 
 // RegisterHandlers registers all the post API handlers to their respective routes.
 func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) http.Handler) {
-	r.Route("/posts", func(r chi.Router) {
+	r.Route("/post-groups", func(r chi.Router) {
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
-			r.Get("/", api.HandleListPosts)
+			r.Get("/", api.HandleListPostGroups)
 		})
 	})
 }

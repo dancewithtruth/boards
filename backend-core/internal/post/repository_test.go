@@ -23,8 +23,13 @@ func TestRepository(t *testing.T) {
 
 	t.Run("Create, get, update, and delete post", func(t *testing.T) {
 		// Create
-		testPost := test.NewPost(testBoard.ID, testUser.ID)
-		err := repo.CreatePost(context.Background(), testPost)
+		postGroup := test.NewPostGroup(testBoard.ID)
+		err := repo.CreatePostGroup(context.Background(), postGroup)
+		if err != nil {
+			assert.FailNow(t, "Failed to create post group")
+		}
+		testPost := test.NewPost(testUser.ID, postGroup.ID)
+		err = repo.CreatePost(context.Background(), testPost)
 		assert.NoError(t, err)
 
 		// Get
@@ -41,11 +46,11 @@ func TestRepository(t *testing.T) {
 		updatedPost, err = repo.GetPost(context.Background(), updatedPost.ID)
 		assert.Equal(t, updatedContent, updatedPost.Content)
 
-		// Delete
-		err = repo.DeletePost(context.Background(), testPost.ID)
+		// Delete post group to cascade delete on post
+		err = repo.DeletePostGroup(context.Background(), postGroup.ID)
 		assert.NoError(t, err)
 		_, err = repo.GetPost(context.Background(), testPost.ID)
-		assert.Error(t, err)
+		assert.ErrorIs(t, err, errPostNotFound)
 	})
 }
 

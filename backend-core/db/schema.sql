@@ -39,13 +39,22 @@ CREATE TABLE IF NOT EXISTS board_invites (
 
 CREATE TABLE IF NOT EXISTS posts (
   id UUID PRIMARY KEY,
-  board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
   content TEXT,
-  pos_x INTEGER,
-  pos_y INTEGER,
   color VARCHAR(7),
   height INTEGER,
+  created_at TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP NOT NULL,
+  post_order FLOAT,
+  post_group_id UUID NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS post_groups (
+  id UUID PRIMARY KEY,
+  board_id UUID REFERENCES boards(id) ON DELETE CASCADE,
+  title VARCHAR(50),
+  pos_x INTEGER,
+  pos_y INTEGER,
   z_index INTEGER,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL

@@ -1,6 +1,6 @@
 import { getBoard } from '@/api/board';
-import { listPosts } from '@/api/post';
-import { Board, PostMap } from '@/components/dnd/board';
+import { listPostGroups } from '@/api/post';
+import { Board, PostGroupMap } from '@/components/dnd/board';
 import { CustomDragLayer } from '@/components/dnd/customDragLayer';
 import { COOKIE_NAME_JWT_TOKEN, SIDEBAR_WIDTH } from '@/constants';
 import { cookies } from 'next/headers';
@@ -10,15 +10,15 @@ export const metadata = {
   description: 'Collaborate with your team',
 };
 
-async function fetchPostsData(boardID: string) {
+async function fetchPostGroupsData(boardID: string) {
   const cookieStore = cookies();
   const jwtToken = cookieStore.get(COOKIE_NAME_JWT_TOKEN);
   if (jwtToken) {
-    const response = await listPosts(boardID, jwtToken.value);
-    const posts = response.data.reduce((map, post) => {
-      map[post.id] = post;
+    const response = await listPostGroups(boardID, jwtToken.value);
+    const posts = response.result.reduce((map, postGroup) => {
+      map[postGroup.id] = postGroup;
       return map;
-    }, {} as PostMap);
+    }, {} as PostGroupMap);
     return posts;
   } else {
     throw new Error('Please log in.');
@@ -37,11 +37,11 @@ async function fetchBoardData(boardID: string) {
 }
 
 export default async function BoardPage({ params: { id: boardID } }: { params: { id: string } }) {
-  const posts = await fetchPostsData(boardID);
+  const postGroups = await fetchPostGroupsData(boardID);
   const board = await fetchBoardData(boardID);
   return (
     <div className="flex" style={{ paddingLeft: SIDEBAR_WIDTH }}>
-      <Board snapToGrid={true} board={board} posts={posts} />
+      <Board snapToGrid={true} board={board} postGroups={postGroups} />
       <CustomDragLayer snapToGrid={true} />
     </div>
   );

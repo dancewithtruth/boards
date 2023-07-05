@@ -5,6 +5,7 @@ import (
 
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/post"
+	"github.com/google/uuid"
 )
 
 const (
@@ -30,6 +31,12 @@ const (
 
 	// EventPostFocus is when a post receives focus.
 	EventPostFocus = "post.focus"
+
+	// EventPostGroupUpdate is when a post group is updated.
+	EventPostGroupUpdate = "post_group.update"
+
+	// EventPostGroupDelete is when a post group is deleted.
+	EventPostGroupDelete = "post_group.delete"
 
 	// Close Reasons
 
@@ -102,13 +109,15 @@ type RequestPostCreate struct {
 
 // ParamsPostCreate contains the parameters for post creation.
 type ParamsPostCreate struct {
-	BoardID string `json:"board_id" validate:"required,uuid"`
-	Content string `json:"content"`
-	PosX    int    `json:"pos_x" validate:"required,min=0"`
-	PosY    int    `json:"pos_y" validate:"required,min=0"`
-	Color   string `json:"color" validate:"required,min=7,max=7"`
-	Height  int    `json:"height" validate:"min=0"`
-	ZIndex  int    `json:"z_index" validate:"min=1"`
+	BoardID     string  `json:"board_id" validate:"required,uuid"`
+	Content     string  `json:"content"`
+	PosX        int     `json:"pos_x" validate:"required,min=0"`
+	PosY        int     `json:"pos_y" validate:"required,min=0"`
+	Color       string  `json:"color" validate:"required,min=7,max=7"`
+	Height      int     `json:"height" validate:"min=0"`
+	ZIndex      int     `json:"z_index" validate:"min=1"`
+	PostOrder   float64 `json:"post_order"`
+	PostGroupID string  `json:"post_group_id"`
 }
 
 // RequestPostUpdate represents a request to update a post.
@@ -147,6 +156,29 @@ type ParamsPostFocus struct {
 	BoardID string `json:"board_id" validate:"required,uuid"`
 }
 
+// RequestPostGroupUpdate represents a request to update a post group.
+type RequestPostGroupUpdate struct {
+	Event  string                `json:"event"`
+	Params ParamsPostGroupUpdate `json:"params"`
+}
+
+// ParamsPostGroupUpdate contains the parameters for updating a post group.
+type ParamsPostGroupUpdate struct {
+	BoardID string `json:"board_id" validate:"required,uuid"`
+	post.UpdatePostGroupInput
+}
+
+// RequestPostGroupDelete represents a request to delete a post group.
+type RequestPostGroupDelete struct {
+	Event  string                `json:"event"`
+	Params ParamsPostGroupDelete `json:"params"`
+}
+
+// ParamsPostGroupDelete contains the parameters for deleting a post group.
+type ParamsPostGroupDelete struct {
+	PostGroupID string `json:"post_group_id" validate:"required,uuid"`
+}
+
 // ResponseBase represents the base response structure.
 type ResponseBase struct {
 	Event        string `json:"event"`
@@ -180,8 +212,19 @@ type ResultBoardConnect struct {
 	ConnectedUsers []models.User `json:"connected_users"`
 }
 
-// ResponsePost represents the response for post operations.
-type ResponsePost struct {
+// ResponsePostCreate represents the response for creating a new post.
+type ResponsePostCreate struct {
+	ResponseBase
+	Result ResultPostCreate `json:"result,omitempty"`
+}
+
+type ResultPostCreate struct {
+	Post      models.Post      `json:"post,omitempty"`
+	PostGroup models.PostGroup `json:"post_group,omitempty"`
+}
+
+// ResponsePostUpdate represents the response for updating a new post.
+type ResponsePostUpdate struct {
 	ResponseBase
 	Result models.Post `json:"result,omitempty"`
 }
@@ -189,13 +232,7 @@ type ResponsePost struct {
 // ResponsePostDelete represents the response for post deletion.
 type ResponsePostDelete struct {
 	ResponseBase
-	Result ResultPostDelete `json:"result,omitempty"`
-}
-
-// ResultPostDelete contains the result of post deletion.
-type ResultPostDelete struct {
-	PostID  string `json:"post_id"`
-	BoardID string `json:"board_id"`
+	Result models.Post `json:"result,omitempty"`
 }
 
 // ResponsePostFocus represents the response for post focusing.
@@ -206,9 +243,22 @@ type ResponsePostFocus struct {
 
 // ResultPostFocus contains the result of post focusing.
 type ResultPostFocus struct {
-	ID      string      `json:"id"`
-	BoardID string      `json:"board_id"`
-	User    models.User `json:"user"`
+	Post models.Post `json:"post"`
+	User models.User `json:"user"`
+}
+
+// ResponsePostGroup represents the response for post group.
+type ResponsePostGroup struct {
+	ResponseBase
+	Result models.PostGroup `json:"result,omitempty"`
+}
+
+// ResponsePostGroupDeleted represents the response for post group.
+type ResponsePostGroupDeleted struct {
+	ResponseBase
+	Result struct {
+		ID uuid.UUID `json:"id"`
+	} `json:"result,omitempty"`
 }
 
 // ResponseUserDisconnect represents the response for user disconnection.
