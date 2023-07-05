@@ -9,7 +9,7 @@ import { CSSProperties, ChangeEvent, FC, useEffect, useRef, useState } from 'rea
 import { memo } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import Avatar from '../avatar';
-import { PostWithTypingBy } from './board';
+import { PostAugmented } from './board';
 import { DragSourceMonitor, useDrag } from 'react-dnd';
 import { ItemTypes } from './itemTypes';
 import { Post } from '@/api/post';
@@ -18,7 +18,7 @@ type PostProps = {
   user: User;
   board: BoardWithMembers;
   send: Send;
-  post: PostWithTypingBy;
+  post: PostAugmented;
   setColorSetting: (color: string) => void;
   handleDeletePost: (post: Post) => void;
 };

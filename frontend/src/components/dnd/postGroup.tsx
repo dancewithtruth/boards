@@ -1,7 +1,7 @@
 'use client';
 
 import { Post, PostGroupWithPosts } from '@/api/post';
-import { PostWithTypingBy } from './board';
+import { PostAugmented } from './board';
 import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
 import { PostUI as PostUI } from './post';
@@ -63,7 +63,7 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDelete
           key={index}
           user={user}
           board={board}
-          post={post as PostWithTypingBy}
+          post={post as PostAugmented}
           send={send}
           setColorSetting={setColorSetting}
           handleDeletePost={handleDeletePost}

@@ -46,7 +46,7 @@ import Sidebar from '../sidebar';
 import { User } from '@/api';
 import PostGroup from './postGroup';
 
-export type PostWithTypingBy = {
+export type PostAugmented = {
   typingBy: User | null;
   autoFocus: boolean;
 } & Post;
