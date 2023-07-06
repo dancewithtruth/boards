@@ -13,6 +13,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/auth"
 	"github.com/Wave-95/boards/backend-core/internal/board"
 	"github.com/Wave-95/boards/backend-core/internal/config"
+	"github.com/Wave-95/boards/backend-core/internal/endpoint"
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
 	"github.com/Wave-95/boards/backend-core/internal/post"
@@ -96,6 +97,13 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	boardAPI.RegisterHandlers(r, authHandler)
 	postAPI.RegisterHandlers(r, authHandler)
 	websocket.RegisterHandlers(r)
+	r.Get("/ping", handlePingCheck)
 
 	return r
+}
+
+func handlePingCheck(w http.ResponseWriter, r *http.Request) {
+	endpoint.WriteWithStatus(w, http.StatusOK, struct {
+		Message string `json:"message"`
+	}{Message: "pong"})
 }
