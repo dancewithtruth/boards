@@ -5,11 +5,11 @@ import { PostAugmented } from './board';
 import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
 import { PostUI as PostUI } from './post';
-import { CSSProperties, useState } from 'react';
+import { CSSProperties, ChangeEvent, useState } from 'react';
 import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
 import { ItemTypes } from './itemTypes';
 import { DragItem } from './interfaces';
-import { deletePostGroup, updatePost } from '@/ws/events';
+import { deletePostGroup, updatePost, updatePostGroup } from '@/ws/events';
 
 type PostGroupProps = {
   postGroup: PostGroupWithPosts;
@@ -35,6 +35,8 @@ const PostGroup = ({
   unsetPostGroup,
 }: PostGroupProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const [isTitleFocused, setTitleFocused] = useState(false);
+  const [titleValue, setTitleValue] = useState('');
   const { id, board_id, pos_x, pos_y, z_index } = postGroup;
 
   const handleMouseEnter = () => {
@@ -44,6 +46,22 @@ const PostGroup = ({
   const handleMouseLeave = () => {
     setIsHovered(false);
   };
+
+  const handleTitleFocus = () => {
+    setTitleFocused(true);
+  };
+
+  const handleTitleBlur = () => {
+    setTitleFocused(false);
+    updatePostGroup({ id, board_id, title: titleValue }, send);
+  };
+
+  // handleTitleChange updates the input value
+  const handleTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    setTitleValue(value);
+  };
+
   const [{ isDragging }, drag] = useDrag(() => {
     const single_post = postGroup.posts.length === 1 ? postGroup.posts[0] : null;
     return {
@@ -52,10 +70,11 @@ const PostGroup = ({
       collect: (monitor: DragSourceMonitor) => ({
         isDragging: monitor.isDragging(),
       }),
+      canDrag: !isTitleFocused,
     };
-  }, [id, pos_x, pos_y]);
+  }, [id, pos_x, pos_y, isTitleFocused]);
 
-  const [, drop] = useDrop(
+  const [{ isOver }, drop] = useDrop(
     () => ({
       accept: ItemTypes.POST_GROUP,
       drop(item: DragItem, monitor) {
@@ -71,6 +90,9 @@ const PostGroup = ({
         }
         return undefined;
       },
+      collect: (monitor) => ({
+        isOver: monitor.isOver(),
+      }),
     }),
     []
   );
@@ -83,15 +105,23 @@ const PostGroup = ({
           ? 'shadow-md border border-dashed border-black backdrop-blur-sm cursor-move rounded-sm'
           : ''
       }
-      style={getStyles(pos_x, pos_y, z_index, isDragging, isHovered)}
+      style={getStyles(pos_x, pos_y, z_index, isDragging, isHovered, isOver)}
       role="DraggableGroupPost"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
       <div ref={drop}>
         {postGroup.posts.length > 1 ? (
-          <div className="flex justify-between min-h-8">
-            <span>{postGroup.title}</span>
+          <div className="flex items-center min-h-8">
+            <input
+              type="text"
+              placeholder={postGroup.title || 'Type group summary'}
+              className="input ml-1 h-5"
+              onFocus={handleTitleFocus}
+              onBlur={handleTitleBlur}
+              value={titleValue}
+              onChange={handleTitleChange}
+            />
           </div>
         ) : null}
         {postGroup.posts.map((post, index) => (
@@ -115,7 +145,8 @@ function getStyles(
   pos_y: number,
   z_index: number,
   isDragging: boolean,
-  isHovered: boolean
+  isHovered: boolean,
+  isOver: boolean
 ): CSSProperties {
   const transform = `translate3d(${pos_x}px, ${pos_y}px, 0)`;
   return {
@@ -127,6 +158,7 @@ function getStyles(
     opacity: isDragging ? 0 : 1,
     height: isDragging ? 0 : '',
     zIndex: isHovered ? '10000' : z_index,
+    border: isOver ? '2px solid black' : '',
   };
 }
 
