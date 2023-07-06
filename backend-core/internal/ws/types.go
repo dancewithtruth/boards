@@ -128,7 +128,6 @@ type RequestPostUpdate struct {
 
 // ParamsPostUpdate contains the parameters for post update.
 type ParamsPostUpdate struct {
-	BoardID string `json:"board_id" validate:"required,uuid"`
 	post.UpdatePostInput
 }
 
@@ -226,7 +225,12 @@ type ResultPostCreate struct {
 // ResponsePostUpdate represents the response for updating a new post.
 type ResponsePostUpdate struct {
 	ResponseBase
-	Result models.Post `json:"result,omitempty"`
+	Result ResultPostUpdate `json:"result,omitempty"`
+}
+
+type ResultPostUpdate struct {
+	UpdatedPost models.Post `json:"updated_post"`
+	OldPost     models.Post `json:"old_post"`
 }
 
 // ResponsePostDelete represents the response for post deletion.

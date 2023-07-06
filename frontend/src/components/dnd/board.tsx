@@ -5,8 +5,8 @@ import { FC, useEffect } from 'react';
 import { useState } from 'react';
 import { useDrop } from 'react-dnd';
 
-import type { DragItem } from './interfaces';
-import { ItemTypes } from './itemTypes';
+import type { PostGroupDragItem } from './interfaces';
+import { ITEM_TYPES } from './itemTypes';
 import { snapToGrid as doSnapToGrid } from './snapToGrid';
 import { Post, PostGroupWithPosts } from '@/api/post';
 import {
@@ -123,7 +123,11 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
             pushPost(result.post);
             break;
           case EVENTS.POST_UPDATE:
-            setPost(result);
+            if (result.updated_post.post_group_id !== result.old_post.post_group_id) {
+              transferPost(result.old_post, result.updated_post);
+            } else {
+              setPost(result.updated_post);
+            }
             break;
           case EVENTS.POST_DELETE:
             unsetPost(result);
@@ -211,6 +215,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   // setPost will attept to set post by finding the existing post in the post group. If none if found, it will
   // insert based on post order.
   const setPost = (post: Post) => {
+    console.log('Setting post: ', post);
     const indexByID = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
     if (indexByID !== -1) {
       setPostGroups(
@@ -224,6 +229,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       );
     } else {
       const indexByOrder = postGroups[post.post_group_id].posts.findIndex((elem) => elem.post_order <= post.post_order);
+      console.log('indexByOrder', indexByOrder);
       setPostGroups(
         update(postGroups, {
           [post.post_group_id]: {
@@ -245,22 +251,63 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   };
 
   const unsetPost = (post: Post) => {
-    const index = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
-    setPostGroups(
-      update(postGroups, {
-        [post.post_group_id]: {
-          posts: {
-            $splice: [[index, 1]],
-          },
+    const currentPostGroup = postGroups[post.post_group_id];
+    if (!currentPostGroup) return;
+
+    const index = currentPostGroup.posts.findIndex((elem) => elem.id === post.id);
+    if (index === -1) return;
+
+    console.log('Inside unsetPost: ', currentPostGroup);
+    console.log('UnsetPost: ', index);
+
+    const updatedPostGroups = update(postGroups, {
+      [post.post_group_id]: {
+        posts: {
+          $splice: [[index, 1]],
         },
-      })
-    );
+      },
+    });
+
+    console.log(updatedPostGroups);
+
+    setPostGroups(updatedPostGroups);
+  };
+
+  const transferPost = (oldPost: Post, updatedPost: Post) => {
+    const oldPostGroup = postGroups[oldPost.post_group_id];
+    const newPostGroup = postGroups[updatedPost.post_group_id];
+
+    const oldIndex = oldPostGroup?.posts.findIndex((elem) => elem.id === oldPost.id);
+    let updatedPostGroups = update(postGroups, {
+      [oldPostGroup.id]: {
+        posts: {
+          $splice: [[oldIndex, 1]],
+        },
+      },
+    });
+    const indexByOrder = newPostGroup?.posts.findIndex((elem) => elem.post_order <= updatedPost.post_order);
+
+    updatedPostGroups = update(updatedPostGroups, {
+      [newPostGroup.id]: {
+        posts: {
+          $splice: [[indexByOrder, 0, updatedPost]],
+        },
+      },
+    });
+    setPostGroups(updatedPostGroups);
   };
 
   const [, drop] = useDrop(
     () => ({
-      accept: ItemTypes.POST_GROUP,
-      drop(item: DragItem, monitor) {
+      accept: ITEM_TYPES.POST_GROUP,
+      drop(item: PostGroupDragItem, monitor) {
+        console.log(item, monitor, monitor.getDifferenceFromInitialOffset());
+        console.log(
+          monitor.getInitialClientOffset(),
+          monitor.getInitialSourceClientOffset(),
+          monitor.getClientOffset(),
+          monitor.getSourceClientOffset()
+        );
         const delta = monitor.getDifferenceFromInitialOffset() as {
           x: number;
           y: number;

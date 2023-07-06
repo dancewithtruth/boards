@@ -4,7 +4,7 @@ import type { CSSProperties, FC } from 'react';
 import type { XYCoord } from 'react-dnd';
 import { useDragLayer } from 'react-dnd';
 
-import { ItemTypes } from './itemTypes';
+import { ITEM_TYPES } from './itemTypes';
 import { snapToGrid } from './snapToGrid';
 
 const layerStyles: CSSProperties = {
@@ -56,7 +56,7 @@ export const CustomDragLayer: FC<CustomDragLayerProps> = (props) => {
 
   function renderItem() {
     switch (itemType) {
-      case ItemTypes.POST:
+      case ITEM_TYPES.POST:
         return null;
       default:
         return null;

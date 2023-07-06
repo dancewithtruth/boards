@@ -11,13 +11,14 @@ import { FaRegTrashAlt } from 'react-icons/fa';
 import Avatar from '../avatar';
 import { PostAugmented } from './board';
 import { DragSourceMonitor, useDrag } from 'react-dnd';
-import { ItemTypes } from './itemTypes';
-import { Post } from '@/api/post';
+import { ITEM_TYPES } from './itemTypes';
+import { Post, PostGroupWithPosts } from '@/api/post';
 
 type PostProps = {
   user: User;
   board: BoardWithMembers;
   send: Send;
+  postGroup: PostGroupWithPosts;
   post: PostAugmented;
   setColorSetting: (color: string) => void;
   handleDeletePost: (post: Post) => void;
@@ -27,6 +28,7 @@ export const PostUI: FC<PostProps> = memo(function Post({
   user,
   board,
   send,
+  postGroup,
   post,
   setColorSetting,
   handleDeletePost,
@@ -39,15 +41,16 @@ export const PostUI: FC<PostProps> = memo(function Post({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const allMembers = board.members;
   const authorName = getName(user_id, allMembers) || 'Unknown';
+  const hasSiblings = postGroup.posts.length > 1;
 
   const [{ isDragging }, drag] = useDrag(
     () => ({
-      type: ItemTypes.POST,
-      item: { id, content },
+      type: ITEM_TYPES.POST,
+      item: { name: ITEM_TYPES.POST, post },
       collect: (monitor: DragSourceMonitor) => ({
         isDragging: monitor.isDragging(),
       }),
-      canDrag: !typingBy && !isFocused,
+      canDrag: !typingBy && !isFocused && hasSiblings,
     }),
     [id, content]
   );
@@ -90,11 +93,11 @@ export const PostUI: FC<PostProps> = memo(function Post({
 
   const handleBlur = () => {
     setIsFocused(false);
-    updatePost({ id, board_id: board.id, content: textareaValue, height: textareaHeight }, send);
+    updatePost({ id, content: textareaValue, height: textareaHeight }, send);
   };
 
   const handlePickColor = (color: string) => {
-    updatePost({ id, board_id: board.id, color }, send);
+    updatePost({ id, color }, send);
     setColorSetting(color);
   };
 
@@ -133,7 +136,7 @@ export const PostUI: FC<PostProps> = memo(function Post({
   };
   return (
     <div
-      // ref={drag}
+      ref={drag}
       style={getStyles(isHovered, isDragging, color)}
       role="DraggablePost"
       onMouseEnter={handleMouseEnter}

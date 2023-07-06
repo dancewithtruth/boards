@@ -282,8 +282,16 @@ func handlePostUpdate(c *Client, msgReq Request) {
 	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
+	existingPost, err := c.ws.postService.GetPost(context.Background(), params.UpdatePostInput.ID)
+	if err != nil {
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	postGroup, err := c.ws.postService.GetPostGroup(context.Background(), existingPost.PostGroupID.String())
+	if err != nil {
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
 	// Check if user has write permissions
-	boardID := params.BoardID
+	boardID := postGroup.BoardID.String()
 	if !c.boards[boardID].canWrite {
 		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
 		sendErrorMessage(c, msgRes)
@@ -298,7 +306,7 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		PostOrder:   params.PostOrder,
 		PostGroupID: params.PostGroupID,
 	}
-	post, err := c.ws.postService.UpdatePost(context.Background(), updatePostInput)
+	updatedPost, err := c.ws.postService.UpdatePost(context.Background(), updatePostInput)
 	if err != nil {
 		switch {
 		case validator.IsValidationError(err):
@@ -315,7 +323,10 @@ func handlePostUpdate(c *Client, msgReq Request) {
 			Event:   msgReq.Event,
 			Success: true,
 		},
-		Result: post,
+		Result: ResultPostUpdate{
+			OldPost:     existingPost,
+			UpdatedPost: updatedPost,
+		},
 	}
 	msgResBytes, err := json.Marshal(msgRes)
 	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
