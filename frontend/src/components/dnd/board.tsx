@@ -215,7 +215,6 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   // setPost will attept to set post by finding the existing post in the post group. If none if found, it will
   // insert based on post order.
   const setPost = (post: Post) => {
-    console.log('Setting post: ', post);
     const indexByID = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
     if (indexByID !== -1) {
       setPostGroups(
@@ -229,7 +228,6 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       );
     } else {
       const indexByOrder = postGroups[post.post_group_id].posts.findIndex((elem) => elem.post_order <= post.post_order);
-      console.log('indexByOrder', indexByOrder);
       setPostGroups(
         update(postGroups, {
           [post.post_group_id]: {
@@ -253,13 +251,8 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   const unsetPost = (post: Post) => {
     const currentPostGroup = postGroups[post.post_group_id];
     if (!currentPostGroup) return;
-
     const index = currentPostGroup.posts.findIndex((elem) => elem.id === post.id);
     if (index === -1) return;
-
-    console.log('Inside unsetPost: ', currentPostGroup);
-    console.log('UnsetPost: ', index);
-
     const updatedPostGroups = update(postGroups, {
       [post.post_group_id]: {
         posts: {
@@ -267,16 +260,14 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         },
       },
     });
-
-    console.log(updatedPostGroups);
-
     setPostGroups(updatedPostGroups);
   };
 
+  // transferPost is used to remove the post from the old post group and to insert the post
+  // into the new post group
   const transferPost = (oldPost: Post, updatedPost: Post) => {
     const oldPostGroup = postGroups[oldPost.post_group_id];
     const newPostGroup = postGroups[updatedPost.post_group_id];
-
     const oldIndex = oldPostGroup?.posts.findIndex((elem) => elem.id === oldPost.id);
     let updatedPostGroups = update(postGroups, {
       [oldPostGroup.id]: {
@@ -286,7 +277,6 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       },
     });
     const indexByOrder = newPostGroup?.posts.findIndex((elem) => elem.post_order <= updatedPost.post_order);
-
     updatedPostGroups = update(updatedPostGroups, {
       [newPostGroup.id]: {
         posts: {
@@ -301,13 +291,6 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     () => ({
       accept: ITEM_TYPES.POST_GROUP,
       drop(item: PostGroupDragItem, monitor) {
-        console.log(item, monitor, monitor.getDifferenceFromInitialOffset());
-        console.log(
-          monitor.getInitialClientOffset(),
-          monitor.getInitialSourceClientOffset(),
-          monitor.getClientOffset(),
-          monitor.getSourceClientOffset()
-        );
         const delta = monitor.getDifferenceFromInitialOffset() as {
           x: number;
           y: number;

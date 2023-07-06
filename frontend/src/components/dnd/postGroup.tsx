@@ -103,6 +103,26 @@ const PostGroup = ({
     []
   );
 
+  const PostGroupTitle = () => {
+    return postGroup.posts.length > 1 ? (
+      <div className="flex items-center min-h-8">
+        <input
+          type="text"
+          placeholder={'Type group summary'}
+          className="input ml-1 h-5"
+          onFocus={handleTitleFocus}
+          onBlur={handleTitleBlur}
+          value={titleValue}
+          onChange={handleTitleChange}
+        />
+      </div>
+    ) : null;
+  };
+
+  if (isDragging) {
+    return null;
+  }
+
   return (
     <div
       ref={(node) => drag(drop(node))}
@@ -116,22 +136,8 @@ const PostGroup = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div
-      // ref={drop}
-      >
-        {postGroup.posts.length > 1 ? (
-          <div className="flex items-center min-h-8">
-            <input
-              type="text"
-              placeholder={'Type group summary'}
-              className="input ml-1 h-5"
-              onFocus={handleTitleFocus}
-              onBlur={handleTitleBlur}
-              value={titleValue}
-              onChange={handleTitleChange}
-            />
-          </div>
-        ) : null}
+      <div>
+        <PostGroupTitle />
         {postGroup.posts.map((post, index) => (
           <PostUI
             key={index}
