@@ -12,15 +12,7 @@ import { Post, PostGroupWithPosts } from '@/api/post';
 import {
   BOARD_SPACE_ADD,
   COOKIE_NAME_JWT_TOKEN,
-  EVENT_BOARD_CONNECT,
-  EVENT_BOARD_DISCONNECT,
-  EVENT_POST_CREATE,
-  EVENT_POST_DELETE,
-  EVENT_POST_FOCUS,
-  EVENT_POST_GROUP_DELETE,
-  EVENT_POST_GROUP_UPDATE,
-  EVENT_POST_UPDATE,
-  EVENT_USER_AUTHENTICATE,
+  EVENTS,
   NAVBAR_HEIGHT,
   POST_COLORS,
   POST_HEIGHT,
@@ -30,14 +22,7 @@ import {
 } from '@/constants';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import Cookies from 'universal-cookie';
-import {
-  authenticateUser as authenticateUserWS,
-  connectBoard as connectBoardWS,
-  createPost as createPostWS,
-  updatePostGroup as updatePostGroupWS,
-  deletePost as deletePostWS,
-  deletePostGroup as deletePostGroupWS,
-} from '@/ws/events';
+import { authenticateUser, connectBoard, createPost, updatePostGroup, deletePost, deletePostGroup } from '@/ws/events';
 import { Overlay } from '../overlay';
 import { getMaxFieldFromObj } from '@/utils';
 import { toast } from 'react-toastify';
@@ -70,8 +55,8 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
   const [boardDimension, setBoardDimension] = useState({ height: 0, width: 0 });
   const [highestZ, setHighestZ] = useState(getMaxFieldFromObj(initialPostGroups, 'z_index'));
-  const [colorSetting, setColorSetting] = useState(pickColor(postGroups));
-  const { messages, error, send, readyState } = useWebSocket(WS_URL);
+  const [colorSetting, setColorSetting] = useState(pickColor());
+  const { messages, send, readyState } = useWebSocket(WS_URL);
   const cookies = new Cookies();
 
   useEffect(() => {
@@ -95,7 +80,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       setOverlayText(TEXT_CONNECTING);
       setShowOverlay(true);
       const jwtToken = cookies.get(COOKIE_NAME_JWT_TOKEN);
-      authenticateUserWS(jwtToken, send);
+      authenticateUser(jwtToken, send);
     }
     if (readyState == WebSocket.CLOSED || readyState == WebSocket.CLOSING) {
       setOverlayText(TEXT_NOT_CONNECTED);
@@ -103,7 +88,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     }
   }, [readyState]);
 
-  // Handles all the different post events
+  // Handles WebSocket events
   useEffect(() => {
     if (messages.length === 0) {
       return;
@@ -111,20 +96,20 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     messages.forEach(({ event, result, success, error_message }) => {
       if (success) {
         switch (event) {
-          case EVENT_USER_AUTHENTICATE:
+          case EVENTS.USER_AUTHENTICATE:
             setUser(result.user);
-            connectBoardWS(board.id, send);
+            connectBoard(board.id, send);
             break;
-          case EVENT_BOARD_CONNECT:
+          case EVENTS.BOARD_CONNECT:
             setShowOverlay(false);
             setConnectedUsers(result.connected_users.concat([result.new_user]));
             break;
-          case EVENT_BOARD_DISCONNECT:
+          case EVENTS.BOARD_DISCONNECT:
             const userID = result.user_id;
             const newConnectedUsers = connectedUsers.filter((user) => user.id != userID);
             setConnectedUsers(newConnectedUsers);
             break;
-          case EVENT_POST_CREATE:
+          case EVENTS.POST_CREATE:
             if (result.post.user_id == user?.id) {
               result.post.autoFocus = true;
             }
@@ -132,26 +117,26 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
             if (!postGroups[result.post_group.id]) {
               const postGroup = result.post_group;
               postGroup.posts = [result.post];
-              addPostGroup(postGroup);
+              setPostGroup(postGroup);
               break;
             }
-            addPost(result.post);
+            pushPost(result.post);
             break;
-          case EVENT_POST_UPDATE:
-            updatePost(result);
+          case EVENTS.POST_UPDATE:
+            setPost(result);
             break;
-          case EVENT_POST_DELETE:
-            deletePost(result);
+          case EVENTS.POST_DELETE:
+            unsetPost(result);
             break;
-          case EVENT_POST_GROUP_UPDATE:
-            updatePostGroup({ ...result, typingBy: null });
+          case EVENTS.POST_GROUP_UPDATE:
+            mergePostGroup({ ...result, typingBy: null });
             break;
-          case EVENT_POST_GROUP_DELETE:
-            deletePostGroup(result.id);
+          case EVENTS.POST_GROUP_DELETE:
+            unsetPostGroup(result.id);
             break;
-          case EVENT_POST_FOCUS:
+          case EVENTS.POST_FOCUS:
             if (result.user.id != user?.id) {
-              updatePost({ ...result.post, typingBy: result.user });
+              setPost({ ...result.post, typingBy: result.user });
             }
             break;
           default:
@@ -173,24 +158,25 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         pos_x: offsetX,
         pos_y: offsetY,
         color: colorSetting,
-        z_index: highestZ + 1,
+        z_index: newZIndex,
       };
-      createPostWS(params, send);
+      createPost(params, send);
       setHighestZ(newZIndex);
     }
   };
 
   const handleDeletePost = (post: Post) => {
+    // Delete post only if more than 1 posts in post group
     if (postGroups[post.post_group_id]?.posts.length >= 2) {
-      // Delete post
       const params = { post_id: post.id, board_id: board.id };
-      deletePostWS(params, send);
+      deletePost(params, send);
       return;
     }
-    deletePostGroupWS(post.post_group_id, send);
+    // Delete post group if only 1 post in post group
+    deletePostGroup(post.post_group_id, send);
   };
 
-  const addPostGroup = (postGroup: PostGroupWithPosts) => {
+  const setPostGroup = (postGroup: PostGroupWithPosts) => {
     setPostGroups(
       update(postGroups, {
         [postGroup.id]: {
@@ -200,7 +186,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     );
   };
 
-  const addPost = (post: Post) => {
+  const pushPost = (post: Post) => {
     setPostGroups(
       update(postGroups, {
         [post.post_group_id]: {
@@ -212,7 +198,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     );
   };
 
-  const updatePostGroup = (postGroup: { id: string } & Partial<PostGroupWithPosts>) => {
+  const mergePostGroup = (postGroup: { id: string } & Partial<PostGroupWithPosts>) => {
     setPostGroups(
       update(postGroups, {
         [postGroup.id]: {
@@ -222,20 +208,35 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     );
   };
 
-  const updatePost = (post: Post) => {
-    const index = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
-    setPostGroups(
-      update(postGroups, {
-        [post.post_group_id]: {
-          posts: {
-            $splice: [[index, 1, post]],
+  // setPost will attept to set post by finding the existing post in the post group. If none if found, it will
+  // insert based on post order.
+  const setPost = (post: Post) => {
+    const indexByID = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
+    if (indexByID !== -1) {
+      setPostGroups(
+        update(postGroups, {
+          [post.post_group_id]: {
+            posts: {
+              $splice: [[indexByID, 1, post]],
+            },
           },
-        },
-      })
-    );
+        })
+      );
+    } else {
+      const indexByOrder = postGroups[post.post_group_id].posts.findIndex((elem) => elem.post_order <= post.post_order);
+      setPostGroups(
+        update(postGroups, {
+          [post.post_group_id]: {
+            posts: {
+              $splice: [[indexByOrder, 0, post]],
+            },
+          },
+        })
+      );
+    }
   };
 
-  const deletePostGroup = (id: string) => {
+  const unsetPostGroup = (id: string) => {
     setPostGroups(
       update(postGroups, {
         $unset: [id],
@@ -243,7 +244,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     );
   };
 
-  const deletePost = (post: Post) => {
+  const unsetPost = (post: Post) => {
     const index = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
     setPostGroups(
       update(postGroups, {
@@ -264,7 +265,9 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
           x: number;
           y: number;
         };
-
+        if (!delta) {
+          return undefined;
+        }
         let pos_x = Math.max(item.pos_x + delta.x, 0);
         let pos_y = Math.max(item.pos_y + delta.y, 0);
         if (snapToGrid) {
@@ -273,12 +276,12 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         const newZIndex = getMaxFieldFromObj(postGroups, 'z_index') + 1;
         const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
         // pre-emptively update post on frontend before waiting on websocket to smoothen out experience
-        updatePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
-        updatePostGroupWS(newParams, send);
+        mergePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
+        updatePostGroup(newParams, send);
         return undefined;
       },
     }),
-    [updatePostGroup]
+    [mergePostGroup]
   );
 
   return (
@@ -306,6 +309,9 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
                 send={send}
                 setColorSetting={setColorSetting}
                 handleDeletePost={handleDeletePost}
+                unsetPostGroup={unsetPostGroup}
+                unsetPost={unsetPost}
+                setPost={setPost}
               />
             ))
           : null}
@@ -314,7 +320,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   );
 };
 
-const pickColor = (postGroupMap: PostGroupMap) => {
+const pickColor = () => {
   const availableColors = Object.values(POST_COLORS);
   const randIndex = Math.floor(Math.random() * availableColors.length);
   return availableColors[randIndex];

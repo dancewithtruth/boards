@@ -1,9 +1,11 @@
-export const EVENT_USER_AUTHENTICATE = 'user.authenticate';
-export const EVENT_BOARD_CONNECT = 'board.connect';
-export const EVENT_BOARD_DISCONNECT = 'board.disconnect';
-export const EVENT_POST_CREATE = 'post.create';
-export const EVENT_POST_UPDATE = 'post.update';
-export const EVENT_POST_DELETE = 'post.delete';
-export const EVENT_POST_FOCUS = 'post.focus';
-export const EVENT_POST_GROUP_UPDATE = 'post_group.update';
-export const EVENT_POST_GROUP_DELETE = 'post_group.delete';
+export const EVENTS = {
+    USER_AUTHENTICATE: 'user.authenticate',
+    BOARD_CONNECT: 'board.connect',
+    BOARD_DISCONNECT: 'board.disconnect',
+    POST_CREATE: 'post.create',
+    POST_UPDATE: 'post.update',
+    POST_DELETE: 'post.delete',
+    POST_FOCUS: 'post.focus',
+    POST_GROUP_UPDATE: 'post_group.update',
+    POST_GROUP_DELETE: 'post_group.delete'
+  };

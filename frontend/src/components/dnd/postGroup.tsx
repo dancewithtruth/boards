@@ -6,8 +6,10 @@ import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
 import { PostUI as PostUI } from './post';
 import { CSSProperties, useState } from 'react';
-import { DragSourceMonitor, useDrag } from 'react-dnd';
+import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
 import { ItemTypes } from './itemTypes';
+import { DragItem } from './interfaces';
+import { deletePostGroup, updatePost } from '@/ws/events';
 
 type PostGroupProps = {
   postGroup: PostGroupWithPosts;
@@ -16,11 +18,24 @@ type PostGroupProps = {
   send: Send;
   setColorSetting: (color: string) => void;
   handleDeletePost: (post: Post) => void;
+  setPost: (post: Post) => void;
+  unsetPost: (post: Post) => void;
+  unsetPostGroup: (id: string) => void;
 };
 
-const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDeletePost }: PostGroupProps) => {
+const PostGroup = ({
+  postGroup,
+  user,
+  board,
+  send,
+  setColorSetting,
+  handleDeletePost,
+  setPost,
+  unsetPost,
+  unsetPostGroup,
+}: PostGroupProps) => {
   const [isHovered, setIsHovered] = useState(false);
-  const { id, pos_x, pos_y, z_index } = postGroup;
+  const { id, board_id, pos_x, pos_y, z_index } = postGroup;
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -29,15 +44,35 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDelete
   const handleMouseLeave = () => {
     setIsHovered(false);
   };
-  const [{ isDragging }, drag] = useDrag(
-    () => ({
+  const [{ isDragging }, drag] = useDrag(() => {
+    const single_post = postGroup.posts.length === 1 ? postGroup.posts[0] : null;
+    return {
       type: ItemTypes.POST_GROUP,
-      item: { id, pos_x, pos_y },
+      item: { id, pos_x, pos_y, single_post },
       collect: (monitor: DragSourceMonitor) => ({
         isDragging: monitor.isDragging(),
       }),
+    };
+  }, [id, pos_x, pos_y]);
+
+  const [, drop] = useDrop(
+    () => ({
+      accept: ItemTypes.POST_GROUP,
+      drop(item: DragItem, monitor) {
+        const { id: source_post_group_id, single_post } = item;
+        if (single_post) {
+          const target_post_group_id = id;
+          if (source_post_group_id != target_post_group_id) {
+            console.log('Moving post from post group ID ', source_post_group_id, ' to ', target_post_group_id);
+            updatePost({ id: single_post.id, board_id, post_group_id: target_post_group_id }, send);
+            // Unset post
+            deletePostGroup(single_post.post_group_id, send);
+          }
+        }
+        return undefined;
+      },
     }),
-    [id, pos_x, pos_y]
+    []
   );
 
   return (
@@ -53,22 +88,24 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDelete
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      {postGroup.posts.length > 1 ? (
-        <div className="flex justify-between min-h-8">
-          <span>{postGroup.title}</span>
-        </div>
-      ) : null}
-      {postGroup.posts.map((post, index) => (
-        <PostUI
-          key={index}
-          user={user}
-          board={board}
-          post={post as PostAugmented}
-          send={send}
-          setColorSetting={setColorSetting}
-          handleDeletePost={handleDeletePost}
-        />
-      ))}
+      <div ref={drop}>
+        {postGroup.posts.length > 1 ? (
+          <div className="flex justify-between min-h-8">
+            <span>{postGroup.title}</span>
+          </div>
+        ) : null}
+        {postGroup.posts.map((post, index) => (
+          <PostUI
+            key={index}
+            user={user}
+            board={board}
+            post={post as PostAugmented}
+            send={send}
+            setColorSetting={setColorSetting}
+            handleDeletePost={handleDeletePost}
+          />
+        ))}
+      </div>
     </div>
   );
 };
