@@ -15,7 +15,7 @@ import {
   EVENTS,
   NAVBAR_HEIGHT,
   POST_COLORS,
-  POST_HEIGHT,
+  DEFAULT_POST_HEIGHT,
   POST_WIDTH,
   SIDEBAR_WIDTH,
   WS_URL,
@@ -69,7 +69,20 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   // Expands the board based on post locations
   useEffect(() => {
     const newWidth = getMaxFieldFromObj(postGroups, 'pos_x') + POST_WIDTH + BOARD_SPACE_ADD;
-    const newHeight = getMaxFieldFromObj(postGroups, 'pos_y') + POST_HEIGHT + BOARD_SPACE_ADD;
+    const heights = Object.values(postGroups).map((postGroup) => {
+      let heightOffset = postGroup.pos_y;
+      postGroup.posts.forEach((post) => {
+        console.log(post.height)
+        if (post.height) {
+          heightOffset += post.height + 66;
+        } else {
+          heightOffset += DEFAULT_POST_HEIGHT;
+        }
+      });
+      return heightOffset;
+    });
+    const newHeight = Math.max(...heights) + BOARD_SPACE_ADD;
+    console.log(heights, newHeight);
     setBoardDimension({ height: newHeight, width: newWidth });
   }, [postGroups]);
 
@@ -125,6 +138,9 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
           case EVENTS.POST_UPDATE:
             if (result.updated_post.post_group_id !== result.old_post.post_group_id) {
               transferPost(result.old_post, result.updated_post);
+              if (postGroups[result.old_post.post_group_id]?.posts.length === 0) {
+                deletePostGroup(result.old_post.post_group_id, send);
+              }
             } else {
               setPost(result.updated_post);
             }
@@ -153,6 +169,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
 
   // handleDoubleClick creates a new post
   const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    toast.dismiss();
     if (event.target === event.currentTarget) {
       const { offsetX, offsetY } = event.nativeEvent;
       const newZIndex = highestZ + 1;
@@ -269,13 +286,16 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     const oldPostGroup = postGroups[oldPost.post_group_id];
     const newPostGroup = postGroups[updatedPost.post_group_id];
     const oldIndex = oldPostGroup?.posts.findIndex((elem) => elem.id === oldPost.id);
-    let updatedPostGroups = update(postGroups, {
-      [oldPostGroup.id]: {
-        posts: {
-          $splice: [[oldIndex, 1]],
+    let updatedPostGroups = postGroups;
+    if (oldIndex !== -1) {
+      updatedPostGroups = update(updatedPostGroups, {
+        [oldPostGroup.id]: {
+          posts: {
+            $splice: [[oldIndex, 1]],
+          },
         },
-      },
-    });
+      });
+    }
     const indexByOrder = newPostGroup?.posts.findIndex((elem) => elem.post_order <= updatedPost.post_order);
     updatedPostGroups = update(updatedPostGroups, {
       [newPostGroup.id]: {
@@ -289,26 +309,30 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
 
   const [, drop] = useDrop(
     () => ({
-      accept: ITEM_TYPES.POST_GROUP,
-      drop(item: PostGroupDragItem, monitor) {
-        const delta = monitor.getDifferenceFromInitialOffset() as {
-          x: number;
-          y: number;
-        };
-        if (!delta) {
+      accept: [ITEM_TYPES.POST_GROUP, ITEM_TYPES.POST],
+      drop(item: any, monitor) {
+        if (item.name === ITEM_TYPES.POST_GROUP) {
+          const delta = monitor.getDifferenceFromInitialOffset() as {
+            x: number;
+            y: number;
+          };
+          if (!delta) {
+            return undefined;
+          }
+          let pos_x = Math.max(item.pos_x + delta.x, 0);
+          let pos_y = Math.max(item.pos_y + delta.y, 0);
+          if (snapToGrid) {
+            [pos_x, pos_y] = doSnapToGrid(pos_x, pos_y);
+          }
+          const newZIndex = getMaxFieldFromObj(postGroups, 'z_index') + 1;
+          const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
+          // pre-emptively update post on frontend before waiting on websocket to smoothen out experience
+          mergePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
+          updatePostGroup(newParams, send);
           return undefined;
+        } else if (item.name === ITEM_TYPES.POST) {
+          // TODO: Create post group
         }
-        let pos_x = Math.max(item.pos_x + delta.x, 0);
-        let pos_y = Math.max(item.pos_y + delta.y, 0);
-        if (snapToGrid) {
-          [pos_x, pos_y] = doSnapToGrid(pos_x, pos_y);
-        }
-        const newZIndex = getMaxFieldFromObj(postGroups, 'z_index') + 1;
-        const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
-        // pre-emptively update post on frontend before waiting on websocket to smoothen out experience
-        mergePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
-        updatePostGroup(newParams, send);
-        return undefined;
       },
     }),
     [mergePostGroup]

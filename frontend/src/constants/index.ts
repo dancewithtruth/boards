@@ -4,7 +4,7 @@ export * from './websocket';
 export const BASE_URL = typeof window === 'undefined' ? process.env.BACKEND_URL : process.env.NEXT_PUBLIC_BACKEND_URL;
 export const COOKIE_NAME_JWT_TOKEN = 'jwt_token';
 export const POST_WIDTH = 275;
-export const POST_HEIGHT = 100;
+export const DEFAULT_POST_HEIGHT = 114;
 export const BOARD_SPACE_ADD = 150;
 export const POST_COLORS: { [key: string]: string } = {
   LIGHT_PINK: '#F5E6E8',

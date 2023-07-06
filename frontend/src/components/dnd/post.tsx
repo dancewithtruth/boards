@@ -1,7 +1,7 @@
 'use client';
 
 import { BoardWithMembers, User } from '@/api';
-import { POST_COLORS, POST_HEIGHT, POST_WIDTH } from '@/constants';
+import { POST_COLORS, DEFAULT_POST_HEIGHT, POST_WIDTH } from '@/constants';
 import { displayColor } from '@/utils';
 import { deletePost, focusPost, updatePost, updatePostGroup } from '@/ws/events';
 import { Send } from '@/ws/types';
@@ -176,7 +176,7 @@ function getStyles(isHovered: boolean, isDragging: boolean, color: string): CSSP
   return {
     opacity: isDragging ? 0 : 1,
     height: isDragging ? 0 : '',
-    minHeight: POST_HEIGHT,
+    minHeight: DEFAULT_POST_HEIGHT,
     width: POST_WIDTH,
     background: color,
   };

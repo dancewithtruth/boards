@@ -89,7 +89,6 @@ const PostGroup = ({
               deletePostGroup(single_post.post_group_id, send);
             }
           }
-          console.log(monitor.getDifferenceFromInitialOffset());
         } else if (item.name == ITEM_TYPES.POST) {
           updatePost({ ...item.post, post_group_id: id }, send);
         }
@@ -102,22 +101,6 @@ const PostGroup = ({
     }),
     []
   );
-
-  const PostGroupTitle = () => {
-    return postGroup.posts.length > 1 ? (
-      <div className="flex items-center min-h-8">
-        <input
-          type="text"
-          placeholder={'Type group summary'}
-          className="input ml-1 h-5"
-          onFocus={handleTitleFocus}
-          onBlur={handleTitleBlur}
-          value={titleValue}
-          onChange={handleTitleChange}
-        />
-      </div>
-    ) : null;
-  };
 
   if (isDragging) {
     return null;
@@ -137,7 +120,19 @@ const PostGroup = ({
       onMouseLeave={handleMouseLeave}
     >
       <div>
-        <PostGroupTitle />
+        {postGroup.posts.length > 1 ? (
+          <div className="flex items-center min-h-8">
+            <input
+              type="text"
+              placeholder={'Edit name'}
+              className="input ml-1 h-5"
+              onFocus={handleTitleFocus}
+              onBlur={handleTitleBlur}
+              value={titleValue}
+              onChange={handleTitleChange}
+            />
+          </div>
+        ) : null}
         {postGroup.posts.map((post, index) => (
           <PostUI
             key={index}
