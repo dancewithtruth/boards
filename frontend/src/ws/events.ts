@@ -1,5 +1,5 @@
 import { EVENTS } from '@/constants';
-import { CreatePostParams, DeletePostParams, FocusPostParams, Send } from './types';
+import { CreatePostParams, DeletePostParams, DetachPostParams, FocusPostParams, Send } from './types';
 import { Post, PostGroupWithPosts } from '@/api/post';
 
 export const buildMessageRequest = (event: string, params: object): string => {
@@ -47,5 +47,10 @@ export const focusPost = (params: FocusPostParams, send: Send) => {
 
 export const deletePostGroup = (id: string, send: Send) => {
   const message = buildMessageRequest(EVENTS.POST_GROUP_DELETE, { post_group_id: id });
+  send(message);
+};
+
+export const detachPost = (params: DetachPostParams, send: Send) => {
+  const message = buildMessageRequest(EVENTS.POST_DETACH, params);
   send(message);
 };

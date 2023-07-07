@@ -13,16 +13,26 @@ import {
   BOARD_SPACE_ADD,
   COOKIE_NAME_JWT_TOKEN,
   EVENTS,
-  NAVBAR_HEIGHT,
+  NAVBAR_HEIGHT_PX,
   POST_COLORS,
   DEFAULT_POST_HEIGHT,
   POST_WIDTH,
-  SIDEBAR_WIDTH,
+  SIDEBAR_WIDTH_PX,
   WS_URL,
+  SIDEBAR_WIDTH,
+  NAVBAR_HEIGHT,
 } from '@/constants';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import Cookies from 'universal-cookie';
-import { authenticateUser, connectBoard, createPost, updatePostGroup, deletePost, deletePostGroup } from '@/ws/events';
+import {
+  authenticateUser,
+  connectBoard,
+  createPost,
+  updatePostGroup,
+  deletePost,
+  deletePostGroup,
+  detachPost as detachPostWS,
+} from '@/ws/events';
 import { Overlay } from '../overlay';
 import { getMaxFieldFromObj } from '@/utils';
 import { toast } from 'react-toastify';
@@ -72,7 +82,6 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     const heights = Object.values(postGroups).map((postGroup) => {
       let heightOffset = postGroup.pos_y;
       postGroup.posts.forEach((post) => {
-        console.log(post.height)
         if (post.height) {
           heightOffset += post.height + 66;
         } else {
@@ -82,7 +91,6 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
       return heightOffset;
     });
     const newHeight = Math.max(...heights) + BOARD_SPACE_ADD;
-    console.log(heights, newHeight);
     setBoardDimension({ height: newHeight, width: newWidth });
   }, [postGroups]);
 
@@ -144,6 +152,13 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
             } else {
               setPost(result.updated_post);
             }
+            break;
+          case EVENTS.POST_DETACH:
+            const postGroup = result.post_group;
+            postGroup.posts = [result.updated_post];
+            detachPost(result.old_post, result.updated_post, result.post_group);
+            // setPostGroup(postGroup);
+            // unsetPost(result.old_post);
             break;
           case EVENTS.POST_DELETE:
             unsetPost(result);
@@ -307,10 +322,34 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     setPostGroups(updatedPostGroups);
   };
 
+  const detachPost = (oldPost: Post, updatedPost: Post, postGroup: PostGroupWithPosts) => {
+    // Add updated post to new post group
+    postGroup.posts = [updatedPost];
+    let updatedMap = update(postGroups, {
+      [postGroup.id]: {
+        $set: postGroup,
+      },
+    });
+    // Remove post from old post group
+    const currentPostGroup = updatedMap[oldPost.post_group_id];
+    if (!currentPostGroup) return;
+    const index = currentPostGroup.posts.findIndex((elem) => elem.id === oldPost.id);
+    if (index === -1) return;
+    updatedMap = update(updatedMap, {
+      [oldPost.post_group_id]: {
+        posts: {
+          $splice: [[index, 1]],
+        },
+      },
+    });
+    setPostGroups(updatedMap);
+  };
+
   const [, drop] = useDrop(
     () => ({
       accept: [ITEM_TYPES.POST_GROUP, ITEM_TYPES.POST],
       drop(item: any, monitor) {
+        const newZIndex = getMaxFieldFromObj(postGroups, 'z_index') + 1;
         if (item.name === ITEM_TYPES.POST_GROUP) {
           const delta = monitor.getDifferenceFromInitialOffset() as {
             x: number;
@@ -324,15 +363,22 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
           if (snapToGrid) {
             [pos_x, pos_y] = doSnapToGrid(pos_x, pos_y);
           }
-          const newZIndex = getMaxFieldFromObj(postGroups, 'z_index') + 1;
           const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
           // pre-emptively update post on frontend before waiting on websocket to smoothen out experience
           mergePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
           updatePostGroup(newParams, send);
           return undefined;
         } else if (item.name === ITEM_TYPES.POST) {
-          // TODO: Create post group
+          const sourceClientOffset = monitor.getSourceClientOffset();
+          if (sourceClientOffset) {
+            let pos_x = sourceClientOffset.x - SIDEBAR_WIDTH;
+            let pos_y = sourceClientOffset.y - NAVBAR_HEIGHT;
+            [pos_x, pos_y] = doSnapToGrid(pos_x, pos_y);
+            console.log({ id: item.post.id, pos_x, pos_y, z_index: newZIndex });
+            detachPostWS({ id: item.post.id, pos_x, pos_y, z_index: newZIndex }, send);
+          }
         }
+        setHighestZ(newZIndex);
       },
     }),
     [mergePostGroup]
@@ -341,13 +387,13 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   return (
     <div className="flex">
       <Overlay show={showOverlay || !user} text={overlayText} />
-      {user ? <Sidebar board={board} width={SIDEBAR_WIDTH} user={user} connectedUsers={connectedUsers} /> : null}
+      {user ? <Sidebar board={board} width={SIDEBAR_WIDTH_PX} user={user} connectedUsers={connectedUsers} /> : null}
       <div
         ref={drop}
         className="relative sketchbook-bg"
         style={{
-          minHeight: `calc(100vh - ${NAVBAR_HEIGHT})`,
-          minWidth: `calc(100vw - ${SIDEBAR_WIDTH})`,
+          minHeight: `calc(100vh - ${NAVBAR_HEIGHT_PX})`,
+          minWidth: `calc(100vw - ${SIDEBAR_WIDTH_PX})`,
           height: boardDimension.height,
           width: boardDimension.width,
         }}

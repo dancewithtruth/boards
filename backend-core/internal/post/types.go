@@ -44,7 +44,21 @@ func (i *UpdatePostInput) Validate() error {
 	return validator.Struct(i)
 }
 
-// UpdatePostGroupInput defines the structure of a request to update a group post.
+// CreatePostgroupInput defines the structure of a request to create a post group.
+type CreatePostGroupInput struct {
+	BoardID string `json:"board_id" validate:"required,uuid"`
+	PosX    int    `json:"pos_x" validate:"required"`
+	PosY    int    `json:"pos_y" validate:"required"`
+	ZIndex  int    `json:"z_index"`
+}
+
+// Validate validates the create post group payload.
+func (i CreatePostGroupInput) Validate() error {
+	validator := validator.New()
+	return validator.Struct(i)
+}
+
+// UpdatePostGroupInput defines the structure of a request to update a post group.
 type UpdatePostGroupInput struct {
 	ID     string  `json:"id" validate:"required,uuid"`
 	Title  *string `json:"title"`

@@ -26,6 +26,9 @@ const (
 	// EventPostUpdate is when a post is updated.
 	EventPostUpdate = "post.update"
 
+	// EventPostDetach is when a post is detached.
+	EventPostDetach = "post.detach"
+
 	// EventPostDelete is when a post is deleted.
 	EventPostDelete = "post.delete"
 
@@ -155,6 +158,21 @@ type ParamsPostFocus struct {
 	BoardID string `json:"board_id" validate:"required,uuid"`
 }
 
+// RequestPostDetach represents a request to detach a post.
+type RequestPostDetach struct {
+	Event  string           `json:"event"`
+	Params ParamsPostDetach `json:"params"`
+}
+
+// ParamsPostDetach contains the parameters for post detach.
+type ParamsPostDetach struct {
+	ID      string `json:"id" validate:"required,uuid"`
+	BoardID string `json:"board_id" validate:"required,uuid"`
+	PosX    int    `json:"pos_x"`
+	PosY    int    `json:"pos_y"`
+	ZIndex  int    `json:"z_index"`
+}
+
 // RequestPostGroupUpdate represents a request to update a post group.
 type RequestPostGroupUpdate struct {
 	Event  string                `json:"event"`
@@ -231,6 +249,18 @@ type ResponsePostUpdate struct {
 type ResultPostUpdate struct {
 	UpdatedPost models.Post `json:"updated_post"`
 	OldPost     models.Post `json:"old_post"`
+}
+
+// ResponsePostDetach represents the response for detaching a post.
+type ResponsePostDetach struct {
+	ResponseBase
+	Result ResultPostDetach `json:"result,omitempty"`
+}
+
+type ResultPostDetach struct {
+	OldPost     models.Post      `json:"old_post"`
+	UpdatedPost models.Post      `json:"updated_post"`
+	PostGroup   models.PostGroup `json:"post_group"`
 }
 
 // ResponsePostDelete represents the response for post deletion.

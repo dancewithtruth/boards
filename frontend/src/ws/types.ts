@@ -18,3 +18,10 @@ export type FocusPostParams = {
 };
 
 export type Send = (data: string) => void;
+
+export type DetachPostParams = {
+  id: string;
+  pos_x: number;
+  pos_y: number;
+  z_index: number;
+};

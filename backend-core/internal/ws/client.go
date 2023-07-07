@@ -161,6 +161,8 @@ func handleMessage(c *Client, msg []byte) {
 		handlePostFocus(c, msgReq)
 	case EventPostUpdate:
 		handlePostUpdate(c, msgReq)
+	case EventPostDetach:
+		handlePostDetach(c, msgReq)
 	case EventPostGroupUpdate:
 		handlePostGroupUpdate(c, msgReq)
 	case EventPostGroupDelete:

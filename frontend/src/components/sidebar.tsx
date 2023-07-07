@@ -1,5 +1,5 @@
 'use client';
-import { NAVBAR_HEIGHT } from '@/constants';
+import { NAVBAR_HEIGHT_PX } from '@/constants';
 import Avatar from './avatar';
 import { User, BoardWithMembers } from '@/api';
 import { isAdmin, mergeArrays } from '@/utils';
@@ -20,7 +20,7 @@ const Sidebar = ({ width, board, user, connectedUsers }: SidebarProps) => {
   return (
     <div
       className="fixed top-h-16 left-0 bg-base-100 shadow-md"
-      style={{ height: `calc(100vh - ${NAVBAR_HEIGHT})`, width, zIndex: 10001 }}
+      style={{ height: `calc(100vh - ${NAVBAR_HEIGHT_PX})`, width, zIndex: 10001 }}
     >
       <div className="flex flex-col items-center justify-between h-full py-8">
         <div className="flex flex-col items-center w-full">

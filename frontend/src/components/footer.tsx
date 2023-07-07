@@ -1,9 +1,9 @@
-import { FOOTER_HEIGHT } from '@/constants';
+import { FOOTER_HEIGHT_PX } from '@/constants';
 import Link from 'next/link';
 import { FaGithub } from 'react-icons/fa';
 
 const Footer = () => (
-  <footer className="footer items-center p-10 bg-neutral text-neutral-content" style={{ height: FOOTER_HEIGHT }}>
+  <footer className="footer items-center p-10 bg-neutral text-neutral-content" style={{ height: FOOTER_HEIGHT_PX }}>
     <div className="items-center grid-flow-col">
       <Link href="/" className="font-bold text-xl">
         Boards

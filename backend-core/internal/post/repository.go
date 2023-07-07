@@ -56,7 +56,7 @@ func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
 	return r.q.CreatePost(ctx, arg)
 }
 
-// CreatePostGroup creates a single post.
+// CreatePostGroup creates a single post group.
 func (r *repository) CreatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
 	arg := db.CreatePostGroupParams{
 		ID:        pgtype.UUID{Bytes: postGroup.ID, Valid: true},

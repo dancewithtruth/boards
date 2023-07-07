@@ -336,6 +336,87 @@ func handlePostUpdate(c *Client, msgReq Request) {
 	c.ws.boardHubs[boardID].broadcast <- msgResBytes
 }
 
+// handlePostDetach detaches a post from its original post group and creates then assigns it to
+// the newly created post group.
+func handlePostDetach(c *Client, msgReq Request) {
+	// Authenticate user
+	user := c.user
+	if user.ID.String() == "" {
+		closeConnection(c, websocket.ClosePolicyViolation, CloseReasonUnauthorized)
+		return
+	}
+	// Unmarshal message request
+	var params ParamsPostDetach
+	if err := unmarshalParams(msgReq, &params, c); err != nil {
+		return
+	}
+
+	postID := params.ID
+	existingPost, err := c.ws.postService.GetPost(context.Background(), postID)
+	if err != nil {
+		log.Printf("handler: failed to get post during post detach request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	existingPostGroup, err := c.ws.postService.GetPostGroup(context.Background(), existingPost.PostGroupID.String())
+	if err != nil {
+		log.Printf("handler: failed to get post group during post detach request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	// Check if user has write permissions
+	boardID := existingPostGroup.BoardID.String()
+	if !c.boards[boardID].canWrite {
+		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
+		sendErrorMessage(c, msgRes)
+		return
+	}
+	// Create new post group
+	createPostGroupInput := post.CreatePostGroupInput{
+		BoardID: boardID,
+		PosX:    params.PosX,
+		PosY:    params.PosY,
+		ZIndex:  params.ZIndex,
+	}
+	newPostGroup, err := c.ws.postService.CreatePostGroup(context.Background(), createPostGroupInput)
+	if err != nil {
+		log.Printf("handler: failed to create a new post group during post detach request: %v", err)
+		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+	}
+	newPostGroupID := newPostGroup.ID.String()
+	updatePostInput := post.UpdatePostInput{
+		ID:          existingPost.ID.String(),
+		PostGroupID: &newPostGroupID,
+	}
+	updatedPost, err := c.ws.postService.UpdatePost(context.Background(), updatePostInput)
+	if err != nil {
+		switch {
+		case validator.IsValidationError(err):
+			validationErrMsg := validator.GetValidationErrMsg(updatePostInput, err)
+			sendErrorMessage(c, buildErrorResponse(msgReq, validationErrMsg))
+		default:
+			sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
+		}
+		return
+	}
+	// Prepare message response
+	msgRes := ResponsePostDetach{
+		ResponseBase: ResponseBase{
+			Event:   msgReq.Event,
+			Success: true,
+		},
+		Result: ResultPostDetach{
+			OldPost:     existingPost,
+			UpdatedPost: updatedPost,
+			PostGroup:   newPostGroup,
+		},
+	}
+	msgResBytes, err := json.Marshal(msgRes)
+	if err := handleMarshalError(err, "handlePostDetach", c); err != nil {
+		return
+	}
+	// Broadcast message response
+	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+}
+
 func handlePostDelete(c *Client, msgReq Request) {
 	user := c.user
 	if user.ID.String() == "" {

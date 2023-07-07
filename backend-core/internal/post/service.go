@@ -17,6 +17,7 @@ type Service interface {
 	ListPostGroups(ctx context.Context, boardID string) ([]GroupWithPostsDTO, error)
 	UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error)
 	DeletePost(ctx context.Context, postID string) error
+	CreatePostGroup(ctx context.Context, input CreatePostGroupInput) (models.PostGroup, error)
 	GetPostGroup(ctx context.Context, postGroupID string) (models.PostGroup, error)
 	UpdatePostGroup(ctx context.Context, input UpdatePostGroupInput) (models.PostGroup, error)
 	DeletePostGroup(ctx context.Context, postGroupID string) error
@@ -161,6 +162,34 @@ func (s *service) DeletePost(ctx context.Context, postID string) error {
 		return err
 	}
 	return s.repo.DeletePost(ctx, postUUID)
+}
+
+// CreatePostGroup creates a single post group.
+func (s *service) CreatePostGroup(ctx context.Context, input CreatePostGroupInput) (models.PostGroup, error) {
+	if err := input.Validate(); err != nil {
+		return models.PostGroup{}, err
+	}
+	// Prepare post group input
+	boardUUID, err := uuid.Parse(input.BoardID)
+	if err != nil {
+		return models.PostGroup{}, fmt.Errorf("service: failed to parse board ID into UUID: %w", err)
+	}
+	postGroupID := uuid.New()
+	now := time.Now()
+
+	postGroup := models.PostGroup{
+		ID:        postGroupID,
+		BoardID:   boardUUID,
+		PosX:      input.PosX,
+		PosY:      input.PosY,
+		ZIndex:    input.ZIndex,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+	if err = s.repo.CreatePostGroup(ctx, postGroup); err != nil {
+		return models.PostGroup{}, fmt.Errorf("service: failed to create post group: %w", err)
+	}
+	return postGroup, nil
 }
 
 // GetPostGroup returns a single post group.

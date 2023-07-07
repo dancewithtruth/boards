@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import Logo from './logo';
 import WidthContainer from './widthContainer';
-import { NAVBAR_HEIGHT } from '@/constants';
+import { NAVBAR_HEIGHT_PX } from '@/constants';
 import { User } from '@/api';
 import Avatar from './avatar';
 import AccountMenu from './menus/account';
@@ -12,7 +12,7 @@ export default function Navbar({ user }: { user: User | null }) {
   return (
     <div
       className="navbar fixed top-0 left-0 w-full bg-white shadow-md"
-      style={{ height: NAVBAR_HEIGHT, zIndex: 10002 }}
+      style={{ height: NAVBAR_HEIGHT_PX, zIndex: 10002 }}
     >
       <WidthContainer>
         <div className="flex justify-between items-center w-full">

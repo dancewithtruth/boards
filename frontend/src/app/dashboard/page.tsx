@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { listBoards, listInvitesByReceiver } from '@/api/board';
 import Board from '@/components/board';
 import WidthContainer from '@/components/widthContainer';
-import { COOKIE_NAME_JWT_TOKEN, FOOTER_HEIGHT, INVITE_STATUS, NAVBAR_HEIGHT } from '@/constants';
+import { COOKIE_NAME_JWT_TOKEN, FOOTER_HEIGHT_PX, INVITE_STATUS, NAVBAR_HEIGHT_PX } from '@/constants';
 import NewBoardModal from '@/components/modals/newBoard';
 import InviteAlerts from '@/components/inviteAlerts';
 
@@ -40,7 +40,7 @@ export default async function DashboardPage() {
   const [boards, pendingInvites] = await Promise.all([boardsData, invitesData]);
 
   return (
-    <div className="min-h-screen" style={{ minHeight: `calc(100vh - ${NAVBAR_HEIGHT} - ${FOOTER_HEIGHT})` }}>
+    <div className="min-h-screen" style={{ minHeight: `calc(100vh - ${NAVBAR_HEIGHT_PX} - ${FOOTER_HEIGHT_PX})` }}>
       <WidthContainer>
         <h1 className="text-4xl font-bold my-5">Dashboard</h1>
         <InviteAlerts invites={pendingInvites} />

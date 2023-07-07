@@ -1,5 +1,5 @@
 import Centered from '@/components/centered';
-import { NAVBAR_HEIGHT } from '@/constants';
+import { NAVBAR_HEIGHT_PX } from '@/constants';
 
 export const metadata = {
   title: 'Boards',
@@ -8,7 +8,7 @@ export const metadata = {
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ height: `calc(100vh - ${NAVBAR_HEIGHT})` }}>
+    <div style={{ height: `calc(100vh - ${NAVBAR_HEIGHT_PX})` }}>
       <Centered>{children}</Centered>
     </div>
   );
