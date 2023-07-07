@@ -5,7 +5,7 @@ import { PostAugmented } from './board';
 import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
 import { PostUI as PostUI } from './post';
-import { CSSProperties, ChangeEvent, useState } from 'react';
+import { CSSProperties, ChangeEvent, useEffect, useState } from 'react';
 import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
 import { ITEM_TYPES } from './itemTypes';
 import { PostGroupDragItem } from './interfaces';
@@ -38,6 +38,10 @@ const PostGroup = ({
   const [isTitleFocused, setTitleFocused] = useState(false);
   const [titleValue, setTitleValue] = useState(postGroup.title);
   const { id, board_id, pos_x, pos_y, z_index } = postGroup;
+
+  useEffect(() => {
+    setTitleValue(postGroup.title);
+  }, [postGroup]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);

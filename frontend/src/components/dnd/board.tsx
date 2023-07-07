@@ -227,13 +227,13 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
   };
 
   const mergePostGroup = (postGroup: { id: string } & Partial<PostGroupWithPosts>) => {
-    setData(
-      update(data, {
-        [postGroup.id]: {
-          $merge: postGroup,
-        },
-      })
-    );
+    const updatedData = update(data, {
+      [postGroup.id]: {
+        $merge: postGroup,
+      },
+    });
+    console.log('mergePostGroup Updated Data', updatedData);
+    setData(updatedData);
   };
 
   // setPost will attept to set post by finding the existing post in the post group. If none if found, it will
