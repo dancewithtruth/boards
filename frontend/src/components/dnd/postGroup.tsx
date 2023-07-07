@@ -83,7 +83,6 @@ const PostGroup = ({
           if (single_post) {
             const target_post_group_id = id;
             if (source_post_group_id != target_post_group_id) {
-              console.log('Moving post from post group ID ', source_post_group_id, ' to ', target_post_group_id);
               updatePost({ id: single_post.id, post_group_id: target_post_group_id }, send);
               // Unset post
               deletePostGroup(single_post.post_group_id, send);
@@ -92,7 +91,6 @@ const PostGroup = ({
         } else if (item.name == ITEM_TYPES.POST) {
           updatePost({ ...item.post, post_group_id: id }, send);
         }
-
         return undefined;
       },
       collect: (monitor) => ({

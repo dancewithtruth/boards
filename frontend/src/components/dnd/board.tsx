@@ -7,7 +7,7 @@ import { useDrop } from 'react-dnd';
 
 import type { PostGroupDragItem } from './interfaces';
 import { ITEM_TYPES } from './itemTypes';
-import { snapToGrid as doSnapToGrid } from './snapToGrid';
+import { snapToGrid } from './snapToGrid';
 import { Post, PostGroupWithPosts } from '@/api/post';
 import {
   BOARD_SPACE_ADD,
@@ -50,15 +50,14 @@ export type PostGroupMap = {
   [key: string]: PostGroupWithPosts;
 };
 export interface BoardProps {
-  snapToGrid: boolean;
   board: BoardWithMembers;
   postGroups: PostGroupMap;
 }
 
-export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPostGroups }) => {
+export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) => {
   const TEXT_CONNECTING = 'Connecting to board';
   const TEXT_NOT_CONNECTED = 'Not connected, try refreshing';
-  const [postGroups, setPostGroups] = useState<PostGroupMap>(initialPostGroups);
+  const [data, setData] = useState<PostGroupMap>(initialPostGroups);
   const [overlayText, setOverlayText] = useState(TEXT_CONNECTING);
   const [showOverlay, setShowOverlay] = useState(true);
   const [user, setUser] = useState<User>();
@@ -78,8 +77,8 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
 
   // Expands the board based on post locations
   useEffect(() => {
-    const newWidth = getMaxFieldFromObj(postGroups, 'pos_x') + POST_WIDTH + BOARD_SPACE_ADD;
-    const heights = Object.values(postGroups).map((postGroup) => {
+    const newWidth = getMaxFieldFromObj(data, 'pos_x') + POST_WIDTH + BOARD_SPACE_ADD;
+    const heights = Object.values(data).map((postGroup) => {
       let heightOffset = postGroup.pos_y;
       postGroup.posts.forEach((post) => {
         if (post.height) {
@@ -92,7 +91,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
     });
     const newHeight = Math.max(...heights) + BOARD_SPACE_ADD;
     setBoardDimension({ height: newHeight, width: newWidth });
-  }, [postGroups]);
+  }, [data]);
 
   // Handles the different connection states. Will authenticate the user if connection is established
   // or will show an error overlay if trouble connecting.
@@ -135,7 +134,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
               result.post.autoFocus = true;
             }
             // If post group does not exist, create a new post group with post child.
-            if (!postGroups[result.post_group.id]) {
+            if (!data[result.post_group.id]) {
               const postGroup = result.post_group;
               postGroup.posts = [result.post];
               setPostGroup(postGroup);
@@ -146,19 +145,12 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
           case EVENTS.POST_UPDATE:
             if (result.updated_post.post_group_id !== result.old_post.post_group_id) {
               transferPost(result.old_post, result.updated_post);
-              if (postGroups[result.old_post.post_group_id]?.posts.length === 0) {
-                deletePostGroup(result.old_post.post_group_id, send);
-              }
             } else {
               setPost(result.updated_post);
             }
             break;
           case EVENTS.POST_DETACH:
-            const postGroup = result.post_group;
-            postGroup.posts = [result.updated_post];
             detachPost(result.old_post, result.updated_post, result.post_group);
-            // setPostGroup(postGroup);
-            // unsetPost(result.old_post);
             break;
           case EVENTS.POST_DELETE:
             unsetPost(result);
@@ -203,7 +195,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
 
   const handleDeletePost = (post: Post) => {
     // Delete post only if more than 1 posts in post group
-    if (postGroups[post.post_group_id]?.posts.length >= 2) {
+    if (data[post.post_group_id]?.posts.length >= 2) {
       const params = { post_id: post.id, board_id: board.id };
       deletePost(params, send);
       return;
@@ -213,8 +205,8 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   };
 
   const setPostGroup = (postGroup: PostGroupWithPosts) => {
-    setPostGroups(
-      update(postGroups, {
+    setData(
+      update(data, {
         [postGroup.id]: {
           $set: postGroup,
         },
@@ -223,8 +215,8 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   };
 
   const pushPost = (post: Post) => {
-    setPostGroups(
-      update(postGroups, {
+    setData(
+      update(data, {
         [post.post_group_id]: {
           posts: {
             $push: [post],
@@ -235,8 +227,8 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   };
 
   const mergePostGroup = (postGroup: { id: string } & Partial<PostGroupWithPosts>) => {
-    setPostGroups(
-      update(postGroups, {
+    setData(
+      update(data, {
         [postGroup.id]: {
           $merge: postGroup,
         },
@@ -247,10 +239,10 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   // setPost will attept to set post by finding the existing post in the post group. If none if found, it will
   // insert based on post order.
   const setPost = (post: Post) => {
-    const indexByID = postGroups[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
+    const indexByID = data[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
     if (indexByID !== -1) {
-      setPostGroups(
-        update(postGroups, {
+      setData(
+        update(data, {
           [post.post_group_id]: {
             posts: {
               $splice: [[indexByID, 1, post]],
@@ -259,9 +251,9 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         })
       );
     } else {
-      const indexByOrder = postGroups[post.post_group_id].posts.findIndex((elem) => elem.post_order <= post.post_order);
-      setPostGroups(
-        update(postGroups, {
+      const indexByOrder = data[post.post_group_id].posts.findIndex((elem) => elem.post_order <= post.post_order);
+      setData(
+        update(data, {
           [post.post_group_id]: {
             posts: {
               $splice: [[indexByOrder, 0, post]],
@@ -273,35 +265,36 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
   };
 
   const unsetPostGroup = (id: string) => {
-    setPostGroups(
-      update(postGroups, {
+    setData(
+      update(data, {
         $unset: [id],
       })
     );
   };
 
   const unsetPost = (post: Post) => {
-    const currentPostGroup = postGroups[post.post_group_id];
+    const currentPostGroup = data[post.post_group_id];
     if (!currentPostGroup) return;
     const index = currentPostGroup.posts.findIndex((elem) => elem.id === post.id);
     if (index === -1) return;
-    const updatedPostGroups = update(postGroups, {
+    const updatedPostGroups = update(data, {
       [post.post_group_id]: {
         posts: {
           $splice: [[index, 1]],
         },
       },
     });
-    setPostGroups(updatedPostGroups);
+    setData(updatedPostGroups);
   };
 
   // transferPost is used to remove the post from the old post group and to insert the post
   // into the new post group
   const transferPost = (oldPost: Post, updatedPost: Post) => {
-    const oldPostGroup = postGroups[oldPost.post_group_id];
-    const newPostGroup = postGroups[updatedPost.post_group_id];
+    console.log('Transfer post from ', oldPost.post_group_id, ' to ', updatedPost.post_group_id);
+    const oldPostGroup = data[oldPost.post_group_id];
+    const newPostGroup = data[updatedPost.post_group_id];
     const oldIndex = oldPostGroup?.posts.findIndex((elem) => elem.id === oldPost.id);
-    let updatedPostGroups = postGroups;
+    let updatedPostGroups = data;
     if (oldIndex !== -1) {
       updatedPostGroups = update(updatedPostGroups, {
         [oldPostGroup.id]: {
@@ -319,13 +312,13 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         },
       },
     });
-    setPostGroups(updatedPostGroups);
+    setData(updatedPostGroups);
   };
 
   const detachPost = (oldPost: Post, updatedPost: Post, postGroup: PostGroupWithPosts) => {
     // Add updated post to new post group
     postGroup.posts = [updatedPost];
-    let updatedMap = update(postGroups, {
+    let updatedMap = update(data, {
       [postGroup.id]: {
         $set: postGroup,
       },
@@ -342,14 +335,14 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         },
       },
     });
-    setPostGroups(updatedMap);
+    setData(updatedMap);
   };
 
   const [, drop] = useDrop(
     () => ({
       accept: [ITEM_TYPES.POST_GROUP, ITEM_TYPES.POST],
       drop(item: any, monitor) {
-        const newZIndex = getMaxFieldFromObj(postGroups, 'z_index') + 1;
+        const newZIndex = getMaxFieldFromObj(data, 'z_index') + 1;
         if (item.name === ITEM_TYPES.POST_GROUP) {
           const delta = monitor.getDifferenceFromInitialOffset() as {
             x: number;
@@ -360,11 +353,9 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
           }
           let pos_x = Math.max(item.pos_x + delta.x, 0);
           let pos_y = Math.max(item.pos_y + delta.y, 0);
-          if (snapToGrid) {
-            [pos_x, pos_y] = doSnapToGrid(pos_x, pos_y);
-          }
+          [pos_x, pos_y] = snapToGrid(pos_x, pos_y);
           const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
-          // pre-emptively update post on frontend before waiting on websocket to smoothen out experience
+          // preemptively update post on frontend before waiting on websocket to smoothen out experience
           mergePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
           updatePostGroup(newParams, send);
           return undefined;
@@ -373,7 +364,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
           if (sourceClientOffset) {
             let pos_x = sourceClientOffset.x - SIDEBAR_WIDTH;
             let pos_y = sourceClientOffset.y - NAVBAR_HEIGHT;
-            [pos_x, pos_y] = doSnapToGrid(pos_x, pos_y);
+            [pos_x, pos_y] = snapToGrid(pos_x, pos_y);
             console.log({ id: item.post.id, pos_x, pos_y, z_index: newZIndex });
             detachPostWS({ id: item.post.id, pos_x, pos_y, z_index: newZIndex }, send);
           }
@@ -400,7 +391,7 @@ export const Board: FC<BoardProps> = ({ board, snapToGrid, postGroups: initialPo
         onDoubleClick={handleDoubleClick}
       >
         {user
-          ? Object.entries(postGroups).map(([key, postGroup]) => (
+          ? Object.entries(data).map(([key, postGroup]) => (
               <PostGroup
                 key={key}
                 user={user}
