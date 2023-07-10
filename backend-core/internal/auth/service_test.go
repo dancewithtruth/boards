@@ -2,6 +2,7 @@ package auth
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
@@ -76,5 +77,7 @@ func setupUser(t *testing.T, userRepo user.Repository) models.User {
 }
 
 func cleanupUser(userRepo user.Repository, userID uuid.UUID) {
-	userRepo.DeleteUser(context.Background(), userID)
+	if err := userRepo.DeleteUser(context.Background(), userID); err != nil {
+		log.Printf("Failed to delete user when cleaning up test: %v", err)
+	}
 }

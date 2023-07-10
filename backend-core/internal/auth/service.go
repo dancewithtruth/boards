@@ -51,7 +51,7 @@ func (s *service) Login(ctx context.Context, input LoginInput) (token string, er
 		}
 		return "", fmt.Errorf("service: failed to get user by email: %w", err)
 	}
-	if ok := security.CheckPasswordHash(input.Password, *retrievedUser.Password); ok == false {
+	if ok := security.CheckPasswordHash(input.Password, *retrievedUser.Password); !ok {
 		return "", errBadLogin
 	}
 	return s.jwtService.GenerateToken(retrievedUser.ID.String())

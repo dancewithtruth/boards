@@ -68,6 +68,9 @@ func TestRepository(t *testing.T) {
 
 		// Check that member was added to board
 		boardAndUsers, err := boardRepo.GetBoardAndUsers(context.Background(), board.ID)
+		if err != nil {
+			assert.FailNow(t, "Failed to get board and users", err)
+		}
 		firstUser := boardAndUsers[0].User
 		assert.Equal(t, user.ID, firstUser.ID, "Expected user to be added to board")
 

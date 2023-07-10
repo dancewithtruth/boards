@@ -44,6 +44,9 @@ func TestRepository(t *testing.T) {
 		err = repo.UpdatePost(context.Background(), updatedPost)
 		assert.NoError(t, err)
 		updatedPost, err = repo.GetPost(context.Background(), updatedPost.ID)
+		if err != nil {
+			assert.FailNow(t, "Failed to get post", err)
+		}
 		assert.Equal(t, updatedContent, updatedPost.Content)
 
 		// Delete post group to cascade delete on post

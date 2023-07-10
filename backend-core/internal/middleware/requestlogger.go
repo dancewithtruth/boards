@@ -12,13 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type requestID int
-type correlationID int
-
 const (
-	keyRequestID     requestID     = 0
-	keyCorrelationID correlationID = 0
-
 	headerNameRequestID     = "X-Request-ID"
 	headerNameCorrelationID = "X-Correlation-ID"
 

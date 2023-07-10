@@ -65,7 +65,7 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 		return
 	}
 	// Verify user
-	userID, err := c.ws.jwtService.VerifyToken(params.Jwt)
+	userID, _ := c.ws.jwtService.VerifyToken(params.Jwt)
 	user, err := c.ws.userService.GetUser(context.Background(), userID)
 	user.Password = nil
 	msgRes := ResponseUserAuthenticate{Event: EventUserAuthenticate}
@@ -149,9 +149,9 @@ func handleBoardConnect(c *Client, msgReq Request) {
 		return
 	}
 	// Only broadcast message if successful, otherwise send only to the client
-	if msgRes.Success == true {
+	if msgRes.Success {
 		c.ws.boardHubs[params.BoardID].broadcast <- msgResBytes
-	} else if msgRes.Success == false {
+	} else {
 		c.send <- msgResBytes
 	}
 }
@@ -587,5 +587,8 @@ func handleMarshalError(err error, handlerName string, c *Client) error {
 
 // closeConnection is a helper function to write a control message with a status code and close reason text.
 func closeConnection(c *Client, statusCode int, text string) {
-	c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(statusCode, text), time.Now().Add(writeWait))
+	err := c.conn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(statusCode, text), time.Now().Add(writeWait))
+	if err != nil {
+		log.Printf("Failed to write control message: %v", err)
+	}
 }

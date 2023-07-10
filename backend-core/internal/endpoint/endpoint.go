@@ -3,6 +3,7 @@ package endpoint
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
@@ -28,7 +29,10 @@ func WriteWithError(w http.ResponseWriter, statusCode int, errMsg string) {
 		Status:  statusCode,
 		Message: errMsg,
 	}
-	json.NewEncoder(w).Encode(errResponse)
+	if err := json.NewEncoder(w).Encode(errResponse); err != nil {
+		log.Printf("Failed to encode error response into JSON: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+	}
 }
 
 // WriteWithStatus sets the response header to application/json, write the header
@@ -37,7 +41,10 @@ func WriteWithStatus(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	if data != nil {
-		json.NewEncoder(w).Encode(data)
+		if err := json.NewEncoder(w).Encode(data); err != nil {
+			log.Printf("Failed to encode API response into JSON: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}
 }
 

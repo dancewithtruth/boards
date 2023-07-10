@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"log"
 	"testing"
 
 	"github.com/Wave-95/boards/backend-core/internal/test"
@@ -39,13 +40,16 @@ func TestRepository(t *testing.T) {
 		if err != nil {
 			assert.FailNow(t, "Failed to create test user", err)
 		}
-		defer userRepo.DeleteUser(context.Background(), user.ID)
 
 		// Create second user using non-unique email
 		userWithBadEmail := test.NewUser()
 		userWithBadEmail.Email = user.Email
 		err = userRepo.CreateUser(context.Background(), userWithBadEmail)
 		assert.ErrorIs(t, err, errEmailAlreadyExists, "Expected error to be returned when user created with non-unique email")
+		err = userRepo.DeleteUser(context.Background(), user.ID)
+		if err != nil {
+			log.Printf("Failed to delete test user for clean up: %v", err)
+		}
 	})
 
 	t.Run("Get user by email", func(t *testing.T) {
@@ -54,7 +58,6 @@ func TestRepository(t *testing.T) {
 		if err != nil {
 			assert.FailNow(t, "Failed to create test user", err)
 		}
-		defer userRepo.DeleteUser(context.Background(), user.ID)
 		t.Run("email exists", func(t *testing.T) {
 			newUser, err := userRepo.GetUserByEmail(context.Background(), *user.Email)
 			assert.NoError(t, err)
@@ -68,6 +71,10 @@ func TestRepository(t *testing.T) {
 			assert.ErrorIs(t, err, ErrUserNotFound)
 		})
 
+		err = userRepo.DeleteUser(context.Background(), user.ID)
+		if err != nil {
+			log.Printf("Failed to delete test user for clean up: %v", err)
+		}
 	})
 
 	t.Run("List users by email", func(t *testing.T) {
@@ -82,17 +89,16 @@ func TestRepository(t *testing.T) {
 			testIds = append(testIds, testUser.ID)
 		}
 
-		defer func() {
-			for _, userID := range testIds {
-				userRepo.DeleteUser(context.Background(), userID)
-			}
-		}()
-
 		users, err := userRepo.ListUsersByFuzzyEmail(context.Background(), "George@gmail.com")
 		assert.NoError(t, err)
 		assert.GreaterOrEqual(t, len(users), 3, "Expected at least 3 users to be returned")
 		assert.Equal(t, testEmails[1], *users[0].Email, "Expected George@gmail.com to be first result")
 		assert.Equal(t, testEmails[0], *users[1].Email, "Expected Georgia@gmail.com to be second result")
 		assert.Equal(t, testEmails[2], *users[2].Email, "Expected Georgina@gmail.com to be third result")
+		for _, userID := range testIds {
+			if err := userRepo.DeleteUser(context.Background(), userID); err != nil {
+				log.Printf("Failed to delete user when cleaning up test: %v", err)
+			}
+		}
 	})
 }

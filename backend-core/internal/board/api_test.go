@@ -41,8 +41,24 @@ func TestAPI(t *testing.T) {
 	}
 	authHeader := test.AuthHeader(token)
 	tt := []test.APITestCase{
-		{"create board", http.MethodPost, "/boards", `{"name":"My very first board"}`, authHeader, http.StatusCreated, "*My very first board*"},
-		{"create invites", http.MethodPost, `/boards/` + board.ID.String() + `/invites`, `{"invites":[{"receiver_id":"` + receiver1.ID.String() + `"}, {"receiver_id":"` + receiver2.ID.String() + `"}]}`, authHeader, http.StatusCreated, `*"status":"PENDING"*`},
+		{
+			Name:         "create board",
+			Method:       http.MethodPost,
+			URL:          "/boards",
+			Body:         `{"name":"My very first board"}`,
+			Header:       authHeader,
+			WantStatus:   http.StatusCreated,
+			WantResponse: "*My very first board*",
+		},
+		{
+			Name:         "create invites",
+			Method:       http.MethodPost,
+			URL:          `/boards/` + board.ID.String() + `/invites`,
+			Body:         `{"invites":[{"receiver_id":"` + receiver1.ID.String() + `"}, {"receiver_id":"` + receiver2.ID.String() + `"}]}`,
+			Header:       authHeader,
+			WantStatus:   http.StatusCreated,
+			WantResponse: `*"status":"PENDING"*`,
+		},
 	}
 
 	for _, tc := range tt {

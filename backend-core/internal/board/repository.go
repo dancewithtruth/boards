@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/Wave-95/boards/backend-core/db"
 	"github.com/Wave-95/boards/backend-core/internal/models"
@@ -94,7 +95,10 @@ func (r *repository) CreateInvites(ctx context.Context, invites []models.Invite)
 	}
 	defer func() {
 		if err != nil {
-			tx.Rollback(ctx)
+			err = tx.Rollback(ctx)
+			if err != nil {
+				log.Printf("repository: failed to rollback tx: %v", err)
+			}
 		}
 	}()
 	qtx := r.q.WithTx(tx)

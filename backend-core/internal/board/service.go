@@ -93,7 +93,9 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 		CreatedAt:   now,
 		UpdatedAt:   now,
 	}
-	err = s.repo.CreateBoard(ctx, board)
+	if err := s.repo.CreateBoard(ctx, board); err != nil {
+		return models.Board{}, fmt.Errorf("service: failed to create board: %w", err)
+	}
 
 	// Create membership for owner
 	membershipID := uuid.New()
@@ -104,9 +106,8 @@ func (s *service) CreateBoard(ctx context.Context, input CreateBoardInput) (mode
 		Role:      models.RoleAdmin,
 		CreatedAt: now,
 		UpdatedAt: now}
-	err = s.repo.CreateMembership(ctx, membership)
-	if err != nil {
-		return models.Board{}, fmt.Errorf("service: failed to create board: %w", err)
+	if err := s.repo.CreateMembership(ctx, membership); err != nil {
+		return models.Board{}, fmt.Errorf("service: failed to create board membership during create board: %w", err)
 	}
 	return board, nil
 }
@@ -356,7 +357,9 @@ func (s *service) UpdateInvite(ctx context.Context, input UpdateInviteInput) err
 			CreatedAt: now,
 			UpdatedAt: now,
 		}
-		err = s.repo.CreateMembership(ctx, membership)
+		if err := s.repo.CreateMembership(ctx, membership); err != nil {
+			return fmt.Errorf("service: failed to create membership when accepting invite: %w", err)
+		}
 	case string(models.InviteStatusIgnored):
 		if invite.ReceiverID != userUUID {
 			return errUnauthorized

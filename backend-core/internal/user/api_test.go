@@ -22,10 +22,13 @@ func TestAPI(t *testing.T) {
 
 	// Set up test user
 	user := test.NewUser()
-	userRepo.CreateUser(context.Background(), user)
+	err := userRepo.CreateUser(context.Background(), user)
+	if err != nil {
+		t.Errorf("Failed to create test user: %v", err)
+	}
 	token, err := jwtService.GenerateToken(user.ID.String())
 	if err != nil {
-		assert.FailNow(t, "Failed to create test user", err)
+		assert.FailNow(t, "Failed to create test JWT token: %v", err)
 	}
 	header := test.AuthHeader(token)
 

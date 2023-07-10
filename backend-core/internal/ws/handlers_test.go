@@ -68,8 +68,13 @@ func TestHandleWebSocket(t *testing.T) {
 
 			// Read message from WebSocket and check fields
 			_, msgRes, err := c.ReadMessage()
+			if err != nil {
+				assert.FailNow(t, "Failed to read message", err)
+			}
 			var resUserAuthenticate ResponseUserAuthenticate
-			json.Unmarshal(msgRes, &resUserAuthenticate)
+			if err := json.Unmarshal(msgRes, &resUserAuthenticate); err != nil {
+				assert.FailNow(t, "Failed to unmarshal JSON", err)
+			}
 			assert.Equal(t, true, resUserAuthenticate.Success, "expected user.authenticate response to be successful")
 			assert.Equal(t, testUser.ID, resUserAuthenticate.Result.User.ID, "user ID from JWT does not match user ID returned in response")
 		})
@@ -95,7 +100,9 @@ func TestHandleWebSocket(t *testing.T) {
 			}
 			_, msgRes, err := c.ReadMessage()
 			var resUserAuthenticate ResponseUserAuthenticate
-			json.Unmarshal(msgRes, &resUserAuthenticate)
+			if err := json.Unmarshal(msgRes, &resUserAuthenticate); err != nil {
+				t.Fatalf("Failed to unmarshal JSON: %v", err)
+			}
 			assert.NoError(t, err)
 			assert.Equal(t, false, resUserAuthenticate.Success)
 			assert.Equal(t, ErrMsgInvalidJwt, resUserAuthenticate.ErrorMessage)
@@ -189,35 +196,6 @@ func TestHandleWebSocket(t *testing.T) {
 			assert.Equal(t, ErrMsgBoardNotFound, resBoardConnect.ErrorMessage)
 		})
 	})
-}
-
-func setupServer(t *testing.T, testUser models.User, testBoard models.Board, jwtService jwt.Service) *httptest.Server {
-	// Set up mock user repo
-	mockUserRepo := user.NewMockRepository()
-	err := mockUserRepo.CreateUser(context.Background(), testUser)
-	if err != nil {
-		t.Fatalf("Failed to create test user: %v", err)
-	}
-	// Set up mock board repo
-	mockBoardRepo := board.NewMockRepository()
-	err = mockBoardRepo.CreateBoard(context.Background(), testBoard)
-	if err != nil {
-		t.Fatalf("Failed to create test board: %v", err)
-	}
-	// Set up mock board repo
-	mockPostRepo := post.NewMockRepository()
-
-	// Set up mock user and board service
-	validator := validator.New()
-	mockUserService := user.NewService(mockUserRepo, validator)
-	mockBoardService := board.NewService(mockBoardRepo, validator)
-	mockPostService := post.NewService(mockPostRepo)
-
-	// Set up server
-	ws := NewWebSocket(mockUserService, mockBoardService, mockPostService, jwtService)
-	mux := http.NewServeMux()
-	mux.HandleFunc("/ws", ws.HandleConnection)
-	return httptest.NewServer(mux)
 }
 
 func setupConnection(t *testing.T, server *httptest.Server) *websocket.Conn {
