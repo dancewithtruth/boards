@@ -76,7 +76,8 @@ WHERE posts.id = $1;
 -- name: ListPostGroups :many
 SELECT sqlc.embed(post_groups), sqlc.embed(posts) FROM post_groups
 INNER JOIN posts on posts.post_group_id = post_groups.id
-WHERE post_groups.board_id = $1;
+WHERE post_groups.board_id = $1
+ORDER BY posts.post_order ASC;
 
 -- name: UpdatePost :exec
 UPDATE posts SET

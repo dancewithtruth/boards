@@ -14,11 +14,12 @@ async function fetchPostGroupsData(boardID: string) {
   const jwtToken = cookieStore.get(COOKIE_NAME_JWT_TOKEN);
   if (jwtToken) {
     const response = await listPostGroups(boardID, jwtToken.value);
-    const posts = response.result.reduce((map, postGroup) => {
+    const postGroups = response.result.reduce((map, postGroup) => {
+      postGroup.posts.sort((a, b) => a.post_order - b.post_order);
       map[postGroup.id] = postGroup;
       return map;
     }, {} as PostGroupMap);
-    return posts;
+    return postGroups;
   } else {
     throw new Error('Please log in.');
   }

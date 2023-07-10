@@ -239,29 +239,32 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
   // setPost will attept to set post by finding the existing post in the post group. If none if found, it will
   // insert based on post order.
   const setPost = (post: Post) => {
+    console.log(data);
     const indexByID = data[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
+    let updatedData = data;
     if (indexByID !== -1) {
-      setData(
-        update(data, {
-          [post.post_group_id]: {
-            posts: {
-              $splice: [[indexByID, 1, post]],
-            },
+      updatedData = update(data, {
+        [post.post_group_id]: {
+          posts: {
+            $splice: [[indexByID, 1]],
           },
-        })
-      );
-    } else {
-      const indexByOrder = data[post.post_group_id].posts.findIndex((elem) => elem.post_order <= post.post_order);
-      setData(
-        update(data, {
-          [post.post_group_id]: {
-            posts: {
-              $splice: [[indexByOrder, 0, post]],
-            },
-          },
-        })
-      );
+        },
+      });
     }
+    console.log(updatedData);
+    let indexByOrder = updatedData[post.post_group_id].posts.findIndex((elem) => elem.post_order > post.post_order);
+    if (indexByOrder === -1) {
+      indexByOrder = updatedData[post.post_group_id].posts.length;
+    }
+    updatedData = update(updatedData, {
+      [post.post_group_id]: {
+        posts: {
+          $splice: [[indexByOrder, 0, post]],
+        },
+      },
+    });
+    console.log(updatedData);
+    setData(updatedData);
   };
 
   const unsetPostGroup = (id: string) => {
@@ -290,7 +293,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
   // transferPost is used to remove the post from the old post group and to insert the post
   // into the new post group
   const transferPost = (oldPost: Post, updatedPost: Post) => {
-    console.log('Transfer post from ', oldPost.post_group_id, ' to ', updatedPost.post_group_id);
     const oldPostGroup = data[oldPost.post_group_id];
     const newPostGroup = data[updatedPost.post_group_id];
     const oldIndex = oldPostGroup?.posts.findIndex((elem) => elem.id === oldPost.id);
@@ -304,7 +306,10 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
         },
       });
     }
-    const indexByOrder = newPostGroup?.posts.findIndex((elem) => elem.post_order <= updatedPost.post_order);
+    let indexByOrder = newPostGroup?.posts.findIndex((elem) => elem.post_order > updatedPost.post_order);
+    if (indexByOrder === -1) {
+      indexByOrder = newPostGroup?.posts.length;
+    }
     updatedPostGroups = update(updatedPostGroups, {
       [newPostGroup.id]: {
         posts: {

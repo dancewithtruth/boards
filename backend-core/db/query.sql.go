@@ -605,6 +605,7 @@ const listPostGroups = `-- name: ListPostGroups :many
 SELECT post_groups.id, post_groups.board_id, post_groups.title, post_groups.pos_x, post_groups.pos_y, post_groups.z_index, post_groups.created_at, post_groups.updated_at, posts.id, posts.user_id, posts.content, posts.color, posts.height, posts.created_at, posts.updated_at, posts.post_order, posts.post_group_id FROM post_groups
 INNER JOIN posts on posts.post_group_id = post_groups.id
 WHERE post_groups.board_id = $1
+ORDER BY posts.post_order ASC
 `
 
 type ListPostGroupsRow struct {

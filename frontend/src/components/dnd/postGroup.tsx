@@ -6,10 +6,9 @@ import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
 import { PostUI as PostUI } from './post';
 import { CSSProperties, ChangeEvent, useEffect, useState } from 'react';
-import { DragSourceMonitor, useDrag, useDrop } from 'react-dnd';
+import { DragSourceMonitor, useDrag } from 'react-dnd';
 import { ITEM_TYPES } from './itemTypes';
-import { PostGroupDragItem } from './interfaces';
-import { deletePostGroup, updatePost, updatePostGroup } from '@/ws/events';
+import { updatePostGroup } from '@/ws/events';
 
 type PostGroupProps = {
   postGroup: PostGroupWithPosts;
@@ -23,17 +22,7 @@ type PostGroupProps = {
   unsetPostGroup: (id: string) => void;
 };
 
-const PostGroup = ({
-  postGroup,
-  user,
-  board,
-  send,
-  setColorSetting,
-  handleDeletePost,
-  setPost,
-  unsetPost,
-  unsetPostGroup,
-}: PostGroupProps) => {
+const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDeletePost }: PostGroupProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isTitleFocused, setTitleFocused] = useState(false);
   const [titleValue, setTitleValue] = useState(postGroup.title);
@@ -78,45 +67,19 @@ const PostGroup = ({
     };
   }, [id, pos_x, pos_y, isTitleFocused]);
 
-  const [{ isOver }, drop] = useDrop(
-    () => ({
-      accept: [ITEM_TYPES.POST_GROUP, ITEM_TYPES.POST],
-      drop(item: any, monitor) {
-        if (item.name == ITEM_TYPES.POST_GROUP) {
-          const { id: source_post_group_id, single_post } = item as PostGroupDragItem;
-          if (single_post) {
-            const target_post_group_id = id;
-            if (source_post_group_id != target_post_group_id) {
-              updatePost({ id: single_post.id, post_group_id: target_post_group_id }, send);
-              // Unset post
-              deletePostGroup(single_post.post_group_id, send);
-            }
-          }
-        } else if (item.name == ITEM_TYPES.POST) {
-          updatePost({ ...item.post, post_group_id: id }, send);
-        }
-        return undefined;
-      },
-      collect: (monitor) => ({
-        isOver: monitor.isOver(),
-      }),
-    }),
-    []
-  );
-
   if (isDragging) {
     return null;
   }
 
   return (
     <div
-      ref={(node) => drag(drop(node))}
+      ref={drag}
       className={
         postGroup.posts.length > 1
           ? 'shadow-md border border-dashed border-black backdrop-blur-sm cursor-move rounded-sm'
           : ''
       }
-      style={getStyles(pos_x, pos_y, z_index, isDragging, isHovered, isOver)}
+      style={getStyles(pos_x, pos_y, z_index, isDragging, isHovered)}
       role="DraggableGroupPost"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -157,8 +120,7 @@ function getStyles(
   pos_y: number,
   z_index: number,
   isDragging: boolean,
-  isHovered: boolean,
-  isOver: boolean
+  isHovered: boolean
 ): CSSProperties {
   const transform = `translate3d(${pos_x}px, ${pos_y}px, 0)`;
   return {
@@ -170,7 +132,6 @@ function getStyles(
     opacity: isDragging ? 0 : 1,
     height: isDragging ? 0 : '',
     zIndex: isHovered ? '10000' : z_index,
-    border: isOver ? '2px solid black' : '',
   };
 }
 
