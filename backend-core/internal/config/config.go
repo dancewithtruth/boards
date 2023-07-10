@@ -25,37 +25,41 @@ const (
 
 // Config encapsulates all the server configuration values.
 type Config struct {
-	ServerPort     string
-	JwtSecret      string
-	JwtExpiration  int
-	DatabaseConfig DatabaseConfig
+	ServerPort    string
+	JwtSecret     string
+	JwtExpiration int
+	DB            DatabaseConfig
 }
 
 // Load looks for config values in environment variables and sets them into the Config struct.
 func Load(file string) (*Config, error) {
-	if os.Getenv(keyEnv) == "development" {
+	env := os.Getenv(keyEnv)
+	if env == "development" {
 		err := godotenv.Load(file)
 		if err != nil {
 			return nil, fmt.Errorf("error loading .env file: %w", err)
 		}
 	}
+
 	databaseConfig, err := getDatabaseConfig()
 	if err != nil {
 		return nil, err
 	}
+
 	serverPort := os.Getenv(keyServerPort)
 	jwtSecret := os.Getenv(keyJWTSecret)
 	jwtExpirationStr := os.Getenv(keyJWTExpiration)
+
 	jwtExpiration, err := strconv.Atoi(jwtExpirationStr)
 	if err != nil {
 		return nil, fmt.Errorf("invalid JWT expiration value: %w", err)
 	}
 
 	return &Config{
-		DatabaseConfig: databaseConfig,
-		ServerPort:     serverPort,
-		JwtSecret:      jwtSecret,
-		JwtExpiration:  jwtExpiration,
+		DB:            databaseConfig,
+		ServerPort:    serverPort,
+		JwtSecret:     jwtSecret,
+		JwtExpiration: jwtExpiration,
 	}, nil
 }
 

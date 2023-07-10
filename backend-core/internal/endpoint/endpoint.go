@@ -25,6 +25,7 @@ type errResponse struct {
 func WriteWithError(w http.ResponseWriter, statusCode int, errMsg string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
+
 	errResponse := errResponse{
 		Status:  statusCode,
 		Message: errMsg,
@@ -40,6 +41,7 @@ func WriteWithError(w http.ResponseWriter, statusCode int, errMsg string) {
 func WriteWithStatus(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
+
 	if data != nil {
 		if err := json.NewEncoder(w).Encode(data); err != nil {
 			log.Printf("Failed to encode API response into JSON: %v", err)
@@ -60,6 +62,7 @@ func HandleDecodeErr(w http.ResponseWriter, err error) {
 	if err, ok := err.(*json.UnmarshalTypeError); ok {
 		errMsg = buildDecodeErrorMsg(err.Field, err.Type.String(), err.Value)
 	}
+
 	WriteWithError(w, http.StatusBadRequest, errMsg)
 }
 
@@ -71,5 +74,6 @@ func WriteValidationErr(w http.ResponseWriter, s interface{}, err error) {
 	if validationErrMsg != "" {
 		errMsg = validationErrMsg
 	}
+
 	WriteWithError(w, http.StatusBadRequest, errMsg)
 }

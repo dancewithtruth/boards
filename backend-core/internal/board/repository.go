@@ -68,7 +68,7 @@ func (r *repository) CreateBoard(ctx context.Context, board models.Board) error 
 	return nil
 }
 
-// CreateMembership creates a board membership--this is effecitvely adding a user to a board.
+// CreateMembership creates a board membership--this is effectively adding a user to a board.
 func (r *repository) CreateMembership(ctx context.Context, membership models.BoardMembership) error {
 	// prepare membership for insert
 	arg := db.CreateMembershipParams{
@@ -137,23 +137,24 @@ func (r *repository) GetBoard(ctx context.Context, boardID uuid.UUID) (models.Bo
 // GetBoardAndUsers returns a flat structure list of board and users. A BoardAndUser encapsulates Board,
 // User, and Membership domain models.
 func (r *repository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardMembershipUser, error) {
-	rows, err := r.q.GetBoardAndUsers(ctx, pgtype.UUID{Bytes: boardID, Valid: true})
+	arg := pgtype.UUID{Bytes: boardID, Valid: true}
+	rows, err := r.q.GetBoardAndUsers(ctx, arg)
 	if err != nil {
 		return []BoardMembershipUser{}, fmt.Errorf("repository: failed to get board and associated users: %w", err)
 	}
+
+	list := make([]BoardMembershipUser, len(rows))
+
 	// Convert storage types into domain types.
-	list := []BoardMembershipUser{}
-	for _, row := range rows {
+	for i, row := range rows {
 		item := BoardMembershipUser{
 			Board:      toBoard(row.Board),
 			User:       toUser(row.User),
 			Membership: toBoardMembership(row.BoardMembership),
 		}
-		if err != nil {
-			return nil, fmt.Errorf("repository: failed to transform db row to domain model: %w", err)
-		}
-		list = append(list, item)
+		list[i] = item
 	}
+
 	return list, nil
 }
 
@@ -259,7 +260,7 @@ func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, 
 		BoardID: pgtype.UUID{Bytes: boardID, Valid: true},
 	}
 	if status != "" {
-		arg.Status = pgtype.Text{String: string(status), Valid: true}
+		arg.Status = pgtype.Text{String: status, Valid: true}
 	}
 	rows, err := r.q.ListInvitesByBoard(ctx, arg)
 	if err != nil {
@@ -278,7 +279,7 @@ func (r *repository) ListInvitesByBoard(ctx context.Context, boardID uuid.UUID, 
 func (r *repository) ListInvitesByReceiver(ctx context.Context, receiverID uuid.UUID, status string) ([]InviteBoardSender, error) {
 	arg := db.ListInvitesByReceiverParams{ReceiverID: pgtype.UUID{Bytes: receiverID, Valid: true}}
 	if status != "" {
-		arg.Status = pgtype.Text{String: string(status), Valid: true}
+		arg.Status = pgtype.Text{String: status, Valid: true}
 	}
 	rows, err := r.q.ListInvitesByReceiver(ctx, arg)
 	if err != nil {

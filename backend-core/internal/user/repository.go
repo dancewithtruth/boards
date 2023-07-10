@@ -103,10 +103,10 @@ func (r *repository) ListUsersByFuzzyEmail(ctx context.Context, email string) ([
 	if err != nil {
 		return []models.User{}, fmt.Errorf("repository: failed to list users by fuzzy email: %w", err)
 	}
-	var users []models.User
-	for _, userDB := range usersDB {
+	users := make([]models.User, len(usersDB))
+	for i, userDB := range usersDB {
 		user := toUser(userDB)
-		users = append(users, user)
+		users[i] = user
 	}
 	return users, nil
 }

@@ -23,9 +23,11 @@ func NewWebSocket(
 	postService post.Service,
 	jwtService jwt.Service,
 ) *WebSocket {
-	destroy := make(chan string)
 	boardHubs := make(map[string]*Hub)
+	destroy := make(chan string)
+
 	go handleDestroy(destroy, boardHubs)
+
 	return &WebSocket{
 		userService:  userService,
 		boardService: boardService,

@@ -12,7 +12,7 @@ func TestLoad(t *testing.T) {
 		assert.NoError(t, err)
 
 		assert.NotNil(t, cfg)
-		assert.NotNil(t, cfg.DatabaseConfig)
-		assert.NotEmpty(t, cfg.DatabaseConfig.Host)
+		assert.NotNil(t, cfg.DB)
+		assert.NotEmpty(t, cfg.DB.Host)
 	})
 }

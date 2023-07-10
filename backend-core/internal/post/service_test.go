@@ -15,7 +15,6 @@ func TestService(t *testing.T) {
 	assert.NotNil(t, service)
 
 	t.Run("Create, get, update, and delete post", func(t *testing.T) {
-
 		// Create
 		createInput := CreatePostInput{
 			UserID:  uuid.New().String(),

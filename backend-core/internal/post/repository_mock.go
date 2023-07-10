@@ -19,17 +19,17 @@ func NewMockRepository() *mockRepository {
 	return &mockRepository{posts: posts, postGroups: postGroups}
 }
 
-func (r *mockRepository) CreatePost(ctx context.Context, post models.Post) error {
+func (r *mockRepository) CreatePost(_ context.Context, post models.Post) error {
 	r.posts[post.ID] = post
 	return nil
 }
 
-func (r *mockRepository) CreatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
+func (r *mockRepository) CreatePostGroup(_ context.Context, postGroup models.PostGroup) error {
 	r.postGroups[postGroup.ID] = postGroup
 	return nil
 }
 
-func (r *mockRepository) ListPostGroups(ctx context.Context, boardID uuid.UUID) ([]GroupAndPost, error) {
+func (r *mockRepository) ListPostGroups(_ context.Context, boardID uuid.UUID) ([]GroupAndPost, error) {
 	list := []GroupAndPost{}
 	for _, postGroup := range r.postGroups {
 		if postGroup.BoardID == boardID {
@@ -47,36 +47,36 @@ func (r *mockRepository) ListPostGroups(ctx context.Context, boardID uuid.UUID) 
 	return list, nil
 }
 
-func (r *mockRepository) GetPost(ctx context.Context, postID uuid.UUID) (models.Post, error) {
+func (r *mockRepository) GetPost(_ context.Context, postID uuid.UUID) (models.Post, error) {
 	if post, ok := r.posts[postID]; ok {
 		return post, nil
 	}
 	return models.Post{}, errPostNotFound
 }
 
-func (r *mockRepository) UpdatePost(ctx context.Context, post models.Post) error {
+func (r *mockRepository) UpdatePost(_ context.Context, post models.Post) error {
 	r.posts[post.ID] = post
 	return nil
 }
 
-func (r *mockRepository) DeletePost(ctx context.Context, postID uuid.UUID) error {
+func (r *mockRepository) DeletePost(_ context.Context, postID uuid.UUID) error {
 	delete(r.posts, postID)
 	return nil
 }
 
-func (r *mockRepository) GetPostGroup(ctx context.Context, postGroupID uuid.UUID) (models.PostGroup, error) {
+func (r *mockRepository) GetPostGroup(_ context.Context, postGroupID uuid.UUID) (models.PostGroup, error) {
 	if postGroup, ok := r.postGroups[postGroupID]; ok {
 		return postGroup, nil
 	}
 	return models.PostGroup{}, errPostNotFound
 }
 
-func (r *mockRepository) UpdatePostGroup(ctx context.Context, postGroup models.PostGroup) error {
+func (r *mockRepository) UpdatePostGroup(_ context.Context, postGroup models.PostGroup) error {
 	r.postGroups[postGroup.ID] = postGroup
 	return nil
 }
 
-func (r *mockRepository) DeletePostGroup(ctx context.Context, postGroupID uuid.UUID) error {
+func (r *mockRepository) DeletePostGroup(_ context.Context, postGroupID uuid.UUID) error {
 	delete(r.postGroups, postGroupID)
 	return nil
 }

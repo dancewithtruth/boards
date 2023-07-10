@@ -35,7 +35,7 @@ func main() {
 	}
 
 	// Connect to database
-	conn, err := db.Connect(cfg.DatabaseConfig)
+	conn, err := db.Connect(cfg.DB)
 	if err != nil {
 		logger.Fatalf("Error connecting to db: %v", err)
 	}
@@ -43,7 +43,10 @@ func main() {
 
 	// Setup server
 	r := chi.NewRouter()
-	server := http.Server{Addr: cfg.ServerPort, Handler: buildHandler(r, conn, logger, validator, cfg)}
+	server := http.Server{
+		Addr:    cfg.ServerPort,
+		Handler: setupHandler(r, conn, logger, validator, cfg),
+	}
 
 	// Graceful shutdown
 	stop := make(chan os.Signal, 1)
@@ -63,8 +66,8 @@ func main() {
 	}
 }
 
-// buildHandler sets up all the middleware and API routes for the server.
-func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate, cfg *config.Config) chi.Router {
+// setupHandler sets up all the middleware and API routes for the server.
+func setupHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate, cfg *config.Config) chi.Router {
 	// Set up middleware
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.Cors())
@@ -102,7 +105,7 @@ func buildHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	return r
 }
 
-func handlePingCheck(w http.ResponseWriter, r *http.Request) {
+func handlePingCheck(w http.ResponseWriter, _ *http.Request) {
 	endpoint.WriteWithStatus(w, http.StatusOK, struct {
 		Message string `json:"message"`
 	}{Message: "pong"})

@@ -8,7 +8,6 @@ import (
 )
 
 func Test_handlePingCheck(t *testing.T) {
-
 	// Setup request and response recorder
 	req, err := http.NewRequest(http.MethodGet, "localhost:8080/ping", nil)
 	if err != nil {

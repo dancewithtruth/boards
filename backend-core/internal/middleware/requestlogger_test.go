@@ -28,7 +28,6 @@ func TestRequestLogger(t *testing.T) {
 		assert.Equal(t, fieldDuration, log.Context[2].Key)
 		assert.Equal(t, "[404] GET: /", log.Entry.Message)
 	})
-
 }
 func Test_getOrCreateIDs(t *testing.T) {
 	req := buildRequest("", "")

@@ -19,7 +19,7 @@ func DB(t *testing.T) *db.DB {
 		t.FailNow()
 	}
 	// connect to db
-	db, err := db.Connect(cfg.DatabaseConfig)
+	db, err := db.Connect(cfg.DB)
 	if err != nil {
 		t.Errorf("Issue connecting db:%v", err)
 		t.FailNow()

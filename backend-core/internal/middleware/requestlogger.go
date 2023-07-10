@@ -34,6 +34,7 @@ type LoggerRW struct {
 func (lrw *LoggerRW) Write(p []byte) (int, error) {
 	bytesWritten, err := lrw.ResponseWriter.Write(p)
 	lrw.BytesWritten = bytesWritten
+
 	return bytesWritten, err
 }
 
@@ -50,6 +51,7 @@ func (lrw *LoggerRW) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if !ok {
 		return nil, nil, errors.New("hijack not supported")
 	}
+
 	return h.Hijack()
 }
 
@@ -90,12 +92,15 @@ func RequestLogger(l logger.Logger) func(http.Handler) http.Handler {
 func getOrCreateIDs(r *http.Request) (reqID string, corrID string) {
 	reqID = getRequestID(r)
 	corrID = getCorrelationID(r)
+
 	if reqID == "" {
 		reqID = uuid.NewString()
 	}
+
 	if corrID == "" {
 		corrID = uuid.NewString()
 	}
+
 	return reqID, corrID
 }
 

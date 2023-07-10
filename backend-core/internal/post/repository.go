@@ -42,17 +42,7 @@ func NewRepository(conn *db.DB) *repository {
 
 // CreatePost creates a single post.
 func (r *repository) CreatePost(ctx context.Context, post models.Post) error {
-	arg := db.CreatePostParams{
-		ID:          pgtype.UUID{Bytes: post.ID, Valid: true},
-		UserID:      pgtype.UUID{Bytes: post.UserID, Valid: true},
-		Content:     pgtype.Text{String: post.Content, Valid: true},
-		Color:       pgtype.Text{String: post.Color, Valid: true},
-		Height:      pgtype.Int4{Int32: int32(post.Height), Valid: true},
-		CreatedAt:   pgtype.Timestamp{Time: post.CreatedAt, Valid: true},
-		UpdatedAt:   pgtype.Timestamp{Time: post.UpdatedAt, Valid: true},
-		PostOrder:   pgtype.Float8{Float64: post.PostOrder, Valid: true},
-		PostGroupID: pgtype.UUID{Bytes: post.PostGroupID, Valid: true},
-	}
+	arg := db.CreatePostParams(toPostDB(post))
 	return r.q.CreatePost(ctx, arg)
 }
 
@@ -89,32 +79,22 @@ func (r *repository) ListPostGroups(ctx context.Context, boardID uuid.UUID) ([]G
 	if err != nil {
 		return []GroupAndPost{}, err
 	}
-	var list []GroupAndPost
-	for _, row := range rows {
+	list := make([]GroupAndPost, len(rows))
+	for i, row := range rows {
 		post := toPost(row.Post)
 		postGroup := toPostGroup(row.PostGroup)
 		item := GroupAndPost{
 			Post:      post,
 			PostGroup: postGroup,
 		}
-		list = append(list, item)
+		list[i] = item
 	}
 	return list, nil
 }
 
 // UpdatePost takes a post model and updates an existing post.
 func (r *repository) UpdatePost(ctx context.Context, post models.Post) error {
-	arg := db.UpdatePostParams{
-		ID:          pgtype.UUID{Bytes: post.ID, Valid: true},
-		UserID:      pgtype.UUID{Bytes: post.UserID, Valid: true},
-		Content:     pgtype.Text{String: post.Content, Valid: true},
-		Color:       pgtype.Text{String: post.Color, Valid: true},
-		Height:      pgtype.Int4{Int32: int32(post.Height), Valid: true},
-		CreatedAt:   pgtype.Timestamp{Time: post.CreatedAt, Valid: true},
-		UpdatedAt:   pgtype.Timestamp{Time: post.UpdatedAt, Valid: true},
-		PostOrder:   pgtype.Float8{Float64: post.PostOrder, Valid: true},
-		PostGroupID: pgtype.UUID{Bytes: post.PostGroupID, Valid: true},
-	}
+	arg := db.UpdatePostParams(toPostDB(post))
 	return r.q.UpdatePost(ctx, arg)
 }
 
@@ -156,7 +136,7 @@ func (r *repository) DeletePostGroup(ctx context.Context, postGroupID uuid.UUID)
 	return nil
 }
 
-// toPost maps a db post to a domain post
+// toPost maps a db post to a domain post.
 func toPost(postDB db.Post) models.Post {
 	return models.Post{
 		ID:          postDB.ID.Bytes,
@@ -171,7 +151,22 @@ func toPost(postDB db.Post) models.Post {
 	}
 }
 
-// toPostGroup maps a db post group to a domain post group
+// toPostDB maps a domain post to a db post.
+func toPostDB(post models.Post) db.Post {
+	return db.Post{
+		ID:          pgtype.UUID{Bytes: post.ID, Valid: true},
+		UserID:      pgtype.UUID{Bytes: post.UserID, Valid: true},
+		Content:     pgtype.Text{String: post.Content, Valid: true},
+		Color:       pgtype.Text{String: post.Color, Valid: true},
+		Height:      pgtype.Int4{Int32: int32(post.Height), Valid: true},
+		CreatedAt:   pgtype.Timestamp{Time: post.CreatedAt, Valid: true},
+		UpdatedAt:   pgtype.Timestamp{Time: post.UpdatedAt, Valid: true},
+		PostOrder:   pgtype.Float8{Float64: post.PostOrder, Valid: true},
+		PostGroupID: pgtype.UUID{Bytes: post.PostGroupID, Valid: true},
+	}
+}
+
+// toPostGroup maps a db post group to a domain post group.
 func toPostGroup(postGroupDB db.PostGroup) models.PostGroup {
 	return models.PostGroup{
 		ID:        postGroupDB.ID.Bytes,

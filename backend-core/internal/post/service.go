@@ -107,7 +107,7 @@ func (s *service) GetPost(ctx context.Context, postID string) (models.Post, erro
 	return s.repo.GetPost(ctx, postUUID)
 }
 
-// UpdatePost takes an update request and applies the updates to an exisitng post.
+// UpdatePost takes an update request and applies the updates to an existing post.
 func (s *service) UpdatePost(ctx context.Context, input UpdatePostInput) (models.Post, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input
@@ -216,7 +216,7 @@ func (s *service) ListPostGroups(ctx context.Context, boardID string) ([]GroupWi
 	return toDTOListPostGroups(rows), nil
 }
 
-// UpdatePostGroup takes an update request and applies the updates to an exisitng post group.
+// UpdatePostGroup takes an update request and applies the updates to an existing post group.
 func (s *service) UpdatePostGroup(ctx context.Context, input UpdatePostGroupInput) (models.PostGroup, error) {
 	logger := logger.FromContext(ctx)
 	// Validate input

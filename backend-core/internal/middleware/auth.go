@@ -52,6 +52,7 @@ func UserIDFromContext(ctx context.Context) string {
 	if userID, ok := ctx.Value(keyUserID).(string); ok {
 		return userID
 	}
+
 	return ""
 }
 
