@@ -5,7 +5,7 @@ import { PostAugmented } from './board';
 import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
 import { PostUI as PostUI } from './post';
-import { CSSProperties, ChangeEvent, useEffect, useState } from 'react';
+import { CSSProperties, ChangeEvent, memo, useEffect, useState } from 'react';
 import { DragSourceMonitor, useDrag } from 'react-dnd';
 import { ITEM_TYPES } from './itemTypes';
 import { updatePostGroup } from '@/ws/events';
@@ -17,9 +17,6 @@ type PostGroupProps = {
   send: Send;
   setColorSetting: (color: string) => void;
   handleDeletePost: (post: Post) => void;
-  setPost: (post: Post) => void;
-  unsetPost: (post: Post) => void;
-  unsetPostGroup: (id: string) => void;
 };
 
 const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDeletePost }: PostGroupProps) => {
@@ -27,6 +24,7 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDelete
   const [isTitleFocused, setTitleFocused] = useState(false);
   const [titleValue, setTitleValue] = useState(postGroup.title);
   const { id, board_id, pos_x, pos_y, z_index } = postGroup;
+  console.log('re-render');
 
   useEffect(() => {
     setTitleValue(postGroup.title);
@@ -135,4 +133,6 @@ function getStyles(
   };
 }
 
-export default PostGroup;
+PostGroup.displayName = "PostGroup"
+
+export default memo(PostGroup);

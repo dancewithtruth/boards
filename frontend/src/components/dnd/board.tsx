@@ -205,13 +205,10 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
   };
 
   const setPostGroup = (postGroup: PostGroupWithPosts) => {
-    setData(
-      update(data, {
-        [postGroup.id]: {
-          $set: postGroup,
-        },
-      })
-    );
+    setData((prevData) => ({
+      ...prevData,
+      [postGroup.id]: postGroup,
+    }));
   };
 
   const pushPost = (post: Post) => {
@@ -405,9 +402,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
                 send={send}
                 setColorSetting={setColorSetting}
                 handleDeletePost={handleDeletePost}
-                unsetPostGroup={unsetPostGroup}
-                unsetPost={unsetPost}
-                setPost={setPost}
               />
             ))
           : null}
@@ -415,6 +409,8 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
     </div>
   );
 };
+
+Board.whyDidYouRender = true;
 
 const pickColor = () => {
   const availableColors = Object.values(POST_COLORS);
