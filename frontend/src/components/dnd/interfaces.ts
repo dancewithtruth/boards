@@ -5,7 +5,7 @@ export interface PostGroupDragItem {
   id: string;
   pos_x: number;
   pos_y: number;
-  single_post: Post | null;
+  posts: Post[];
 }
 
 export interface PostDragItem {

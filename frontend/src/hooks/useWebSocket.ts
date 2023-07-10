@@ -23,14 +23,14 @@ export const useWebSocket = (url: string) => {
     ws.current.onmessage = (event) => {
       const receivedData = event.data;
       const messages = receivedData.split('\n');
-      const parsedMessages : any[] = []
+      const parsedMessages: any[] = [];
 
-      messages.forEach((message : any) => {
+      messages.forEach((message: any) => {
         try {
           const parsedMessage = JSON.parse(message);
-          console.log(parsedMessage)
+          console.log(parsedMessage);
           // Process each individual message
-          parsedMessages.push(parsedMessage)
+          parsedMessages.push(parsedMessage);
         } catch (error) {
           console.log('Error parsing message:', error);
         }

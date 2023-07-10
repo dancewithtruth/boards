@@ -3,37 +3,28 @@
 import { BoardWithMembers, User } from '@/api';
 import { POST_COLORS, DEFAULT_POST_HEIGHT, POST_WIDTH } from '@/constants';
 import { displayColor } from '@/utils';
-import { deletePost, deletePostGroup, focusPost, updatePost, updatePostGroup } from '@/ws/events';
+import { deletePost, deletePostGroup, focusPost, updatePost } from '@/ws/events';
 import { Send } from '@/ws/types';
-import { CSSProperties, ChangeEvent, FC, RefObject, useEffect, useRef, useState } from 'react';
+import { CSSProperties, ChangeEvent, FC, useEffect, useRef, useState } from 'react';
 import { memo } from 'react';
 import { FaRegTrashAlt } from 'react-icons/fa';
 import Avatar from '../avatar';
 import { PostAugmented } from './board';
 import { DragSourceMonitor, DropTargetMonitor, XYCoord, useDrag, useDrop } from 'react-dnd';
 import { ITEM_TYPES } from './itemTypes';
-import { Post, PostGroupWithPosts } from '@/api/post';
+import { PostGroupWithPosts } from '@/api/post';
 import { PostGroupDragItem } from './interfaces';
 
 type PostProps = {
   user: User;
   board: BoardWithMembers;
-  send: Send;
   postGroup: PostGroupWithPosts;
   post: PostAugmented;
+  send: Send;
   setColorSetting: (color: string) => void;
-  handleDeletePost: (post: Post) => void;
 };
 
-export const PostUI: FC<PostProps> = memo(function Post({
-  user,
-  board,
-  send,
-  postGroup,
-  post,
-  setColorSetting,
-  handleDeletePost,
-}) {
+const PostUI: FC<PostProps> = memo(function Post({ user, board, postGroup, post, send, setColorSetting }) {
   const { id, user_id, color, content, height, typingBy, autoFocus, post_order } = post;
   const [textareaValue, setTextareaValue] = useState(content);
   const [textareaHeight, setTextareaHeight] = useState(height);
@@ -44,7 +35,8 @@ export const PostUI: FC<PostProps> = memo(function Post({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const allMembers = board.members;
   const authorName = getName(user_id, allMembers) || 'Unknown';
-  const hasSiblings = postGroup.posts.length > 1;
+  const posts = postGroup.posts;
+  const hasSiblings = posts.length > 1;
 
   const [{ isDragging }, drag] = useDrag(
     () => ({
@@ -55,7 +47,7 @@ export const PostUI: FC<PostProps> = memo(function Post({
       }),
       canDrag: !typingBy && !isFocused && hasSiblings,
     }),
-    [id, content]
+    [post]
   );
 
   const [{ isOver }, drop] = useDrop(
@@ -67,47 +59,32 @@ export const PostUI: FC<PostProps> = memo(function Post({
         }
         const hoverAbove = isHoverAbove(monitor, ref.current);
         let post_order = 0.0;
-        if (postGroup.posts.length === 1) {
+        const index = posts.findIndex((post) => post.id == id);
+
+        if (index === 0 && hoverAbove) {
+          post_order = post.post_order / 2;
+        } else if (index === posts.length - 1 && !hoverAbove) {
+          post_order = post.post_order + 1;
+        } else {
+          const currentOrder = posts[index].post_order;
           if (hoverAbove) {
-            post_order = post.post_order / 2;
+            const aboveOrder = posts[index - 1].post_order;
+            post_order = (aboveOrder + currentOrder) / 2;
           } else {
-            post_order = post.post_order + 1;
+            const belowOrder = posts[index + 1].post_order;
+            post_order = (belowOrder + currentOrder) / 2;
           }
         }
 
-        if (postGroup.posts.length > 1) {
-          const index = postGroup.posts.findIndex((post) => post.id == id);
-          if (index === 0) {
-            if (hoverAbove) {
-              post_order = post.post_order / 2;
-            }
-          } else if (index === postGroup.posts.length - 1) {
-            if (!hoverAbove) {
-              post_order = post.post_order + 1;
-            }
-          } else {
-            if (hoverAbove) {
-              const topPostOrder = postGroup.posts[index - 1].post_order;
-              const currentPostOrder = postGroup.posts[index].post_order;
-              post_order = (topPostOrder + currentPostOrder) / 2;
-            } else {
-              const currentPostOrder = postGroup.posts[index].post_order;
-              const bottomPostOrder = postGroup.posts[index + 1].post_order;
-              post_order = (bottomPostOrder + currentPostOrder) / 2;
-            }
-          }
-        }
         if (item.name == ITEM_TYPES.POST_GROUP) {
-          const { id: source_post_group_id, single_post } = item as PostGroupDragItem;
+          const { posts } = item.postGroup as PostGroupDragItem;
+          const single_post = posts.length === 1 ? posts[0] : null;
           if (single_post) {
             const target_post_group_id = post.post_group_id;
-            //TODO: Calculate new post order
             updatePost({ id: single_post.id, post_group_id: target_post_group_id, post_order }, send);
-            // Unset post
             deletePostGroup(single_post.post_group_id, send);
           }
         } else if (item.name == ITEM_TYPES.POST) {
-          //TODO: Calculate new post order
           updatePost({ ...item.post, post_group_id: post.post_group_id, post_order }, send);
         }
         return undefined;
@@ -120,13 +97,13 @@ export const PostUI: FC<PostProps> = memo(function Post({
           return;
         }
         if (isHoverAbove(monitor, ref.current)) {
-          setBorderStyle({ 'border-top': '2px solid black' });
+          setBorderStyle({ borderTop: '2px solid black' });
         } else {
-          setBorderStyle({ 'border-bottom': '2px solid black' });
+          setBorderStyle({ borderBottom: '2px solid black' });
         }
       },
     }),
-    []
+    [posts]
   );
 
   useEffect(() => {
@@ -181,6 +158,14 @@ export const PostUI: FC<PostProps> = memo(function Post({
     setColorSetting(color);
   };
 
+  const handleDeletePost = () => {
+    if (posts.length === 1) {
+      deletePostGroup(post.post_group_id, send);
+      return;
+    }
+    deletePost({ post_id: id, board_id: board.id }, send);
+  };
+
   const ColorPicker = () => {
     return (
       <div className="flex space-x-1 items-center">
@@ -208,7 +193,7 @@ export const PostUI: FC<PostProps> = memo(function Post({
         style={{ visibility: isHovered ? 'visible' : 'hidden' }}
       >
         <ColorPicker />
-        <button className="text-gray-500 hover:text-gray-700" onClick={() => handleDeletePost(post)}>
+        <button className="text-gray-500 hover:text-gray-700" onClick={handleDeletePost}>
           <FaRegTrashAlt />
         </button>
       </div>
@@ -289,3 +274,5 @@ function isHoverAbove(monitor: DropTargetMonitor, ref: HTMLDivElement): boolean 
   const hoverClientY = (clientOffset as XYCoord).y - hoverBoundingRect.top;
   return hoverClientY < hoverMiddleY;
 }
+
+export default PostUI;

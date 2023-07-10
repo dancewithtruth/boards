@@ -63,7 +63,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
   const [user, setUser] = useState<User>();
   const [connectedUsers, setConnectedUsers] = useState<User[]>([]);
   const [boardDimension, setBoardDimension] = useState({ height: 0, width: 0 });
-  const [highestZ, setHighestZ] = useState(getMaxFieldFromObj(initialPostGroups, 'z_index'));
   const [colorSetting, setColorSetting] = useState(pickColor());
   const { messages, send, readyState } = useWebSocket(WS_URL);
   const cookies = new Cookies();
@@ -77,6 +76,7 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
 
   // Expands the board based on post locations
   useEffect(() => {
+    const { height: oldHeight, width: oldWidth } = boardDimension;
     const newWidth = getMaxFieldFromObj(data, 'pos_x') + POST_WIDTH + BOARD_SPACE_ADD;
     const heights = Object.values(data).map((postGroup) => {
       let heightOffset = postGroup.pos_y;
@@ -90,7 +90,9 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
       return heightOffset;
     });
     const newHeight = Math.max(...heights) + BOARD_SPACE_ADD;
-    setBoardDimension({ height: newHeight, width: newWidth });
+    if (oldHeight != newHeight || oldWidth !== newWidth) {
+      setBoardDimension({ height: newHeight, width: newWidth });
+    }
   }, [data]);
 
   // Handles the different connection states. Will authenticate the user if connection is established
@@ -179,7 +181,7 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
     toast.dismiss();
     if (event.target === event.currentTarget) {
       const { offsetX, offsetY } = event.nativeEvent;
-      const newZIndex = highestZ + 1;
+      const newZIndex = getMaxFieldFromObj(data, 'z_index') + 1;
       const params = {
         board_id: board.id,
         content: '',
@@ -189,7 +191,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
         z_index: newZIndex,
       };
       createPost(params, send);
-      setHighestZ(newZIndex);
     }
   };
 
@@ -229,14 +230,12 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
         $merge: postGroup,
       },
     });
-    console.log('mergePostGroup Updated Data', updatedData);
     setData(updatedData);
   };
 
   // setPost will attept to set post by finding the existing post in the post group. If none if found, it will
   // insert based on post order.
   const setPost = (post: Post) => {
-    console.log(data);
     const indexByID = data[post.post_group_id].posts.findIndex((elem) => elem.id == post.id);
     let updatedData = data;
     if (indexByID !== -1) {
@@ -248,7 +247,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
         },
       });
     }
-    console.log(updatedData);
     let indexByOrder = updatedData[post.post_group_id].posts.findIndex((elem) => elem.post_order > post.post_order);
     if (indexByOrder === -1) {
       indexByOrder = updatedData[post.post_group_id].posts.length;
@@ -260,7 +258,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
         },
       },
     });
-    console.log(updatedData);
     setData(updatedData);
   };
 
@@ -346,19 +343,21 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
       drop(item: any, monitor) {
         const newZIndex = getMaxFieldFromObj(data, 'z_index') + 1;
         if (item.name === ITEM_TYPES.POST_GROUP) {
+          let { id: post_group_id, pos_x, pos_y } = item.postGroup as PostGroupDragItem;
           const delta = monitor.getDifferenceFromInitialOffset() as {
             x: number;
             y: number;
           };
+          console.log('dropped post group', item);
           if (!delta) {
             return undefined;
           }
-          let pos_x = Math.max(item.pos_x + delta.x, 0);
-          let pos_y = Math.max(item.pos_y + delta.y, 0);
+          pos_x = Math.max(pos_x + delta.x, 0);
+          pos_y = Math.max(pos_y + delta.y, 0);
           [pos_x, pos_y] = snapToGrid(pos_x, pos_y);
-          const newParams = { id: item.id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
+          const newParams = { id: post_group_id, board_id: board.id, z_index: newZIndex, pos_x, pos_y };
           // preemptively update post on frontend before waiting on websocket to smoothen out experience
-          mergePostGroup({ id: item.id, z_index: newZIndex, pos_x, pos_y });
+          mergePostGroup({ id: post_group_id, z_index: newZIndex, pos_x, pos_y });
           updatePostGroup(newParams, send);
           return undefined;
         } else if (item.name === ITEM_TYPES.POST) {
@@ -367,11 +366,9 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
             let pos_x = sourceClientOffset.x - SIDEBAR_WIDTH;
             let pos_y = sourceClientOffset.y - NAVBAR_HEIGHT;
             [pos_x, pos_y] = snapToGrid(pos_x, pos_y);
-            console.log({ id: item.post.id, pos_x, pos_y, z_index: newZIndex });
             detachPostWS({ id: item.post.id, pos_x, pos_y, z_index: newZIndex }, send);
           }
         }
-        setHighestZ(newZIndex);
       },
     }),
     [mergePostGroup]
@@ -396,12 +393,11 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
           ? Object.entries(data).map(([key, postGroup]) => (
               <PostGroup
                 key={key}
+                postGroup={postGroup}
                 user={user}
                 board={board}
-                postGroup={postGroup}
                 send={send}
                 setColorSetting={setColorSetting}
-                handleDeletePost={handleDeletePost}
               />
             ))
           : null}

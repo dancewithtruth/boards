@@ -4,11 +4,12 @@ import { Post, PostGroupWithPosts } from '@/api/post';
 import { PostAugmented } from './board';
 import { BoardWithMembers, User } from '@/api';
 import { Send } from '@/ws/types';
-import { PostUI as PostUI } from './post';
 import { CSSProperties, ChangeEvent, memo, useEffect, useState } from 'react';
 import { DragSourceMonitor, useDrag } from 'react-dnd';
 import { ITEM_TYPES } from './itemTypes';
 import { updatePostGroup } from '@/ws/events';
+import PostUI from './post';
+import { getEmptyImage } from 'react-dnd-html5-backend';
 
 type PostGroupProps = {
   postGroup: PostGroupWithPosts;
@@ -16,19 +17,18 @@ type PostGroupProps = {
   board: BoardWithMembers;
   send: Send;
   setColorSetting: (color: string) => void;
-  handleDeletePost: (post: Post) => void;
 };
 
-const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDeletePost }: PostGroupProps) => {
+const PostGroup = ({ postGroup, user, board, send, setColorSetting }: PostGroupProps) => {
+  const { id, board_id, title, posts, pos_x, pos_y, z_index } = postGroup;
   const [isHovered, setIsHovered] = useState(false);
   const [isTitleFocused, setTitleFocused] = useState(false);
-  const [titleValue, setTitleValue] = useState(postGroup.title);
-  const { id, board_id, pos_x, pos_y, z_index } = postGroup;
-  console.log('re-render');
+  const [titleValue, setTitleValue] = useState(title);
+  console.log('Postgroup: re-render');
 
   useEffect(() => {
-    setTitleValue(postGroup.title);
-  }, [postGroup]);
+    setTitleValue(title);
+  }, [title]);
 
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -36,6 +36,12 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDelete
 
   const handleMouseLeave = () => {
     setIsHovered(false);
+  };
+
+  // handleTitleChange updates the input value
+  const handleTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { value } = event.target;
+    setTitleValue(value);
   };
 
   const handleTitleFocus = () => {
@@ -47,68 +53,52 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting, handleDelete
     updatePostGroup({ id, board_id, title: titleValue }, send);
   };
 
-  // handleTitleChange updates the input value
-  const handleTitleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { value } = event.target;
-    setTitleValue(value);
-  };
-
   const [{ isDragging }, drag] = useDrag(() => {
-    const single_post = postGroup.posts.length === 1 ? postGroup.posts[0] : null;
     return {
       type: ITEM_TYPES.POST_GROUP,
-      item: { id, pos_x, pos_y, single_post, name: ITEM_TYPES.POST_GROUP },
+      item: { postGroup, name: ITEM_TYPES.POST_GROUP },
       collect: (monitor: DragSourceMonitor) => ({
         isDragging: monitor.isDragging(),
       }),
       canDrag: !isTitleFocused,
     };
-  }, [id, pos_x, pos_y, isTitleFocused]);
-
-  if (isDragging) {
-    return null;
-  }
+  }, [isTitleFocused, postGroup]);
 
   return (
     <div
       ref={drag}
       className={
-        postGroup.posts.length > 1
-          ? 'shadow-md border border-dashed border-black backdrop-blur-sm cursor-move rounded-sm'
-          : ''
+        posts.length > 1 ? 'shadow-md border border-dashed border-black backdrop-blur-sm cursor-move rounded-sm' : ''
       }
       style={getStyles(pos_x, pos_y, z_index, isDragging, isHovered)}
       role="DraggableGroupPost"
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div>
-        {postGroup.posts.length > 1 ? (
-          <div className="flex items-center min-h-8">
-            <input
-              type="text"
-              placeholder={'Edit name'}
-              className="input ml-1 h-5"
-              onFocus={handleTitleFocus}
-              onBlur={handleTitleBlur}
-              value={titleValue}
-              onChange={handleTitleChange}
-            />
-          </div>
-        ) : null}
-        {postGroup.posts.map((post, index) => (
-          <PostUI
-            key={index}
-            user={user}
-            board={board}
-            postGroup={postGroup}
-            post={post as PostAugmented}
-            send={send}
-            setColorSetting={setColorSetting}
-            handleDeletePost={handleDeletePost}
+      {posts.length > 1 ? (
+        <div className="flex items-center min-h-8">
+          <input
+            type="text"
+            placeholder={'Edit name'}
+            className="input ml-1 h-5"
+            onFocus={handleTitleFocus}
+            onBlur={handleTitleBlur}
+            value={titleValue}
+            onChange={handleTitleChange}
           />
-        ))}
-      </div>
+        </div>
+      ) : null}
+      {posts.map((post, index) => (
+        <PostUI
+          key={index}
+          user={user}
+          board={board}
+          postGroup={postGroup}
+          post={post as PostAugmented}
+          send={send}
+          setColorSetting={setColorSetting}
+        />
+      ))}
     </div>
   );
 };
@@ -133,6 +123,6 @@ function getStyles(
   };
 }
 
-PostGroup.displayName = "PostGroup"
+PostGroup.displayName = 'PostGroup';
 
 export default memo(PostGroup);
