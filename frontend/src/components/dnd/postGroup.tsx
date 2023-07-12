@@ -24,7 +24,9 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting }: PostGroupP
   const [isHovered, setIsHovered] = useState(false);
   const [isTitleFocused, setTitleFocused] = useState(false);
   const [titleValue, setTitleValue] = useState(title);
-  console.log('Postgroup: re-render');
+  if (process.env.NEXT_PUBLIC_ENV == 'development') {
+    console.log('Postgroup: re-render');
+  }
 
   useEffect(() => {
     setTitleValue(title);

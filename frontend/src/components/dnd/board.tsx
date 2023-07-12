@@ -71,7 +71,7 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
     // Scroll to the top left portion of the page
     window.scrollTo(0, 0);
     // Usability message
-    toast.info('Double-click anywhere to create a post!', { autoClose: false });
+    toast.info('Double-click anywhere on the grid!', { autoClose: false });
   }, []);
 
   // Expands the board based on post locations
@@ -348,7 +348,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
             x: number;
             y: number;
           };
-          console.log('dropped post group', item);
           if (!delta) {
             return undefined;
           }
