@@ -42,8 +42,6 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 	id := uuid.New()
 	name := toNameCase(input.Name)
 	now := time.Now()
-
-	// Initialize user
 	user := models.User{
 		ID:        id,
 		Name:      name,
@@ -66,7 +64,9 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 		return models.User{}, fmt.Errorf("service: failed to create user: %w", err)
 	}
 
+	// Hide password
 	user.Password = nil
+
 	return user, nil
 }
 
@@ -76,10 +76,12 @@ func (s *service) GetUser(ctx context.Context, userID string) (models.User, erro
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: issue parsing userID into UUID: %w", err)
 	}
+
 	user, err := s.userRepo.GetUser(ctx, userUUID)
 	if err != nil {
 		return models.User{}, fmt.Errorf("service: failed to get user: %w", err)
 	}
+
 	return user, nil
 }
 
@@ -89,9 +91,11 @@ func (s *service) ListUsersByEmail(ctx context.Context, email string) ([]models.
 	if err != nil {
 		return []models.User{}, fmt.Errorf("service: failed to list users by fuzzy email: %w", err)
 	}
+
 	for _, user := range users {
 		user.Password = nil
 	}
+
 	return users, nil
 }
 
@@ -99,5 +103,6 @@ func (s *service) ListUsersByEmail(ctx context.Context, email string) ([]models.
 func toNameCase(word string) string {
 	re := regexp.MustCompile(`\b\w`)
 	nameCase := re.ReplaceAllStringFunc(word, strings.ToUpper)
+
 	return nameCase
 }
