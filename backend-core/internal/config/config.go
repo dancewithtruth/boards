@@ -21,6 +21,8 @@ const (
 	keyJWTSecret       = "JWT_SIGNING_KEY"
 	keyJWTExpiration   = "JWT_EXPIRATION"
 	keyInternalNetwork = "INTERNAL_NETWORK"
+
+	valEnvDev = "DEVELOPMENT"
 )
 
 // Config encapsulates all the server configuration values.
@@ -31,10 +33,12 @@ type Config struct {
 	DB            DatabaseConfig
 }
 
-// Load looks for config values in environment variables and sets them into the Config struct.
+// Load looks for config values in environment table and .env files (development), and sets them
+// into the Config struct.
 func Load(file string) (*Config, error) {
 	env := os.Getenv(keyEnv)
-	if env == "development" {
+	if env == valEnvDev {
+		// Load .env file if in development
 		err := godotenv.Load(file)
 		if err != nil {
 			return nil, fmt.Errorf("error loading .env file: %w", err)

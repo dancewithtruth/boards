@@ -55,5 +55,10 @@ services:
       - ./backend-core/swagger.yaml:/spec/swagger.yaml
     ports:
       - 8081:8080
+  redis-ws:
+    container_name: redis-ws
+    image: redis:latest
+    ports:
+      - 6379:6379
 volumes:
   db-core-data:
