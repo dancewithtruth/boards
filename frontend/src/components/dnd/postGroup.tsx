@@ -66,6 +66,10 @@ const PostGroup = ({ postGroup, user, board, send, setColorSetting }: PostGroupP
     };
   }, [isTitleFocused, postGroup]);
 
+  if (isDragging) {
+    return null
+  }
+
   return (
     <div
       ref={drag}

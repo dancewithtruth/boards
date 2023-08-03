@@ -25,7 +25,7 @@ type PostProps = {
 };
 
 const PostUI: FC<PostProps> = memo(function Post({ user, board, postGroup, post, send, setColorSetting }) {
-  const { id, user_id, color, content, height, typingBy, autoFocus, post_order } = post;
+  const { id, user_id, color, content, height, typingBy, autoFocus, post_order, post_group_id } = post;
   const [textareaValue, setTextareaValue] = useState(content);
   const [textareaHeight, setTextareaHeight] = useState(height);
   const [isHovered, setIsHovered] = useState(false);
@@ -54,6 +54,7 @@ const PostUI: FC<PostProps> = memo(function Post({ user, board, postGroup, post,
     () => ({
       accept: [ITEM_TYPES.POST_GROUP, ITEM_TYPES.POST],
       drop(item: any, monitor) {
+        console.log("dropped onto post", item)
         if (!ref.current) {
           return;
         }
@@ -83,6 +84,10 @@ const PostUI: FC<PostProps> = memo(function Post({ user, board, postGroup, post,
             const target_post_group_id = post.post_group_id;
             updatePost({ id: single_post.id, post_group_id: target_post_group_id, post_order }, send);
             deletePostGroup(single_post.post_group_id, send);
+          }
+          if (item.postGroup.id === post_group_id) {
+            console.log('dropping onto self')
+            
           }
         } else if (item.name == ITEM_TYPES.POST) {
           updatePost({ ...item.post, post_group_id: post.post_group_id, post_order }, send);
