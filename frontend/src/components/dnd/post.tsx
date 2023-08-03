@@ -79,7 +79,7 @@ const PostUI: FC<PostProps> = memo(function Post({ user, board, postGroup, post,
         if (item.name == ITEM_TYPES.POST_GROUP) {
           const { posts } = item.postGroup as PostGroupDragItem;
           const single_post = posts.length === 1 ? posts[0] : null;
-          if (single_post) {
+          if (single_post && single_post.id !== id) {
             const target_post_group_id = post.post_group_id;
             updatePost({ id: single_post.id, post_group_id: target_post_group_id, post_order }, send);
             deletePostGroup(single_post.post_group_id, send);
