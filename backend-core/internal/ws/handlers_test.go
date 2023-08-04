@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/Wave-95/boards/backend-core/internal/board"
+	"github.com/Wave-95/boards/backend-core/internal/config"
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/post"
@@ -34,7 +35,8 @@ func TestHandleWebSocket(t *testing.T) {
 	jwtService := jwt.New("jwt_secret", 1)
 
 	// Set up server
-	ws := NewWebSocket(mockUserService, mockBoardService, mockPostService, jwtService)
+	redisConfig := config.RedisConfig{Host: "redis-ws", Port: "6379"}
+	ws := NewWebSocket(mockUserService, mockBoardService, mockPostService, jwtService, redisConfig)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", ws.HandleConnection)
 	server := httptest.NewServer(mux)

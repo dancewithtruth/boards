@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/internal/board"
+	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/post"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
@@ -38,10 +39,11 @@ func (ws *WebSocket) HandleConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := Client{
-		boards: make(map[string]Board),
-		conn:   conn,
-		send:   make(chan []byte, 256),
-		ws:     ws,
+		boards:        make(map[string]Board),
+		subscriptions: make(map[string]chan bool),
+		conn:          conn,
+		send:          make(chan []byte, 256),
+		ws:            ws,
 	}
 
 	// Allow collection of memory referenced by the caller by doing all work in
@@ -89,10 +91,8 @@ func handleUserAuthenticate(c *Client, msgReq Request) {
 	c.send <- msgResBytes
 }
 
-// handleBoardConnect will attempt to connect a user to the board by registering the client
-// to a board hub. If a board hub does not exist, it will be created in this handler. A successful
-// board connect event will be broadcasted to all connected clients. The response contains the new
-// user that's been connected as well as existing users.
+// handleBoardConnect will subscribe a client to a board channel and, if successful, will broadcast
+// the connection to all subscribers
 func handleBoardConnect(c *Client, msgReq Request) {
 	// Check if user is authenticated
 	user := c.user
@@ -118,18 +118,23 @@ func handleBoardConnect(c *Client, msgReq Request) {
 				ErrorMessage: ErrMsgBoardNotFound},
 		}
 	} else {
-		// If board does not exist as a hub, create one and run it
-		if _, ok := c.ws.boardHubs[boardID]; !ok {
-			c.ws.boardHubs[boardID] = newHub(boardID, c.ws.destroy)
-			go c.ws.boardHubs[boardID].run()
+		rdb := c.ws.rdb
+
+		go c.subscribe(boardID)
+
+		if err := setUser(rdb, boardID, *user); err != nil {
+			closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		}
-		// Store write permission on the client's boards map
-		boardHub := c.ws.boardHubs[boardID]
-		c.boards[boardID] = Board{
-			canWrite: true,
+
+		mp, err := getUsers(rdb, boardID)
+		if err != nil {
+			closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		}
-		existingUsers := boardHub.listConnectedUsers()
-		boardHub.register <- c
+
+		connectedUsers, err := formatConnectedUsers(mp)
+		if err != nil {
+			closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
+		}
 
 		// Broacast successful message response
 		msgRes = ResponseBoardConnect{
@@ -140,7 +145,7 @@ func handleBoardConnect(c *Client, msgReq Request) {
 			Result: ResultBoardConnect{
 				BoardID:        boardID,
 				NewUser:        *user,
-				ConnectedUsers: existingUsers,
+				ConnectedUsers: connectedUsers,
 			},
 		}
 	}
@@ -148,12 +153,10 @@ func handleBoardConnect(c *Client, msgReq Request) {
 	if err := handleMarshalError(err, "handleBoardConnect", c); err != nil {
 		return
 	}
-	// Only broadcast message if successful, otherwise send only to the client
 	if msgRes.Success {
-		c.ws.boardHubs[params.BoardID].broadcast <- msgResBytes
-	} else {
-		c.send <- msgResBytes
+		c.ws.rdb.Publish(context.Background(), boardID, msgResBytes)
 	}
+	c.send <- msgResBytes
 }
 
 func handlePostCreate(c *Client, msgReq Request) {
@@ -168,17 +171,10 @@ func handlePostCreate(c *Client, msgReq Request) {
 	if err := unmarshalParams(msgReq, &params, c); err != nil {
 		return
 	}
-	// Check if user has write permissions
-	boardID := params.BoardID
-	if !c.boards[boardID].canWrite {
-		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
-		sendErrorMessage(c, msgRes)
-		return
-	}
 	// Prepare create post input
 	createPostInput := post.CreatePostInput{
 		UserID:      user.ID.String(),
-		BoardID:     boardID,
+		BoardID:     params.BoardID,
 		Content:     params.Content,
 		PosX:        params.PosX,
 		PosY:        params.PosY,
@@ -222,7 +218,7 @@ func handlePostCreate(c *Client, msgReq Request) {
 		return
 	}
 	// Broadcast message response
-	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+	c.ws.rdb.Publish(context.Background(), params.BoardID, msgResBytes)
 }
 
 func handlePostFocus(c *Client, msgReq Request) {
@@ -247,11 +243,6 @@ func handlePostFocus(c *Client, msgReq Request) {
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 	}
 	boardID := postGroup.BoardID.String()
-	if !c.boards[boardID].canWrite {
-		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
-		sendErrorMessage(c, msgRes)
-		return
-	}
 	msgRes := ResponsePostFocus{
 		ResponseBase: ResponseBase{
 			Event:   msgReq.Event,
@@ -267,7 +258,7 @@ func handlePostFocus(c *Client, msgReq Request) {
 	if err := handleMarshalError(err, "handlePostFocus", c); err != nil {
 		return
 	}
-	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+	c.ws.rdb.Publish(context.Background(), boardID, msgResBytes)
 }
 
 func handlePostUpdate(c *Client, msgReq Request) {
@@ -290,13 +281,7 @@ func handlePostUpdate(c *Client, msgReq Request) {
 	if err != nil {
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 	}
-	// Check if user has write permissions
 	boardID := postGroup.BoardID.String()
-	if !c.boards[boardID].canWrite {
-		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
-		sendErrorMessage(c, msgRes)
-		return
-	}
 	// Prepare update post input
 	updatePostInput := post.UpdatePostInput{
 		ID:          params.ID,
@@ -333,7 +318,7 @@ func handlePostUpdate(c *Client, msgReq Request) {
 		return
 	}
 	// Broadcast message response
-	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+	c.ws.rdb.Publish(context.Background(), boardID, msgResBytes)
 }
 
 // handlePostDetach detaches a post from its original post group and creates then assigns it to
@@ -362,13 +347,7 @@ func handlePostDetach(c *Client, msgReq Request) {
 		log.Printf("handler: failed to get post group during post detach request: %v", err)
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 	}
-	// Check if user has write permissions
 	boardID := existingPostGroup.BoardID.String()
-	if !c.boards[boardID].canWrite {
-		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
-		sendErrorMessage(c, msgRes)
-		return
-	}
 	// Create new post group
 	createPostGroupInput := post.CreatePostGroupInput{
 		BoardID: boardID,
@@ -414,7 +393,7 @@ func handlePostDetach(c *Client, msgReq Request) {
 		return
 	}
 	// Broadcast message response
-	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+	c.ws.rdb.Publish(context.Background(), boardID, msgResBytes)
 }
 
 func handlePostDelete(c *Client, msgReq Request) {
@@ -439,11 +418,6 @@ func handlePostDelete(c *Client, msgReq Request) {
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 	}
 	boardID := postGroup.BoardID.String()
-	if !c.boards[boardID].canWrite {
-		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
-		sendErrorMessage(c, msgRes)
-		return
-	}
 	if err := c.ws.postService.DeletePost(context.Background(), postID); err != nil {
 		sendErrorMessage(c, buildErrorResponse(msgReq, ErrMsgInternalServer))
 		return
@@ -459,7 +433,7 @@ func handlePostDelete(c *Client, msgReq Request) {
 	if err := handleMarshalError(err, "handlePostDelete", c); err != nil {
 		return
 	}
-	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+	c.ws.rdb.Publish(context.Background(), boardID, msgResBytes)
 }
 
 // handlePostGroupUpdate handles a message request to update a post group.
@@ -474,11 +448,6 @@ func handlePostGroupUpdate(c *Client, msgReq Request) {
 		return
 	}
 	boardID := params.BoardID
-	if !c.boards[boardID].canWrite {
-		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
-		sendErrorMessage(c, msgRes)
-		return
-	}
 	updatePostInput := post.UpdatePostGroupInput{
 		ID:     params.ID,
 		Title:  params.Title,
@@ -508,7 +477,8 @@ func handlePostGroupUpdate(c *Client, msgReq Request) {
 	if err := handleMarshalError(err, "handlePostUpdate", c); err != nil {
 		return
 	}
-	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+	c.ws.rdb.Publish(context.Background(), boardID, msgResBytes)
+
 }
 
 // handlePostGroupDelete handles a message request to delete a post group.
@@ -533,11 +503,6 @@ func handlePostGroupDelete(c *Client, msgReq Request) {
 		return
 	}
 	boardID := postGroup.BoardID.String()
-	if !c.boards[boardID].canWrite {
-		msgRes := buildErrorResponse(msgReq, ErrMsgUnauthorized)
-		sendErrorMessage(c, msgRes)
-		return
-	}
 	// Delete post group
 	err = c.ws.postService.DeletePostGroup(context.Background(), postGroupID)
 	if err != nil {
@@ -560,7 +525,7 @@ func handlePostGroupDelete(c *Client, msgReq Request) {
 		return
 	}
 	// Broadcast response
-	c.ws.boardHubs[boardID].broadcast <- msgResBytes
+	c.ws.rdb.Publish(context.Background(), boardID, msgResBytes)
 }
 
 // unmarshalParams is a helper function that unmarshals a message request's params and sends
@@ -591,4 +556,20 @@ func closeConnection(c *Client, statusCode int, text string) {
 	if err != nil {
 		log.Printf("Failed to write control message: %v", err)
 	}
+}
+
+// formatConnectedUsers formats the map of connected users into an array of users
+func formatConnectedUsers(mp map[string]string) ([]models.User, error) {
+	users := make([]models.User, len(mp))
+	i := 0
+	for _, val := range mp {
+		var user models.User
+		err := json.Unmarshal([]byte(val), &user)
+		if err != nil {
+			return []models.User{}, err
+		}
+		users[i] = user
+		i++
+	}
+	return users, nil
 }

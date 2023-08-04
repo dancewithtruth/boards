@@ -5,7 +5,9 @@
 package ws
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"time"
 
@@ -43,6 +45,9 @@ type Client struct {
 	// A map of board IDs to Board.
 	boards map[string]Board
 
+	// A map of subscriptions that the client has. Each value is a cancel channel to close the subscription.
+	subscriptions map[string]chan bool
+
 	// Websocket dependencies.
 	ws *WebSocket
 
@@ -53,6 +58,29 @@ type Client struct {
 	send chan []byte
 }
 
+// subscribe subscribes a client to a Redis board channel
+func (c *Client) subscribe(boardID string) {
+	rdb := c.ws.rdb
+	pubsub := rdb.Subscribe(context.Background(), boardID)
+	defer pubsub.Close()
+
+	cancel := make(chan bool)
+	c.subscriptions[boardID] = cancel
+
+	ch := pubsub.Channel()
+	fmt.Printf("Channel created for board %v\n", boardID)
+	for {
+		select {
+		case msg := <-ch:
+			// Forward messages received from pubsub channel to client
+			c.send <- []byte(msg.Payload)
+		case <-cancel:
+			fmt.Printf("Cancelling subscription %v\n", boardID)
+			return
+		}
+	}
+}
+
 // readPump pumps messages from the websocket connection to the hub.
 //
 // The application runs readPump in a per-connection goroutine. The application
@@ -60,8 +88,7 @@ type Client struct {
 // reads from this goroutine.
 func (c *Client) readPump() {
 	defer func() {
-		// Unregister client from every hub
-		c.unregisterAll()
+		c.closeSubscriptions()
 		c.conn.Close()
 	}()
 	c.conn.SetReadLimit(maxMessageSize)
@@ -149,6 +176,15 @@ func (c *Client) unregisterAll() {
 		boardHub := c.ws.boardHubs[boardID]
 		boardHub.broadcast <- buildDisconnectMsg(c)
 		boardHub.unregister <- c
+	}
+}
+
+func (c *Client) closeSubscriptions() {
+	for boardID, cancel := range c.subscriptions {
+		cancel <- true
+		rdb := c.ws.rdb
+		delUser(rdb, boardID, c.user.ID.String())
+		rdb.Publish(context.Background(), boardID, buildDisconnectMsg(c))
 	}
 }
 
