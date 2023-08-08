@@ -89,7 +89,7 @@ func setupHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	authAPI := auth.NewAPI(authService, v)
 	boardAPI := board.NewAPI(boardService, v)
 	postAPI := post.NewAPI(postService, boardService, v)
-	websocket := ws.NewWebSocket(userService, boardService, postService, jwtService)
+	websocket := ws.NewWebSocket(userService, boardService, postService, jwtService, cfg.Rdb)
 
 	// Set up auth handler
 	authHandler := middleware.Auth(jwtService)

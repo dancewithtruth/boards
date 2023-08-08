@@ -16,6 +16,9 @@ const (
 	keyDBUser     = "DB_USER"
 	keyDBPassword = "DB_PASSWORD"
 
+	keyRedisHost = "REDIS_HOST"
+	keyRedisPort = "REDIS_PORT"
+
 	keyEnv             = "ENV"
 	keyServerPort      = "SERVER_PORT"
 	keyJWTSecret       = "JWT_SIGNING_KEY"
@@ -31,6 +34,7 @@ type Config struct {
 	JwtSecret     string
 	JwtExpiration int
 	DB            DatabaseConfig
+	Rdb           RedisConfig
 }
 
 // Load looks for config values in environment table and .env files (development), and sets them
@@ -50,6 +54,11 @@ func Load(file string) (*Config, error) {
 		return nil, err
 	}
 
+	rdbConfig, err := getRedisConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	serverPort := os.Getenv(keyServerPort)
 	jwtSecret := os.Getenv(keyJWTSecret)
 	jwtExpirationStr := os.Getenv(keyJWTExpiration)
@@ -60,8 +69,9 @@ func Load(file string) (*Config, error) {
 	}
 
 	return &Config{
-		DB:            databaseConfig,
 		ServerPort:    serverPort,
+		DB:            databaseConfig,
+		Rdb:           rdbConfig,
 		JwtSecret:     jwtSecret,
 		JwtExpiration: jwtExpiration,
 	}, nil
@@ -106,4 +116,33 @@ func getDatabaseConfig() (DatabaseConfig, error) {
 	}
 
 	return databaseConfig, nil
+}
+
+// RedisConfig represents the config for connecting to Redis PubSub
+type RedisConfig struct {
+	Host string `validate:"required"`
+	Port string `validate:"required"`
+}
+
+// Validate checks that all values are properly loaded into the redis config.
+func (rdbConfig *RedisConfig) Validate() error {
+	validate := validator.New()
+	if err := validate.Struct(rdbConfig); err != nil {
+		return fmt.Errorf("missing redis env var: %v", err)
+	}
+	return nil
+}
+
+func getRedisConfig() (RedisConfig, error) {
+	rdbConfig := RedisConfig{
+		Host: os.Getenv(keyRedisHost),
+		Port: os.Getenv(keyRedisPort),
+	}
+
+	// validate all redis params are available
+	if err := rdbConfig.Validate(); err != nil {
+		return RedisConfig{}, err
+	}
+
+	return rdbConfig, nil
 }
