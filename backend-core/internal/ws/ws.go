@@ -18,8 +18,6 @@ type WebSocket struct {
 	postService  post.Service
 	jwtService   jwt.Service
 	rdb          *redis.Client
-	boardHubs    map[string]*Hub
-	destroy      chan string
 }
 
 func NewWebSocket(
@@ -33,19 +31,12 @@ func NewWebSocket(
 		Addr: fmt.Sprintf("%v:%v", rdbConfig.Host, rdbConfig.Port),
 	})
 
-	boardHubs := make(map[string]*Hub)
-	destroy := make(chan string)
-
-	go handleDestroy(destroy, boardHubs)
-
 	return &WebSocket{
 		userService:  userService,
 		boardService: boardService,
 		postService:  postService,
 		jwtService:   jwtService,
 		rdb:          rdb,
-		boardHubs:    boardHubs,
-		destroy:      destroy,
 	}
 }
 

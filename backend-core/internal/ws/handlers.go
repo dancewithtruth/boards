@@ -52,13 +52,6 @@ func (ws *WebSocket) HandleConnection(w http.ResponseWriter, r *http.Request) {
 	go client.readPump()
 }
 
-func handleDestroy(destroy chan string, boardHubs map[string]*Hub) {
-	for {
-		boardID := <-destroy
-		delete(boardHubs, boardID)
-	}
-}
-
 // handleUserAuthenticate will authenticate the user and store a userID in the Client.
 func handleUserAuthenticate(c *Client, msgReq Request) {
 	// Unmarshal params

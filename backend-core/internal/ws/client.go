@@ -171,14 +171,6 @@ func (c *Client) writePump() {
 	}
 }
 
-func (c *Client) unregisterAll() {
-	for boardID := range c.boards {
-		boardHub := c.ws.boardHubs[boardID]
-		boardHub.broadcast <- buildDisconnectMsg(c)
-		boardHub.unregister <- c
-	}
-}
-
 func (c *Client) closeSubscriptions() {
 	for boardID, cancel := range c.subscriptions {
 		cancel <- true
