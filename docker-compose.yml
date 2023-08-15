@@ -28,6 +28,20 @@ services:
       - INTERNAL_NETWORK=true
     depends_on:
       - db-core
+  backend-notification:
+    container_name: backend-notification
+    build:
+      context: ./backend-notification
+    ports:
+      - 2346:2346
+    volumes:
+      - ./backend-notification:/app/src
+    env_file:
+      - backend-notification/.env
+    environment:
+      - INTERNAL_NETWORK=true
+    depends_on:
+      - db-core
   db-core:
     container_name: db-core
     image: postgres
@@ -60,5 +74,14 @@ services:
     image: redis:latest
     ports:
       - 6379:6379
+  rabbitmq:
+    container_name: rabbitmq
+    image: rabbitmq:3-management
+    hostname: rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    env_file:
+      - backend-notification/.env
 volumes:
   db-core-data:

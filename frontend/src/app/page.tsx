@@ -52,12 +52,12 @@ export default function Page() {
             </div>
           </div>
           <div className="pt-10 w-full flex">
-            <div className="w-[50%]">
+            <div className="w-[60%]">
               <div>
                 <h2 className="font-bold text-xl pb-4">Documentation</h2>
-                <p className="max-w-2xl text-gray-700">
-                  Interested in learning how Boards was built? Take a look at the documentation for the REST API or
-                  WebSocket events.
+                <p className="max-w-lg text-gray-700">
+                  Interested in the backend components? Take a look at the documentation for the REST API or WebSocket
+                  events.
                 </p>
                 <div className="flex space-x-6 pt-6">
                   <div className="btn btn-primary">API Docs</div>
@@ -65,20 +65,19 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <div className="w-[50%]">
+            <div className="w-[40%]">
               <div className="flex flex-col justify-between">
-                <h2 className="font-bold text-xl pb-4">Built using the following technologies</h2>
+                <h2 className="font-bold text-xl pb-4">Boards is built with</h2>
                 <div className="flex justify-between">
                   <img src="/golang.png" width={50} />
                   <img src="/nextjs.png" width={50} />
                   <img src="/postgresql.png" width={50} />
                   <img src="/redis.png" width={50} />
-                  <img src="/docker.png" width={50} />
                 </div>
                 <div className="flex justify-between mt-4">
+                  <img src="/docker.png" width={50} />
                   <img src="/kubernetes.png" width={50} />
                   <img src="/aws.png" width={50} />
-                  <img src="/openai.png" width={50} />
                   <img src="/activemq.png" width={150} />
                 </div>
               </div>
