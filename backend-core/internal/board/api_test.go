@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
@@ -17,7 +18,8 @@ func TestAPI(t *testing.T) {
 	boardRepo := NewMockRepository()
 	user := test.NewUser()
 	validator := validator.New()
-	boardService := NewService(boardRepo, validator)
+	amqpMock := amqp.NewMock()
+	boardService := NewService(boardRepo, amqpMock, validator)
 	boardAPI := NewAPI(boardService, validator)
 	r := chi.NewRouter()
 	jwtService := test.NewJWTService()

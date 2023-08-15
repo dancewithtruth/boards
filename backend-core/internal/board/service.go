@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
@@ -43,13 +44,15 @@ type Service interface {
 
 type service struct {
 	repo      Repository
+	amqp      amqp.Amqp
 	validator validator.Validate
 }
 
 // NewService returns a service struct that implements the board service interface.
-func NewService(repo Repository, validator validator.Validate) *service {
+func NewService(repo Repository, amqp amqp.Amqp, validator validator.Validate) *service {
 	return &service{
 		repo:      repo,
+		amqp:      amqp,
 		validator: validator,
 	}
 }
@@ -126,13 +129,13 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 	if err != nil {
 		return nil, errInvalidID
 	}
-	receiverIDsUUID := []uuid.UUID{}
+	receiverUUIDs := []uuid.UUID{}
 	for _, invite := range invites {
 		receiverUUID, err := uuid.Parse(invite.ReceiverID)
 		if err != nil {
 			return nil, errInvalidID
 		}
-		receiverIDsUUID = append(receiverIDsUUID, receiverUUID)
+		receiverUUIDs = append(receiverUUIDs, receiverUUID)
 	}
 
 	// Check if user is authorized
@@ -154,7 +157,7 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 	invitesToInsert := []models.Invite{}
 	now := time.Now()
 	// Prepare invites to insert
-	for _, receiverUUID := range receiverIDsUUID {
+	for _, receiverUUID := range receiverUUIDs {
 		// If invite already exists, update the updated_at timestamp
 		if existingInvite, ok := hasPendingInvite(receiverUUID, pendingInvites); ok {
 			existingInvite.UpdatedAt = now
@@ -178,6 +181,7 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to create board invites: %w", err)
 	}
+	s.amqp.Publish(amqp.TaskEmailInvites, invitesToInsert)
 	return invitesToInsert, nil
 }
 

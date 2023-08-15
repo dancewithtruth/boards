@@ -1,10 +1,7 @@
 package ws
 
 import (
-	"fmt"
-
 	"github.com/Wave-95/boards/backend-core/internal/board"
-	"github.com/Wave-95/boards/backend-core/internal/config"
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/post"
 	"github.com/Wave-95/boards/backend-core/internal/user"
@@ -25,11 +22,8 @@ func NewWebSocket(
 	boardService board.Service,
 	postService post.Service,
 	jwtService jwt.Service,
-	rdbConfig config.RedisConfig,
+	rdb *redis.Client,
 ) *WebSocket {
-	rdb := redis.NewClient(&redis.Options{
-		Addr: fmt.Sprintf("%v:%v", rdbConfig.Host, rdbConfig.Port),
-	})
 
 	return &WebSocket{
 		userService:  userService,

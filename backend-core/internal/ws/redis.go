@@ -5,9 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/Wave-95/boards/backend-core/internal/config"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/redis/go-redis/v9"
 )
+
+func NewRedis(cfg config.RedisConfig) *redis.Client {
+	rdb := redis.NewClient(&redis.Options{
+		Addr: fmt.Sprintf("%v:%v", cfg.Host, cfg.Port),
+	})
+	return rdb
+}
 
 // setUser sets a user into the redis hash store organized by board ID. This hash store is used to
 // manage the list of connected users.

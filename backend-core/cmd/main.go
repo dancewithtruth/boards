@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/db"
+	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/auth"
 	"github.com/Wave-95/boards/backend-core/internal/board"
 	"github.com/Wave-95/boards/backend-core/internal/config"
@@ -41,11 +42,17 @@ func main() {
 	}
 	defer conn.Close()
 
+	// Connect to amqp
+	amqp, err := amqp.New(cfg.Amqp)
+	if err != nil {
+		logger.Fatalf("Error setting up amqp: %v", err)
+	}
+
 	// Setup server
 	r := chi.NewRouter()
 	server := http.Server{
 		Addr:    cfg.ServerPort,
-		Handler: setupHandler(r, conn, logger, validator, cfg),
+		Handler: setupHandler(r, conn, amqp, logger, validator, cfg),
 	}
 
 	// Graceful shutdown
@@ -67,7 +74,14 @@ func main() {
 }
 
 // setupHandler sets up all the middleware and API routes for the server.
-func setupHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Validate, cfg *config.Config) chi.Router {
+func setupHandler(
+	r chi.Router,
+	db *db.DB,
+	amqp amqp.Amqp,
+	logger logger.Logger,
+	v validator.Validate,
+	cfg *config.Config,
+) chi.Router {
 	// Set up middleware
 	r.Use(middleware.RequestLogger(logger))
 	r.Use(middleware.Cors())
@@ -81,15 +95,16 @@ func setupHandler(r chi.Router, db *db.DB, logger logger.Logger, v validator.Val
 	jwtService := jwt.New(cfg.JwtSecret, cfg.JwtExpiration)
 	authService := auth.NewService(userRepo, jwtService, v)
 	userService := user.NewService(userRepo, v)
-	boardService := board.NewService(boardRepo, v)
+	boardService := board.NewService(boardRepo, amqp, v)
 	postService := post.NewService(postRepo)
+	rdb := ws.NewRedis(cfg.Rdb)
 
 	// Set up APIs
 	userAPI := user.NewAPI(userService, jwtService, v)
 	authAPI := auth.NewAPI(authService, v)
 	boardAPI := board.NewAPI(boardService, v)
 	postAPI := post.NewAPI(postService, boardService, v)
-	websocket := ws.NewWebSocket(userService, boardService, postService, jwtService, cfg.Rdb)
+	websocket := ws.NewWebSocket(userService, boardService, postService, jwtService, rdb)
 
 	// Set up auth handler
 	authHandler := middleware.Auth(jwtService)

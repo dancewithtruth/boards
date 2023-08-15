@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/board"
 	"github.com/Wave-95/boards/backend-core/internal/config"
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
@@ -26,17 +27,19 @@ func TestHandleWebSocket(t *testing.T) {
 	mockUserRepo := user.NewMockRepository()
 	mockBoardRepo := board.NewMockRepository()
 	mockPostRepo := post.NewMockRepository()
+	mockAmqp := amqp.NewMock()
 
 	// Set up mock services
 	validator := validator.New()
 	mockUserService := user.NewService(mockUserRepo, validator)
-	mockBoardService := board.NewService(mockBoardRepo, validator)
+	mockBoardService := board.NewService(mockBoardRepo, mockAmqp, validator)
 	mockPostService := post.NewService(mockPostRepo)
 	jwtService := jwt.New("jwt_secret", 1)
 
 	// Set up server
 	redisConfig := config.RedisConfig{Host: "redis-ws", Port: "6379"}
-	ws := NewWebSocket(mockUserService, mockBoardService, mockPostService, jwtService, redisConfig)
+	rdb := NewRedis(redisConfig)
+	ws := NewWebSocket(mockUserService, mockBoardService, mockPostService, jwtService, rdb)
 	mux := http.NewServeMux()
 	mux.HandleFunc("/ws", ws.HandleConnection)
 	server := httptest.NewServer(mux)

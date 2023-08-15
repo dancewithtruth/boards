@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
@@ -16,7 +17,8 @@ func TestService(t *testing.T) {
 	testUser := test.NewUser()
 	mockBoardRepo := NewMockRepository()
 	mockBoardRepo.AddUser(testUser)
-	boardService := NewService(mockBoardRepo, validator)
+	mockAmqp := amqp.NewMock()
+	boardService := NewService(mockBoardRepo, mockAmqp, validator)
 	assert.NotNil(t, boardService)
 	t.Run("Create board", func(t *testing.T) {
 		t.Run("without name or description", func(t *testing.T) {

@@ -19,6 +19,11 @@ const (
 	keyRedisHost = "REDIS_HOST"
 	keyRedisPort = "REDIS_PORT"
 
+	keyAmqpHost     = "AMQP_HOST"
+	keyAmqpPort     = "AMQP_PORT"
+	keyAmqpUser     = "AMQP_USER"
+	keyAmqpPassword = "AMQP_PASSWORD"
+
 	keyEnv             = "ENV"
 	keyServerPort      = "SERVER_PORT"
 	keyJWTSecret       = "JWT_SIGNING_KEY"
@@ -35,6 +40,7 @@ type Config struct {
 	JwtExpiration int
 	DB            DatabaseConfig
 	Rdb           RedisConfig
+	Amqp          AmqpConfig
 }
 
 // Load looks for config values in environment table and .env files (development), and sets them
@@ -59,6 +65,11 @@ func Load(file string) (*Config, error) {
 		return nil, err
 	}
 
+	amqpConfig, err := getAmqpConfig()
+	if err != nil {
+		return nil, err
+	}
+
 	serverPort := os.Getenv(keyServerPort)
 	jwtSecret := os.Getenv(keyJWTSecret)
 	jwtExpirationStr := os.Getenv(keyJWTExpiration)
@@ -72,6 +83,7 @@ func Load(file string) (*Config, error) {
 		ServerPort:    serverPort,
 		DB:            databaseConfig,
 		Rdb:           rdbConfig,
+		Amqp:          amqpConfig,
 		JwtSecret:     jwtSecret,
 		JwtExpiration: jwtExpiration,
 	}, nil
@@ -145,4 +157,38 @@ func getRedisConfig() (RedisConfig, error) {
 	}
 
 	return rdbConfig, nil
+}
+
+// AmqpConfig represents the config for connecting to a message broker
+type AmqpConfig struct {
+	Host     string `validate:"required"`
+	Port     string `validate:"required"`
+	User     string `validate:"required"`
+	Password string `validate:"required"`
+}
+
+// Validate checks that all values are properly loaded into the redis config.
+func (config *AmqpConfig) Validate() error {
+	validate := validator.New()
+	if err := validate.Struct(config); err != nil {
+		return fmt.Errorf("missing amqp env var: %v", err)
+	}
+	return nil
+}
+
+// getAmqpConfig looks for amqp env vars and creates a config.
+func getAmqpConfig() (AmqpConfig, error) {
+	cfg := AmqpConfig{
+		Host:     os.Getenv(keyAmqpHost),
+		Port:     os.Getenv(keyAmqpPort),
+		User:     os.Getenv(keyAmqpUser),
+		Password: os.Getenv(keyAmqpPassword),
+	}
+
+	// validate all redis params are available
+	if err := cfg.Validate(); err != nil {
+		return AmqpConfig{}, err
+	}
+
+	return cfg, nil
 }
