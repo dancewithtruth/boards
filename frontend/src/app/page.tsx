@@ -23,32 +23,27 @@ export default function Page() {
               </Link>
             </div>
           </div>
-          <img
-            src="/Hero.png"
-            style={{ width: '700px' }}
-            className="rounded-lg shadow-2xl"
-            alt="Picture of the author"
-          />
+          <img src="/Hero.png" style={{ width: '700px' }} className="rounded-lg shadow-2xl" alt="Boards app" />
         </div>
       </div>
-      <div className="bg-white h-[50vh]">
-        <WidthContainer className="h-full">
-          <div className="flex items-center justify-between h-full">
-            <div className="card w-96 border !rounded-none">
+      <div className="bg-white h-[70vh]">
+        <WidthContainer className="h-full flex flex-col justify-evenly items-center">
+          <div className="flex items-center justify-between w-full">
+            <div className="card w-80 border !rounded-none">
               <div className="card-body">
                 <FaPaperPlane size={30} />
                 <h2 className="card-title">Invite</h2>
                 <p className="text-gray-700">Invite other collaborators and work together in real-time</p>
               </div>
             </div>
-            <div className="card w-96 border !rounded-none">
+            <div className="card w-80 border !rounded-none">
               <div className="card-body">
                 <FaStickyNote size={30} />
                 <h2 className="card-title">Organize</h2>
                 <p className="text-gray-700">Capture ideas, tasks, and goals on digital sticky notes</p>
               </div>
             </div>
-            <div className="card w-96 border !rounded-none">
+            <div className="card w-80 border !rounded-none">
               <div className="card-body">
                 <FaRegFileCode size={30} />
                 <h2 className="card-title">Automate</h2>
@@ -56,11 +51,39 @@ export default function Page() {
               </div>
             </div>
           </div>
-        </WidthContainer>
-      </div>
-      <div className="bg-base-200 h-[50vh]">
-        <WidthContainer className="h-full ">
-          <h2 className="text-2xl">Boards is built with</h2>
+          <div className="pt-10 w-full flex">
+            <div className="w-[50%]">
+              <div>
+                <h2 className="font-bold text-xl pb-4">Documentation</h2>
+                <p className="max-w-2xl text-gray-700">
+                  Interested in learning how Boards was built? Take a look at the documentation for the REST API or
+                  WebSocket events.
+                </p>
+                <div className="flex space-x-6 pt-6">
+                  <div className="btn btn-primary">API Docs</div>
+                  <div className="btn btn-outline">WebSocket Docs</div>
+                </div>
+              </div>
+            </div>
+            <div className="w-[50%]">
+              <div className="flex flex-col justify-between">
+                <h2 className="font-bold text-xl pb-4">Built using the following technologies</h2>
+                <div className="flex justify-between">
+                  <img src="/golang.png" width={50} />
+                  <img src="/nextjs.png" width={50} />
+                  <img src="/postgresql.png" width={50} />
+                  <img src="/redis.png" width={50} />
+                  <img src="/docker.png" width={50} />
+                </div>
+                <div className="flex justify-between mt-4">
+                  <img src="/kubernetes.png" width={50} />
+                  <img src="/aws.png" width={50} />
+                  <img src="/openai.png" width={50} />
+                  <img src="/activemq.png" width={150} />
+                </div>
+              </div>
+            </div>
+          </div>
         </WidthContainer>
       </div>
       <Footer />
