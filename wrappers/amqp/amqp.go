@@ -12,18 +12,18 @@ import (
 type Amqp interface {
 	Publish(queue string, task string, v any) error
 	Consume(queue string) error
-	AddHandler(task string, handler func(payload interface{}) error)
+	AddHandler(task string, handler func(payload []byte) error)
 }
 
 type amqpClient struct {
 	conn     *rabbitmq.Connection
 	ch       *rabbitmq.Channel
-	handlers map[string]func(payload interface{}) error
+	handlers map[string]func(payload []byte) error
 }
 
 // New creates an Amqp implemented with RabbitMQ. It connects to a broker and opens a channel
 func New(user, password, host, port string) (*amqpClient, error) {
-	handlers := make(map[string]func(payload interface{}) error)
+	handlers := make(map[string]func(payload []byte) error)
 	connString := fmt.Sprintf("amqp://%v:%v@%v:%v/", user, password, host, port)
 	conn, err := rabbitmq.Dial(connString)
 	if err != nil {
@@ -53,7 +53,7 @@ func (a *amqpClient) Publish(queue string, task string, v any) error {
 		return fmt.Errorf("failed to declare a queue: %w", err)
 	}
 
-	msg := tasks.Message{Task: task, Payload: v}
+	msg := tasks.PublishMessage{Task: task, Payload: v}
 	bytes, err := json.Marshal(msg)
 	if err != nil {
 		return fmt.Errorf("failed to marshal the message: %w", err)
@@ -113,7 +113,7 @@ func (a *amqpClient) Consume(queue string) error {
 
 	go func() {
 		for d := range msgs {
-			var msg tasks.Message
+			var msg tasks.ConsumeMessage
 			err := json.Unmarshal(d.Body, &msg)
 			if err != nil {
 				fmt.Printf("failed to unmarshal message: %v", err)
@@ -137,6 +137,6 @@ func (a *amqpClient) Consume(queue string) error {
 	return nil
 }
 
-func (a *amqpClient) AddHandler(task string, handler func(interface{}) error) {
+func (a *amqpClient) AddHandler(task string, handler func([]byte) error) {
 	a.handlers[task] = handler
 }

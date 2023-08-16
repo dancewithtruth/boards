@@ -14,5 +14,5 @@ func (a *amqpMock) Consume(queue string) error {
 	return nil
 }
 
-func (a *amqpMock) AddHandler(task string, handler func(payload interface{}) error) {
+func (a *amqpMock) AddHandler(task string, handler func(payload []byte) error) {
 }
