@@ -72,6 +72,7 @@ func (a *amqpClient) Publish(queue string, task string, v any) error {
 // Consume is a blocking operation that consumes each new message published to
 // a queue.
 func (a *amqpClient) Consume(queue string) error {
+	fmt.Println("Consuming")
 	_, err := a.ch.QueueDeclare(
 		queue, // name
 		true,  // durable
