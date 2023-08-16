@@ -56,6 +56,9 @@ func (a *amqpClient) Publish(queue string, task string, v any) error {
 
 	msg := tasks.Message{Task: task, Payload: v}
 	bytes, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal the message: %w", err)
+	}
 	err = a.ch.PublishWithContext(context.Background(),
 		"",     // exchange
 		q.Name, // routing key
@@ -73,7 +76,6 @@ func (a *amqpClient) Publish(queue string, task string, v any) error {
 // Consume is a blocking operation that consumes each new message published to
 // a queue.
 func (a *amqpClient) Consume(queue string) error {
-	fmt.Println("Consuming")
 	_, err := a.ch.QueueDeclare(
 		queue, // name
 		true,  // durable
@@ -108,7 +110,7 @@ func (a *amqpClient) Consume(queue string) error {
 		return fmt.Errorf("failed to register as consumer: %w", err)
 	}
 
-	var forever chan struct{}
+	forever := make(chan struct{})
 
 	go func() {
 		for d := range msgs {
@@ -137,6 +139,5 @@ func (a *amqpClient) Consume(queue string) error {
 }
 
 func (a *amqpClient) AddHandler(task string, handler func(interface{}) error) {
-	fmt.Println("inside add handler")
 	a.handlers[task] = handler
 }
