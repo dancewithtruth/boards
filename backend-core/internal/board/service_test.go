@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 )

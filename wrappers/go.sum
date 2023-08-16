@@ -1,5 +1,5 @@
-github.com/Wave-95/boards/shared v0.0.0-20230816155627-5a05376f44ab h1:RJ7EiZY5oooVwlAAUQY2clm0TiR6Szb/lDf8f5tPMuY=
-github.com/Wave-95/boards/shared v0.0.0-20230816155627-5a05376f44ab/go.mod h1:zM+Spm9pN3KG0bp88fvxk/25rsNV88luGygz2If++yQ=
+github.com/Wave-95/boards/backend-notification v0.1.0 h1:zCzO0UaFwZeUpzzSvI6VcFQykrl+lW62qv1rM0P6g2I=
+github.com/Wave-95/boards/backend-notification v0.1.0/go.mod h1:KXNbH8va4BDXzB5co2ipoiCBZ7UADsDbXpWMLJ5BJbI=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/kr/pretty v0.1.0/go.mod h1:dAy3ld7l9f0ibDNOQOHHMYYIIbhfbHSm3C4ZsoJORNo=

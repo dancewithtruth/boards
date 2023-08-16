@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/Wave-95/boards/backend-core/db"
-	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/auth"
 	"github.com/Wave-95/boards/backend-core/internal/board"
 	"github.com/Wave-95/boards/backend-core/internal/config"
@@ -22,6 +21,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/ws"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -43,7 +43,7 @@ func main() {
 	defer conn.Close()
 
 	// Connect to amqp
-	amqp, err := amqp.New(cfg.Amqp)
+	amqp, err := amqp.New(cfg.Amqp.User, cfg.Amqp.Password, cfg.Amqp.Host, cfg.Amqp.Port)
 	if err != nil {
 		logger.Fatalf("Error setting up amqp: %v", err)
 	}

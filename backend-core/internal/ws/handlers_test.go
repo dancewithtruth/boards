@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/board"
 	"github.com/Wave-95/boards/backend-core/internal/config"
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
@@ -17,6 +16,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/internal/user"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/stretchr/testify/assert"

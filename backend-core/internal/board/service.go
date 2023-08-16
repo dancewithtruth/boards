@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/Wave-95/boards/backend-core/internal/amqp"
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
-	"github.com/Wave-95/boards/shared/queues"
-	"github.com/Wave-95/boards/shared/tasks"
+	"github.com/Wave-95/boards/backend-notification/constants/queues"
+	"github.com/Wave-95/boards/backend-notification/constants/tasks"
+	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )

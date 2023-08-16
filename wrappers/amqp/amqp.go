@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/Wave-95/boards/shared/tasks"
+	"github.com/Wave-95/boards/backend-notification/constants/tasks"
 	rabbitmq "github.com/rabbitmq/amqp091-go"
 )
 
