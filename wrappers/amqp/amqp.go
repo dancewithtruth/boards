@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/Wave-95/boards/shared/tasks"
 	rabbitmq "github.com/rabbitmq/amqp091-go"
@@ -12,11 +13,13 @@ import (
 type Amqp interface {
 	Publish(queue string, task string, v any) error
 	Consume(queue string) error
+	AddHandler(task string, handler func(payload interface{}) error)
 }
 
 type amqpClient struct {
-	conn *rabbitmq.Connection
-	ch   *rabbitmq.Channel
+	conn     *rabbitmq.Connection
+	ch       *rabbitmq.Channel
+	handlers map[string]func(payload interface{}) error
 }
 
 // New creates an Amqp implemented with RabbitMQ. It connects to a broker and opens a channel
@@ -107,13 +110,30 @@ func (a *amqpClient) Consume(queue string) error {
 
 	go func() {
 		for d := range msgs {
-			// Process each msg
-			fmt.Println(d.Body)
-			d.Ack(false)
+			var msg tasks.Message
+			err := json.Unmarshal(d.Body, &msg)
+			if err != nil {
+				log.Printf("failed to unmarshal message: %v", err)
+				continue
+			}
+			if handler, ok := a.handlers[msg.Task]; ok {
+				err = handler(msg.Payload)
+				if err != nil {
+					log.Printf("failed to handle message: %v", err)
+					continue
+				}
+				d.Ack(false)
+			} else {
+				log.Printf("task does not exist: %v", msg.Task)
+			}
 		}
 	}()
 
 	<-forever
 
 	return nil
+}
+
+func (a *amqpClient) AddHandler(task string, handler func(interface{}) error) {
+	a.handlers[task] = handler
 }
