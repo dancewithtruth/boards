@@ -3,8 +3,10 @@ package main
 import (
 	"log"
 
-	"github.com/Wave-95/boards/backend-notification/internal/amqp"
+	"github.com/Wave-95/boards/backend-notification/constants/queues"
 	"github.com/Wave-95/boards/backend-notification/internal/config"
+	"github.com/Wave-95/boards/backend-notification/internal/handlers"
+	"github.com/Wave-95/boards/wrappers/amqp"
 )
 
 func main() {
@@ -13,10 +15,15 @@ func main() {
 		log.Fatalf("Error loading config: %v", err)
 	}
 
-	amqp, err := amqp.New(cfg.Amqp)
+	amqp, err := amqp.New(cfg.Amqp.User, cfg.Amqp.Password, cfg.Amqp.Host, cfg.Amqp.Port)
 	if err != nil {
 		log.Fatalf("Error setting up amqp: %v", err)
 	}
 
-	amqp.Consume()
+	handlers.Register(amqp)
+
+	err = amqp.Consume(queues.Notification)
+	if err != nil {
+		log.Fatalf("Error consuming messages from amqp: %v", err)
+	}
 }
