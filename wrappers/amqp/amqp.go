@@ -113,8 +113,6 @@ func (a *amqpClient) Consume(queue string) error {
 
 	go func() {
 		for d := range msgs {
-			fmt.Println("message:", string(d.Body))
-			fmt.Println("handlers:", a.handlers)
 			var msg tasks.Message
 			err := json.Unmarshal(d.Body, &msg)
 			if err != nil {
