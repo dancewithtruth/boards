@@ -24,6 +24,7 @@ type amqpClient struct {
 
 // New creates an Amqp implemented with RabbitMQ. It connects to a broker and opens a channel
 func New(user, password, host, port string) (*amqpClient, error) {
+	handlers := make(map[string]func(payload interface{}) error)
 	connString := fmt.Sprintf("amqp://%v:%v@%v:%v/", user, password, host, port)
 	conn, err := rabbitmq.Dial(connString)
 	if err != nil {
@@ -35,7 +36,7 @@ func New(user, password, host, port string) (*amqpClient, error) {
 		return nil, fmt.Errorf("failed to open a channel: %w", err)
 	}
 
-	return &amqpClient{conn: conn, ch: ch}, nil
+	return &amqpClient{conn: conn, ch: ch, handlers: handlers}, nil
 }
 
 // Publish publishes a new durable message to the work queue to be processed
@@ -136,5 +137,6 @@ func (a *amqpClient) Consume(queue string) error {
 }
 
 func (a *amqpClient) AddHandler(task string, handler func(interface{}) error) {
+	fmt.Println("inside add handler")
 	a.handlers[task] = handler
 }
