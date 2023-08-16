@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 
 	"github.com/Wave-95/boards/shared/tasks"
 	rabbitmq "github.com/rabbitmq/amqp091-go"
@@ -114,22 +113,23 @@ func (a *amqpClient) Consume(queue string) error {
 
 	go func() {
 		for d := range msgs {
-			fmt.Println(string(d.Body))
+			fmt.Println("message:", string(d.Body))
+			fmt.Println("handlers:", a.handlers)
 			var msg tasks.Message
 			err := json.Unmarshal(d.Body, &msg)
 			if err != nil {
-				log.Printf("failed to unmarshal message: %v", err)
+				fmt.Printf("failed to unmarshal message: %v", err)
 				continue
 			}
 			if handler, ok := a.handlers[msg.Task]; ok {
 				err = handler(msg.Payload)
 				if err != nil {
-					log.Printf("failed to handle message: %v", err)
+					fmt.Printf("failed to handle message: %v", err)
 					continue
 				}
 				d.Ack(false)
 			} else {
-				log.Printf("task does not exist: %v", msg.Task)
+				fmt.Printf("task does not exist: %v", msg.Task)
 			}
 		}
 	}()
