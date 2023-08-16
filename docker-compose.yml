@@ -28,6 +28,7 @@ services:
       - INTERNAL_NETWORK=true
     depends_on:
       - db-core
+      - rabbitmq
   backend-notification:
     container_name: backend-notification
     build:
@@ -42,6 +43,7 @@ services:
       - INTERNAL_NETWORK=true
     depends_on:
       - db-core
+      - rabbitmq
   db-core:
     container_name: db-core
     image: postgres

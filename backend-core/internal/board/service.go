@@ -10,6 +10,8 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/shared/queues"
+	"github.com/Wave-95/boards/shared/tasks"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 )
@@ -181,7 +183,11 @@ func (s *service) CreateInvites(ctx context.Context, input CreateInvitesInput) (
 	if err != nil {
 		return nil, fmt.Errorf("service: failed to create board invites: %w", err)
 	}
-	s.amqp.Publish(amqp.TaskEmailInvites, invitesToInsert)
+
+	for _, invite := range invitesToInsert {
+		s.amqp.Publish(queues.Notification, tasks.EmailInvite, invite)
+	}
+
 	return invitesToInsert, nil
 }
 

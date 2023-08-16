@@ -6,6 +6,6 @@ func NewMock() Amqp {
 	return &amqpMock{}
 }
 
-func (a *amqpMock) Publish(task string, v any) error {
+func (a *amqpMock) Publish(queue string, task string, v any) error {
 	return nil
 }
