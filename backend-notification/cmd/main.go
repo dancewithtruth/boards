@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/Wave-95/boards/backend-notification/constants/queues"
 	"github.com/Wave-95/boards/backend-notification/internal/config"
+	"github.com/Wave-95/boards/backend-notification/internal/email"
 	"github.com/Wave-95/boards/backend-notification/internal/handlers"
 	"github.com/Wave-95/boards/wrappers/amqp"
 )
@@ -20,10 +20,12 @@ func main() {
 		log.Fatalf("Error setting up amqp: %v", err)
 	}
 
-	handlers.Register(amqp)
+	emailClient := email.NewClient("useboards@gmail.com", "wdlrmviaiwalxkkq", "smtp.gmail.com", "587")
 
-	err = amqp.Consume(queues.Notification)
+	taskHandler := handlers.New(emailClient, amqp)
+	err = taskHandler.Run()
+
 	if err != nil {
-		log.Fatalf("Error consuming messages from amqp: %v", err)
+		log.Fatalf("Error running task handler: %v", err)
 	}
 }
