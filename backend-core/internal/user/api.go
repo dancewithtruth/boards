@@ -73,6 +73,67 @@ func (api *API) HandleCreateUser(w http.ResponseWriter, r *http.Request) {
 	endpoint.WriteWithStatus(w, http.StatusCreated, CreateUserDTO{User: user, JwtToken: jwtToken})
 }
 
+// HandleCreateEmailVerification creates an email verification record.
+func (api *API) HandleCreateEmailVerification(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	// Decode request
+	var input CreateEmailVerificationInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		logger.Errorf("handler: failed to decode request: %v", err)
+		endpoint.HandleDecodeErr(w, err)
+		return
+	}
+	defer r.Body.Close()
+
+	// Create user and handle errors
+	verification, err := api.userService.CreateEmailVerification(ctx, input)
+	if err != nil {
+		switch {
+		case validator.IsValidationError(err):
+			endpoint.WriteValidationErr(w, input, err)
+		default:
+			logger.Errorf("handler: failed to create user: %v", err)
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+
+	endpoint.WriteWithStatus(w, http.StatusCreated, verification)
+}
+
+// HandleVerifyEmail takes in a user ID and code query parameter to verify a user's email
+func (api *API) HandleVerifyEmail(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+	queryParams := r.URL.Query()
+	userID := queryParams.Get("userID")
+	code := queryParams.Get("code")
+
+	if userID == "" || code == "" {
+		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidSearchParam)
+		return
+	}
+
+	err := api.userService.VerifyEmail(ctx, VerifyEmailInput{Code: code, UserID: userID})
+	if err != nil {
+		logger.Errorf("handler: failed to verify user: %w", err)
+		switch {
+		case errors.Is(err, ErrInvalidVerificationCode):
+			endpoint.WriteWithError(w, http.StatusUnauthorized, ErrInvalidVerificationCode.Error())
+		case errors.Is(err, ErrVerificationNotFound):
+			endpoint.WriteWithError(w, http.StatusNotFound, "Please resend a new verification email.")
+		default:
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusOK, struct {
+		Message string `json:"message"`
+	}{Message: "Email verified."})
+}
+
 // HandleGetMe is protected with an authHandler and expects the user ID to be present
 // on the request context. It uses the user ID to get the user details.
 func (api *API) HandleGetMe(w http.ResponseWriter, r *http.Request) {
@@ -119,6 +180,8 @@ func (api *API) HandleListUsersBySearch(w http.ResponseWriter, r *http.Request) 
 func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) http.Handler) {
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", api.HandleCreateUser)
+		r.Post("/email-verifications", api.HandleCreateEmailVerification)
+		r.Post("/verify-email", api.HandleVerifyEmail)
 		r.Get("/search", api.HandleListUsersBySearch)
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)

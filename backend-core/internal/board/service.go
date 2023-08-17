@@ -234,7 +234,7 @@ func (s *service) GetInvite(ctx context.Context, inviteID string) (models.Invite
 	}
 	invite, err := s.repo.GetInvite(ctx, inviteUUID)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
+		if errors.Is(err, errInviteDoesNotExist) {
 			return models.Invite{}, errInviteNotFound
 		}
 		return models.Invite{}, fmt.Errorf("service: failed to get invite: %w", err)

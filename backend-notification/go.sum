@@ -1,7 +1,5 @@
-github.com/Wave-95/boards/shared v0.0.0-20230816163436-1f4095b4a55b h1:cTwd1XZB4UHI7hnEbs10XAIiuSZtw30ax3wPGSrzB+A=
-github.com/Wave-95/boards/shared v0.0.0-20230816163436-1f4095b4a55b/go.mod h1:zM+Spm9pN3KG0bp88fvxk/25rsNV88luGygz2If++yQ=
-github.com/Wave-95/boards/wrappers v0.2.3 h1:8+tNv/NYEXZWYo+/zc8oJeuhQGWb3QQhqOgnOwNxFz0=
-github.com/Wave-95/boards/wrappers v0.2.3/go.mod h1:eozSwva6SNzYv4jsBdJGmdqyiwh+nJD6UQUadrjXQxk=
+github.com/Wave-95/boards/wrappers v0.2.4 h1:JzX46MmowqUhKWL6lTcHi2m7FtRaj+F+pR/wMqTgOUk=
+github.com/Wave-95/boards/wrappers v0.2.4/go.mod h1:Jl8HKCvpmnp1M5N0T9GPcmvdVc1y7j7xfHI1lmwBNhs=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

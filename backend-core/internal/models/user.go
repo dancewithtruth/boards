@@ -16,3 +16,12 @@ type User struct {
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 }
+
+type Verification struct {
+	ID         uuid.UUID `json:"id"`
+	Code       string    `json:"code,omitempty"`
+	UserID     uuid.UUID `json:"user_id"`
+	IsVerified *bool     `json:"is_verified"`
+	CreatedAt  time.Time `json:"created_at,omitempty"`
+	UpdatedAt  time.Time `json:"updated_at,omitempty"`
+}

@@ -5,7 +5,8 @@ CREATE TABLE IF NOT EXISTS users(
     password VARCHAR(255),
     is_guest BOOLEAN DEFAULT false,
     created_at TIMESTAMP NOT NULL,
-    updated_at TIMESTAMP NOT NULL
+    updated_at TIMESTAMP NOT NULL,
+    is_verified BOOLEAN DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS boards(
@@ -58,4 +59,13 @@ CREATE TABLE IF NOT EXISTS post_groups (
   z_index INTEGER,
   created_at TIMESTAMP NOT NULL,
   updated_at TIMESTAMP NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_verifications(
+    id UUID PRIMARY KEY,
+    code VARCHAR(255) NOT NULL,
+    user_id UUID REFERENCES users(id),
+    is_verified BOOLEAN,
+    created_at TIMESTAMP NOT NULL,
+    updated_at TIMESTAMP NOT NULL
 );

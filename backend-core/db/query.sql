@@ -11,6 +11,11 @@ WHERE users.id = $1;
 SELECT * FROM users
 WHERE users.email = $1;
 
+-- name: UpdateUserVerification :exec
+UPDATE users SET
+(id, is_verified) =
+($1, $2) WHERE id = $1;
+
 -- name: DeleteUser :exec
 DELETE FROM users
 WHERE users.id = $1;
@@ -131,3 +136,17 @@ INNER JOIN users on users.id = board_invites.sender_id
 WHERE board_invites.receiver_id = sqlc.arg('receiver_id') AND
 (status = sqlc.narg('status') OR sqlc.narg('status') IS NULL)
 ORDER BY board_invites.updated_at DESC;
+
+-- name: CreateEmailVerification :exec
+INSERT INTO email_verifications
+(id, code, user_id, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5);
+
+-- name: UpdateEmailVerification :exec
+UPDATE email_verifications SET
+(user_id, is_verified) =
+($1, $2) WHERE user_id = $1 AND is_verified IS NULL;
+
+-- name: GetEmailVerification :one
+SELECT * FROM email_verifications WHERE user_id = $1 AND is_verified IS NULL
+ORDER BY created_at DESC LIMIT 1;

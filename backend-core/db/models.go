@@ -36,6 +36,15 @@ type BoardMembership struct {
 	UpdatedAt pgtype.Timestamp
 }
 
+type EmailVerification struct {
+	ID         pgtype.UUID
+	Code       string
+	UserID     pgtype.UUID
+	IsVerified pgtype.Bool
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
+}
+
 type Post struct {
 	ID          pgtype.UUID
 	UserID      pgtype.UUID
@@ -60,11 +69,12 @@ type PostGroup struct {
 }
 
 type User struct {
-	ID        pgtype.UUID
-	Name      pgtype.Text
-	Email     pgtype.Text
-	Password  pgtype.Text
-	IsGuest   pgtype.Bool
-	CreatedAt pgtype.Timestamp
-	UpdatedAt pgtype.Timestamp
+	ID         pgtype.UUID
+	Name       pgtype.Text
+	Email      pgtype.Text
+	Password   pgtype.Text
+	IsGuest    pgtype.Bool
+	CreatedAt  pgtype.Timestamp
+	UpdatedAt  pgtype.Timestamp
+	IsVerified pgtype.Bool
 }

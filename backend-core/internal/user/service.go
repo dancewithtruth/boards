@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -13,11 +14,19 @@ import (
 	"github.com/google/uuid"
 )
 
+var (
+	ErrInvalidVerificationCode = errors.New("Invalid email verification code.")
+)
+
 // Service is an interface that describes all the methods pertaining to the user service.
 type Service interface {
 	CreateUser(ctx context.Context, input CreateUserInput) (models.User, error)
+	CreateEmailVerification(ctx context.Context, input CreateEmailVerificationInput) (models.Verification, error)
+
 	GetUser(ctx context.Context, userID string) (models.User, error)
 	ListUsersByEmail(ctx context.Context, email string) ([]models.User, error)
+
+	VerifyEmail(ctx context.Context, input VerifyEmailInput) error
 }
 
 type service struct {
@@ -70,6 +79,37 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 	return user, nil
 }
 
+// CreateEmailVerification validates an input and inserts an email verification record into the database.
+func (s *service) CreateEmailVerification(ctx context.Context, input CreateEmailVerificationInput) (models.Verification, error) {
+	// Validate input
+	if err := s.validator.Struct(input); err != nil {
+		return models.Verification{}, fmt.Errorf("service: failed to validate input: %w", err)
+	}
+
+	// Prepare user input
+	id := uuid.New()
+	userUUID, err := uuid.Parse(input.UserID)
+	if err != nil {
+		return models.Verification{}, fmt.Errorf("service: failed to parse user ID into UUID: %w", err)
+	}
+	now := time.Now()
+	verification := models.Verification{
+		ID:        id,
+		Code:      input.Code,
+		UserID:    userUUID,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+
+	if err := s.userRepo.CreateEmailVerification(ctx, verification); err != nil {
+		return models.Verification{}, fmt.Errorf("service: failed to create email verification: %w", err)
+	}
+
+	verification.Code = ""
+
+	return verification, nil
+}
+
 // GetUser returns a single user for a given user ID
 func (s *service) GetUser(ctx context.Context, userID string) (models.User, error) {
 	userUUID, err := uuid.Parse(userID)
@@ -97,6 +137,42 @@ func (s *service) ListUsersByEmail(ctx context.Context, email string) ([]models.
 	}
 
 	return users, nil
+}
+
+// VerifyEmail looks up the first non-null verification record for a given user ID and compares the input code
+// to the verification code. Depending on the match, the users and verification table will be updated.
+func (s *service) VerifyEmail(ctx context.Context, input VerifyEmailInput) error {
+	// Validate input
+	if err := s.validator.Struct(input); err != nil {
+		return fmt.Errorf("service: failed to validate input: %w", err)
+	}
+
+	userUUID, err := uuid.Parse(input.UserID)
+	if err != nil {
+		return fmt.Errorf("service: failed to parse user ID into UUID: %w", err)
+	}
+
+	verification, err := s.userRepo.GetEmailVerification(ctx, userUUID)
+	if err != nil {
+		return fmt.Errorf("service: failed to get email verification: %w", err)
+	}
+
+	if verification.Code != input.Code {
+		return ErrInvalidVerificationCode
+	}
+
+	// Update users and verification table
+	err = s.userRepo.UpdateUserVerification(ctx, UpdateUserVerificationInput{UserID: userUUID, IsVerified: true})
+	if err != nil {
+		return fmt.Errorf("service: failed to update user's verification status: %w", err)
+	}
+
+	err = s.userRepo.UpdateEmailVerification(ctx, UpdateEmailVerificationInput{UserID: userUUID, IsVerified: true})
+	if err != nil {
+		return fmt.Errorf("service: failed to update email verification: %w", err)
+	}
+
+	return nil
 }
 
 // toNameCase creates a regular expression to match word boundaries and convert them to name case

@@ -3,6 +3,7 @@ package board
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
@@ -184,6 +185,31 @@ func (api *API) HandleCreateInvites(w http.ResponseWriter, r *http.Request) {
 	}{Result: invites})
 }
 
+// HandleGetInvite is the handler for getting a board invite
+func (api *API) HandleGetInvite(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	logger := logger.FromContext(ctx)
+
+	inviteID := chi.URLParam(r, "inviteID")
+
+	// Get board invite
+	invite, err := api.boardService.GetInvite(ctx, inviteID)
+	if err != nil {
+		fmt.Println("this error", err)
+		switch {
+		case errors.Is(err, errInvalidID):
+			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidID.Error())
+		case errors.Is(err, errInviteNotFound):
+			endpoint.WriteWithError(w, http.StatusNotFound, errInviteNotFound.Error())
+		default:
+			logger.Errorf("handler: failed to get board invite: %v", err)
+			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
+		}
+		return
+	}
+	endpoint.WriteWithStatus(w, http.StatusOK, invite)
+}
+
 // HandleListInvitesByBoard is the handler for returning a list of invites belonging to a board. The handler
 // can filter for invites using an optional status query parameter.
 func (api *API) HandleListInvitesByBoard(w http.ResponseWriter, r *http.Request) {
@@ -352,6 +378,8 @@ func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) ht
 	})
 
 	r.Route("/invites", func(r chi.Router) {
+		r.Get("/{inviteID}", api.HandleGetInvite)
+
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
 			r.Get("/", api.HandleListInvitesByReceiver)

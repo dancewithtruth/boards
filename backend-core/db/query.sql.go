@@ -38,6 +38,31 @@ func (q *Queries) CreateBoard(ctx context.Context, arg CreateBoardParams) error 
 	return err
 }
 
+const createEmailVerification = `-- name: CreateEmailVerification :exec
+INSERT INTO email_verifications
+(id, code, user_id, created_at, updated_at) 
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type CreateEmailVerificationParams struct {
+	ID        pgtype.UUID
+	Code      string
+	UserID    pgtype.UUID
+	CreatedAt pgtype.Timestamp
+	UpdatedAt pgtype.Timestamp
+}
+
+func (q *Queries) CreateEmailVerification(ctx context.Context, arg CreateEmailVerificationParams) error {
+	_, err := q.db.Exec(ctx, createEmailVerification,
+		arg.ID,
+		arg.Code,
+		arg.UserID,
+		arg.CreatedAt,
+		arg.UpdatedAt,
+	)
+	return err
+}
+
 const createInvite = `-- name: CreateInvite :exec
 INSERT INTO board_invites
 (id, board_id, sender_id, receiver_id, status, created_at, updated_at) 
@@ -244,7 +269,7 @@ func (q *Queries) GetBoard(ctx context.Context, id pgtype.UUID) (Board, error) {
 }
 
 const getBoardAndUsers = `-- name: GetBoardAndUsers :many
-SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
+SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, users.is_verified, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
 INNER JOIN board_memberships on board_memberships.board_id = boards.id
 INNER JOIN users on board_memberships.user_id = users.id
 WHERE boards.id = $1
@@ -280,6 +305,7 @@ func (q *Queries) GetBoardAndUsers(ctx context.Context, id pgtype.UUID) ([]GetBo
 			&i.User.IsGuest,
 			&i.User.CreatedAt,
 			&i.User.UpdatedAt,
+			&i.User.IsVerified,
 			&i.BoardMembership.ID,
 			&i.BoardMembership.UserID,
 			&i.BoardMembership.BoardID,
@@ -295,6 +321,25 @@ func (q *Queries) GetBoardAndUsers(ctx context.Context, id pgtype.UUID) ([]GetBo
 		return nil, err
 	}
 	return items, nil
+}
+
+const getEmailVerification = `-- name: GetEmailVerification :one
+SELECT id, code, user_id, is_verified, created_at, updated_at FROM email_verifications WHERE user_id = $1 AND is_verified IS NULL
+ORDER BY created_at DESC LIMIT 1
+`
+
+func (q *Queries) GetEmailVerification(ctx context.Context, userID pgtype.UUID) (EmailVerification, error) {
+	row := q.db.QueryRow(ctx, getEmailVerification, userID)
+	var i EmailVerification
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.UserID,
+		&i.IsVerified,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
 }
 
 const getInvite = `-- name: GetInvite :one
@@ -361,7 +406,7 @@ func (q *Queries) GetPostGroup(ctx context.Context, id pgtype.UUID) (PostGroup, 
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
+SELECT id, name, email, password, is_guest, created_at, updated_at, is_verified FROM users
 WHERE users.id = $1
 `
 
@@ -376,12 +421,13 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
 		&i.IsGuest,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsVerified,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
+SELECT id, name, email, password, is_guest, created_at, updated_at, is_verified FROM users
 WHERE users.email = $1
 `
 
@@ -396,12 +442,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email pgtype.Text) (User, 
 		&i.IsGuest,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.IsVerified,
 	)
 	return i, err
 }
 
 const listInvitesByBoard = `-- name: ListInvitesByBoard :many
-SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at FROM board_invites
+SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, users.is_verified FROM board_invites
 INNER JOIN users on users.id = board_invites.receiver_id
 WHERE board_invites.board_id = $1 AND
 (status = $2 OR $2 IS NULL)
@@ -442,6 +489,7 @@ func (q *Queries) ListInvitesByBoard(ctx context.Context, arg ListInvitesByBoard
 			&i.User.IsGuest,
 			&i.User.CreatedAt,
 			&i.User.UpdatedAt,
+			&i.User.IsVerified,
 		); err != nil {
 			return nil, err
 		}
@@ -454,7 +502,7 @@ func (q *Queries) ListInvitesByBoard(ctx context.Context, arg ListInvitesByBoard
 }
 
 const listInvitesByReceiver = `-- name: ListInvitesByReceiver :many
-SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at FROM board_invites
+SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, users.is_verified, boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at FROM board_invites
 INNER JOIN boards on boards.id = board_invites.board_id
 INNER JOIN users on users.id = board_invites.sender_id 
 WHERE board_invites.receiver_id = $1 AND
@@ -497,6 +545,7 @@ func (q *Queries) ListInvitesByReceiver(ctx context.Context, arg ListInvitesByRe
 			&i.User.IsGuest,
 			&i.User.CreatedAt,
 			&i.User.UpdatedAt,
+			&i.User.IsVerified,
 			&i.Board.ID,
 			&i.Board.Name,
 			&i.Board.Description,
@@ -515,7 +564,7 @@ func (q *Queries) ListInvitesByReceiver(ctx context.Context, arg ListInvitesByRe
 }
 
 const listOwnedBoardAndUsers = `-- name: ListOwnedBoardAndUsers :many
-SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
+SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, users.is_verified, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
 INNER JOIN board_memberships on board_memberships.board_id = boards.id
 INNER JOIN users on board_memberships.user_id = users.id
 WHERE boards.user_id = $1
@@ -551,6 +600,7 @@ func (q *Queries) ListOwnedBoardAndUsers(ctx context.Context, userID pgtype.UUID
 			&i.User.IsGuest,
 			&i.User.CreatedAt,
 			&i.User.UpdatedAt,
+			&i.User.IsVerified,
 			&i.BoardMembership.ID,
 			&i.BoardMembership.UserID,
 			&i.BoardMembership.BoardID,
@@ -652,7 +702,7 @@ func (q *Queries) ListPostGroups(ctx context.Context, boardID pgtype.UUID) ([]Li
 }
 
 const listSharedBoardAndUsers = `-- name: ListSharedBoardAndUsers :many
-SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
+SELECT boards.id, boards.name, boards.description, boards.user_id, boards.created_at, boards.updated_at, users.id, users.name, users.email, users.password, users.is_guest, users.created_at, users.updated_at, users.is_verified, board_memberships.id, board_memberships.user_id, board_memberships.board_id, board_memberships.role, board_memberships.created_at, board_memberships.updated_at FROM boards
 INNER JOIN board_memberships on board_memberships.board_id = boards.id
 INNER JOIN users on board_memberships.user_id = users.id
 WHERE board_memberships.user_id = $1
@@ -689,6 +739,7 @@ func (q *Queries) ListSharedBoardAndUsers(ctx context.Context, userID pgtype.UUI
 			&i.User.IsGuest,
 			&i.User.CreatedAt,
 			&i.User.UpdatedAt,
+			&i.User.IsVerified,
 			&i.BoardMembership.ID,
 			&i.BoardMembership.UserID,
 			&i.BoardMembership.BoardID,
@@ -707,7 +758,7 @@ func (q *Queries) ListSharedBoardAndUsers(ctx context.Context, userID pgtype.UUI
 }
 
 const listUsersByFuzzyEmail = `-- name: ListUsersByFuzzyEmail :many
-SELECT id, name, email, password, is_guest, created_at, updated_at FROM users
+SELECT id, name, email, password, is_guest, created_at, updated_at, is_verified FROM users
 ORDER BY levenshtein(users.email, $1) LIMIT 10
 `
 
@@ -728,6 +779,7 @@ func (q *Queries) ListUsersByFuzzyEmail(ctx context.Context, levenshtein interfa
 			&i.IsGuest,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.IsVerified,
 		); err != nil {
 			return nil, err
 		}
@@ -737,6 +789,22 @@ func (q *Queries) ListUsersByFuzzyEmail(ctx context.Context, levenshtein interfa
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateEmailVerification = `-- name: UpdateEmailVerification :exec
+UPDATE email_verifications SET
+(user_id, is_verified) =
+($1, $2) WHERE user_id = $1 AND is_verified IS NULL
+`
+
+type UpdateEmailVerificationParams struct {
+	UserID     pgtype.UUID
+	IsVerified pgtype.Bool
+}
+
+func (q *Queries) UpdateEmailVerification(ctx context.Context, arg UpdateEmailVerificationParams) error {
+	_, err := q.db.Exec(ctx, updateEmailVerification, arg.UserID, arg.IsVerified)
+	return err
 }
 
 const updateInvite = `-- name: UpdateInvite :exec
@@ -829,5 +897,21 @@ func (q *Queries) UpdatePostGroup(ctx context.Context, arg UpdatePostGroupParams
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
+	return err
+}
+
+const updateUserVerification = `-- name: UpdateUserVerification :exec
+UPDATE users SET
+(id, is_verified) =
+($1, $2) WHERE id = $1
+`
+
+type UpdateUserVerificationParams struct {
+	ID         pgtype.UUID
+	IsVerified pgtype.Bool
+}
+
+func (q *Queries) UpdateUserVerification(ctx context.Context, arg UpdateUserVerificationParams) error {
+	_, err := q.db.Exec(ctx, updateUserVerification, arg.ID, arg.IsVerified)
 	return err
 }
