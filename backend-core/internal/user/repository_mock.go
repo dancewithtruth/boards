@@ -55,6 +55,10 @@ func (r *mockRepository) GetEmailVerification(ctx context.Context, userID uuid.U
 	return models.Verification{}, nil
 }
 
+func (r *mockRepository) UpdateUserVerification(ctx context.Context, input UpdateUserVerificationInput) error {
+	return nil
+}
+
 func (r *mockRepository) UpdateEmailVerification(ctx context.Context, input UpdateEmailVerificationInput) error {
 	return nil
 }

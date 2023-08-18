@@ -26,7 +26,7 @@ type Repository interface {
 
 	GetBoard(ctx context.Context, boardID uuid.UUID) (models.Board, error)
 	GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([]BoardMembershipUser, error)
-	GetInvite(ctx context.Context, inviteID uuid.UUID) (models.Invite, error)
+	GetInvite(ctx context.Context, inviteID uuid.UUID) (InviteSenderReceiver, error)
 
 	ListOwnedBoards(ctx context.Context, userID uuid.UUID) ([]models.Board, error)
 	ListOwnedBoardAndUsers(ctx context.Context, userID uuid.UUID) ([]BoardMembershipUser, error)
@@ -159,25 +159,22 @@ func (r *repository) GetBoardAndUsers(ctx context.Context, boardID uuid.UUID) ([
 }
 
 // GetInvite returns a single invite for a given invite ID.
-func (r *repository) GetInvite(ctx context.Context, inviteID uuid.UUID) (models.Invite, error) {
+func (r *repository) GetInvite(ctx context.Context, inviteID uuid.UUID) (InviteSenderReceiver, error) {
 	row, err := r.q.GetInvite(ctx, pgtype.UUID{Bytes: inviteID, Valid: true})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return models.Invite{}, errInviteDoesNotExist
+			return InviteSenderReceiver{}, errInviteDoesNotExist
 		}
-		return models.Invite{}, fmt.Errorf("repository: failed to get invite by id: %w", err)
+		return InviteSenderReceiver{}, fmt.Errorf("repository: failed to get invite by id: %w", err)
 	}
 	// Convert storage type to domain type.
-	invite := models.Invite{
-		ID:         row.ID.Bytes,
-		BoardID:    row.BoardID.Bytes,
-		SenderID:   row.SenderID.Bytes,
-		ReceiverID: row.ReceiverID.Bytes,
-		Status:     models.InviteStatus(row.Status.String),
-		CreatedAt:  row.CreatedAt.Time,
-		UpdatedAt:  row.UpdatedAt.Time,
+	inviteSenderReceiver := InviteSenderReceiver{
+		Invite:   toInvite(row.BoardInvite),
+		Sender:   toUser(row.User),
+		Receiver: toUser(row.User_2),
 	}
-	return invite, nil
+
+	return inviteSenderReceiver, nil
 }
 
 // ListOwnedBoards returns a list of boards that belong to a user.
@@ -337,13 +334,14 @@ func toBoard(dbBoard db.Board) models.Board {
 
 func toUser(dbUser db.User) models.User {
 	return models.User{
-		ID:        dbUser.ID.Bytes,
-		Name:      dbUser.Name.String,
-		Email:     &dbUser.Email.String,
-		Password:  &dbUser.Password.String,
-		IsGuest:   dbUser.IsGuest.Bool,
-		CreatedAt: dbUser.CreatedAt.Time,
-		UpdatedAt: dbUser.UpdatedAt.Time,
+		ID:         dbUser.ID.Bytes,
+		Name:       dbUser.Name.String,
+		Email:      &dbUser.Email.String,
+		Password:   &dbUser.Password.String,
+		IsGuest:    dbUser.IsGuest.Bool,
+		IsVerified: dbUser.IsVerified.Bool,
+		CreatedAt:  dbUser.CreatedAt.Time,
+		UpdatedAt:  dbUser.UpdatedAt.Time,
 	}
 }
 
@@ -356,6 +354,13 @@ func toBoardMembership(dbBoardMembership db.BoardMembership) models.BoardMembers
 		CreatedAt: dbBoardMembership.CreatedAt.Time,
 		UpdatedAt: dbBoardMembership.UpdatedAt.Time,
 	}
+}
+
+// InviteSenderReceiver is a struct that encapsulates the invite, sender, and receiver domain models.
+type InviteSenderReceiver struct {
+	Invite   models.Invite
+	Sender   models.User
+	Receiver models.User
 }
 
 // InviteBoardSender is a struct that encapsulates domain models.

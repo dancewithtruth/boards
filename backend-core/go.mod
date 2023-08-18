@@ -3,8 +3,8 @@ module github.com/Wave-95/boards/backend-core
 go 1.20
 
 require (
-	github.com/Wave-95/boards/backend-notification v0.1.0
-	github.com/Wave-95/boards/wrappers v0.2.3
+	github.com/Wave-95/boards/backend-notification v0.2.0
+	github.com/Wave-95/boards/wrappers v0.3.1
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/cors v1.2.1
 	github.com/go-playground/validator/v10 v10.15.0
@@ -21,7 +21,6 @@ require (
 )
 
 require (
-	github.com/Wave-95/boards/shared v0.0.0-20230816163436-1f4095b4a55b // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect

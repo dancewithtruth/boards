@@ -11,6 +11,9 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/security"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/backend-notification/constants/queues"
+	"github.com/Wave-95/boards/backend-notification/constants/tasks"
+	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/google/uuid"
 )
 
@@ -31,12 +34,13 @@ type Service interface {
 
 type service struct {
 	userRepo  Repository
+	amqp      amqp.Amqp
 	validator validator.Validate
 }
 
 // NewService initializes a service struct with dependencies
-func NewService(repo Repository, validator validator.Validate) *service {
-	return &service{userRepo: repo, validator: validator}
+func NewService(repo Repository, amqp amqp.Amqp, validator validator.Validate) *service {
+	return &service{userRepo: repo, amqp: amqp, validator: validator}
 }
 
 // CreateUser takes a user input and standardizes the user name, hashes the password (if provided), and stores the
@@ -73,9 +77,21 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 		return models.User{}, fmt.Errorf("service: failed to create user: %w", err)
 	}
 
+	// Publish email verification task
+	if input.Email != nil {
+		s.amqp.Publish(queues.Notification, tasks.EmailVerification, struct {
+			ID    string
+			Name  string
+			Email string
+		}{
+			ID:    id.String(),
+			Name:  name,
+			Email: *input.Email,
+		})
+	}
+
 	// Hide password
 	user.Password = nil
-
 	return user, nil
 }
 

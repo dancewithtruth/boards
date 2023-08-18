@@ -94,7 +94,7 @@ func (api *API) HandleCreateEmailVerification(w http.ResponseWriter, r *http.Req
 		case validator.IsValidationError(err):
 			endpoint.WriteValidationErr(w, input, err)
 		default:
-			logger.Errorf("handler: failed to create user: %v", err)
+			logger.Errorf("handler: failed to create email verification record: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)
 		}
 		return

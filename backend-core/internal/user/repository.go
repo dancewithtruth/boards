@@ -186,13 +186,14 @@ func (r *repository) DeleteUser(ctx context.Context, userID uuid.UUID) error {
 // toUser is a mapper that converts a db user to a domain user.
 func toUser(userDB db.User) models.User {
 	return models.User{
-		ID:        userDB.ID.Bytes,
-		Name:      userDB.Name.String,
-		Email:     &userDB.Email.String,
-		Password:  &userDB.Password.String,
-		IsGuest:   userDB.IsGuest.Bool,
-		CreatedAt: userDB.CreatedAt.Time,
-		UpdatedAt: userDB.UpdatedAt.Time,
+		ID:         userDB.ID.Bytes,
+		Name:       userDB.Name.String,
+		Email:      &userDB.Email.String,
+		Password:   &userDB.Password.String,
+		IsGuest:    userDB.IsGuest.Bool,
+		IsVerified: userDB.IsVerified.Bool,
+		CreatedAt:  userDB.CreatedAt.Time,
+		UpdatedAt:  userDB.UpdatedAt.Time,
 	}
 }
 

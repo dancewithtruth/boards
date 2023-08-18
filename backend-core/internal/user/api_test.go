@@ -8,13 +8,15 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
 	"github.com/Wave-95/boards/backend-core/internal/middleware"
 	"github.com/Wave-95/boards/backend-core/internal/test"
+	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestAPI(t *testing.T) {
 	userRepo, jwtService, validator := getServiceDeps()
-	userService := NewService(userRepo, validator)
+	amqp := amqp.NewMock()
+	userService := NewService(userRepo, amqp, validator)
 	api := NewAPI(userService, jwtService, validator)
 	router := chi.NewRouter()
 	authHandler := middleware.Auth(jwtService)

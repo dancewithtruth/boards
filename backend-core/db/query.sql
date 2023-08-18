@@ -114,7 +114,9 @@ INSERT INTO board_invites
 VALUES ($1, $2, $3, $4, $5, $6, $7);
 
 -- name: GetInvite :one
-SELECT * FROM board_invites
+SELECT sqlc.embed(board_invites), sqlc.embed(s), sqlc.embed(r) FROM board_invites
+JOIN users s on s.id = board_invites.sender_id
+JOIN users r on r.id = board_invites.receiver_id
 WHERE board_invites.id = $1;
 
 -- name: UpdateInvite :exec

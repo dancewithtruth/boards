@@ -31,7 +31,7 @@ func TestHandleWebSocket(t *testing.T) {
 
 	// Set up mock services
 	validator := validator.New()
-	mockUserService := user.NewService(mockUserRepo, validator)
+	mockUserService := user.NewService(mockUserRepo, mockAmqp, validator)
 	mockBoardService := board.NewService(mockBoardRepo, mockAmqp, validator)
 	mockPostService := post.NewService(mockPostRepo)
 	jwtService := jwt.New("jwt_secret", 1)

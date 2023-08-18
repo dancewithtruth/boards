@@ -21,6 +21,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/ws"
 	"github.com/Wave-95/boards/backend-core/pkg/logger"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/backend-notification/constants/queues"
 	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/go-chi/chi/v5"
 )
@@ -47,6 +48,7 @@ func main() {
 	if err != nil {
 		logger.Fatalf("Error setting up amqp: %v", err)
 	}
+	amqp.Declare(queues.Notification, 10000, true) //10sec ttl with dlx
 
 	// Setup server
 	r := chi.NewRouter()
@@ -94,7 +96,7 @@ func setupHandler(
 	// Set up services
 	jwtService := jwt.New(cfg.JwtSecret, cfg.JwtExpiration)
 	authService := auth.NewService(userRepo, jwtService, v)
-	userService := user.NewService(userRepo, v)
+	userService := user.NewService(userRepo, amqp, v)
 	boardService := board.NewService(boardRepo, amqp, v)
 	postService := post.NewService(postRepo)
 	rdb := ws.NewRedis(cfg.Rdb)

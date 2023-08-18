@@ -369,6 +369,18 @@ paths:
                     items:
                       $ref: '#/components/schemas/BoardInvite'
   /invites/{inviteID}:
+    get:
+      tags:
+        - invites
+      summary: Get invite
+      description: Retrieve a single invite entity.
+      responses:
+        '200':
+          description: Successfully retrieved board with members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardInvite'
     patch:
       tags:
         - invites

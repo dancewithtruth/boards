@@ -7,12 +7,14 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/jwt"
 	"github.com/Wave-95/boards/backend-core/internal/test"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/wrappers/amqp"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestService(t *testing.T) {
 	userRepo, _, validate := getServiceDeps()
-	userService := NewService(userRepo, validate)
+	amqp := amqp.NewMock()
+	userService := NewService(userRepo, amqp, validate)
 	assert.NotNil(t, userService)
 	t.Run("Create and get user", func(t *testing.T) {
 		t.Run("using valid user input", func(t *testing.T) {

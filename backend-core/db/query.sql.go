@@ -343,21 +343,45 @@ func (q *Queries) GetEmailVerification(ctx context.Context, userID pgtype.UUID) 
 }
 
 const getInvite = `-- name: GetInvite :one
-SELECT id, board_id, sender_id, receiver_id, status, created_at, updated_at FROM board_invites
+SELECT board_invites.id, board_invites.board_id, board_invites.sender_id, board_invites.receiver_id, board_invites.status, board_invites.created_at, board_invites.updated_at, s.id, s.name, s.email, s.password, s.is_guest, s.created_at, s.updated_at, s.is_verified, r.id, r.name, r.email, r.password, r.is_guest, r.created_at, r.updated_at, r.is_verified FROM board_invites
+JOIN users s on s.id = board_invites.sender_id
+JOIN users r on r.id = board_invites.receiver_id
 WHERE board_invites.id = $1
 `
 
-func (q *Queries) GetInvite(ctx context.Context, id pgtype.UUID) (BoardInvite, error) {
+type GetInviteRow struct {
+	BoardInvite BoardInvite
+	User        User
+	User_2      User
+}
+
+func (q *Queries) GetInvite(ctx context.Context, id pgtype.UUID) (GetInviteRow, error) {
 	row := q.db.QueryRow(ctx, getInvite, id)
-	var i BoardInvite
+	var i GetInviteRow
 	err := row.Scan(
-		&i.ID,
-		&i.BoardID,
-		&i.SenderID,
-		&i.ReceiverID,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
+		&i.BoardInvite.ID,
+		&i.BoardInvite.BoardID,
+		&i.BoardInvite.SenderID,
+		&i.BoardInvite.ReceiverID,
+		&i.BoardInvite.Status,
+		&i.BoardInvite.CreatedAt,
+		&i.BoardInvite.UpdatedAt,
+		&i.User.ID,
+		&i.User.Name,
+		&i.User.Email,
+		&i.User.Password,
+		&i.User.IsGuest,
+		&i.User.CreatedAt,
+		&i.User.UpdatedAt,
+		&i.User.IsVerified,
+		&i.User_2.ID,
+		&i.User_2.Name,
+		&i.User_2.Email,
+		&i.User_2.Password,
+		&i.User_2.IsGuest,
+		&i.User_2.CreatedAt,
+		&i.User_2.UpdatedAt,
+		&i.User_2.IsVerified,
 	)
 	return i, err
 }

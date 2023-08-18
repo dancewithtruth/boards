@@ -92,3 +92,14 @@ type InviteWithReceiverDTO struct {
 	CreatedAt time.Time   `json:"created_at"`
 	UpdatedAt time.Time   `json:"updated_at"`
 }
+
+// InviteWithSenderReceiverDTO is a formatted response representing a board invite along with its sender and receiver details.
+type InviteWithSenderReceiverDTO struct {
+	ID        uuid.UUID   `json:"id"`
+	BoardID   uuid.UUID   `json:"board_id"`
+	Sender    models.User `json:"sender"`
+	Receiver  models.User `json:"receiver"`
+	Status    string      `json:"status"`
+	CreatedAt time.Time   `json:"created_at"`
+	UpdatedAt time.Time   `json:"updated_at"`
+}

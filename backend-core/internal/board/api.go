@@ -3,7 +3,6 @@ package board
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/Wave-95/boards/backend-core/internal/endpoint"
@@ -195,7 +194,6 @@ func (api *API) HandleGetInvite(w http.ResponseWriter, r *http.Request) {
 	// Get board invite
 	invite, err := api.boardService.GetInvite(ctx, inviteID)
 	if err != nil {
-		fmt.Println("this error", err)
 		switch {
 		case errors.Is(err, errInvalidID):
 			endpoint.WriteWithError(w, http.StatusBadRequest, errInvalidID.Error())

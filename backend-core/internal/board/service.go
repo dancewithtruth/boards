@@ -34,7 +34,7 @@ type Service interface {
 
 	GetBoard(ctx context.Context, boardID string) (models.Board, error)
 	GetBoardWithMembers(ctx context.Context, boardID string) (BoardWithMembersDTO, error)
-	GetInvite(ctx context.Context, inviteID string) (models.Invite, error)
+	GetInvite(ctx context.Context, inviteID string) (InviteWithSenderReceiverDTO, error)
 
 	ListOwnedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
 	ListSharedBoardsWithMembers(ctx context.Context, userID string) ([]BoardWithMembersDTO, error)
@@ -227,19 +227,19 @@ func (s *service) GetBoardWithMembers(ctx context.Context, boardID string) (Boar
 }
 
 // GetInvite returns a single invite for a given invite ID
-func (s *service) GetInvite(ctx context.Context, inviteID string) (models.Invite, error) {
+func (s *service) GetInvite(ctx context.Context, inviteID string) (InviteWithSenderReceiverDTO, error) {
 	inviteUUID, err := uuid.Parse(inviteID)
 	if err != nil {
-		return models.Invite{}, fmt.Errorf("service: issue parsing inviteID into UUID: %w", err)
+		return InviteWithSenderReceiverDTO{}, fmt.Errorf("service: issue parsing inviteID into UUID: %w", err)
 	}
-	invite, err := s.repo.GetInvite(ctx, inviteUUID)
+	inviteSenderReceiver, err := s.repo.GetInvite(ctx, inviteUUID)
 	if err != nil {
 		if errors.Is(err, errInviteDoesNotExist) {
-			return models.Invite{}, errInviteNotFound
+			return InviteWithSenderReceiverDTO{}, errInviteNotFound
 		}
-		return models.Invite{}, fmt.Errorf("service: failed to get invite: %w", err)
+		return InviteWithSenderReceiverDTO{}, fmt.Errorf("service: failed to get invite: %w", err)
 	}
-	return invite, nil
+	return toInviteWithSenderReceiverDTO(inviteSenderReceiver), nil
 }
 
 // ListOwnedBoardsWithMembers returns a list of boards that belong to a user
@@ -352,17 +352,17 @@ func (s *service) UpdateInvite(ctx context.Context, input UpdateInviteInput) err
 	now := time.Now()
 	switch input.Status {
 	case string(models.InviteStatusAccepted):
-		if invite.ReceiverID != userUUID {
+		if invite.Receiver.ID != userUUID {
 			return errUnauthorized
 		}
-		if invite.Status == models.InviteStatusCancelled {
+		if invite.Status == string(models.InviteStatusCancelled) {
 			return errInviteCancelled
 		}
 		// Add user to board
 		membership := models.BoardMembership{
 			ID:        uuid.New(),
 			BoardID:   invite.BoardID,
-			UserID:    invite.ReceiverID,
+			UserID:    invite.Receiver.ID,
 			Role:      models.RoleMember,
 			CreatedAt: now,
 			UpdatedAt: now,
@@ -371,22 +371,31 @@ func (s *service) UpdateInvite(ctx context.Context, input UpdateInviteInput) err
 			return fmt.Errorf("service: failed to create membership when accepting invite: %w", err)
 		}
 	case string(models.InviteStatusIgnored):
-		if invite.ReceiverID != userUUID {
+		if invite.Receiver.ID != userUUID {
 			return errUnauthorized
 		}
-		if invite.Status == models.InviteStatusCancelled {
+		if invite.Status == string(models.InviteStatusCancelled) {
 			return errInviteCancelled
 		}
 	case string(models.InviteStatusCancelled):
-		if invite.SenderID != userUUID {
+		if invite.Sender.ID != userUUID {
 			return errUnauthorized
 		}
 	default:
 		return errUnsupportedInviteUpdate
 	}
-	invite.UpdatedAt = now
-	invite.Status = models.InviteStatus(input.Status)
-	return s.repo.UpdateInvite(ctx, invite)
+
+	inviteToUpdate := models.Invite{
+		ID:         invite.ID,
+		BoardID:    invite.BoardID,
+		SenderID:   invite.Sender.ID,
+		ReceiverID: invite.Receiver.ID,
+		Status:     models.InviteStatus(input.Status),
+		CreatedAt:  invite.CreatedAt,
+		UpdatedAt:  now,
+	}
+
+	return s.repo.UpdateInvite(ctx, inviteToUpdate)
 }
 
 // toBoardWithMembersDTO transforms the BoardAndUser rows into a nested DTO struct
@@ -487,4 +496,19 @@ func toInviteWithReceiverDTO(rows []InviteReceiver) []InviteWithReceiverDTO {
 		dto = append(dto, mappedRow)
 	}
 	return dto
+}
+
+func toInviteWithSenderReceiverDTO(row InviteSenderReceiver) InviteWithSenderReceiverDTO {
+	row.Sender.Password = nil
+	row.Receiver.Password = nil
+
+	return InviteWithSenderReceiverDTO{
+		ID:        row.Invite.ID,
+		BoardID:   row.Invite.BoardID,
+		Sender:    row.Sender,
+		Receiver:  row.Receiver,
+		Status:    string(row.Invite.Status),
+		CreatedAt: row.Invite.CreatedAt,
+		UpdatedAt: row.Invite.UpdatedAt,
+	}
 }
