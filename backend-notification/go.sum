@@ -1,5 +1,9 @@
 github.com/Wave-95/boards/wrappers v0.2.4 h1:JzX46MmowqUhKWL6lTcHi2m7FtRaj+F+pR/wMqTgOUk=
 github.com/Wave-95/boards/wrappers v0.2.4/go.mod h1:Jl8HKCvpmnp1M5N0T9GPcmvdVc1y7j7xfHI1lmwBNhs=
+github.com/Wave-95/boards/wrappers v0.3.0 h1:ArvHuXC4kQm34pCVSaoXWRyPrVe1faWr6vcJma4ufy8=
+github.com/Wave-95/boards/wrappers v0.3.0/go.mod h1:Jl8HKCvpmnp1M5N0T9GPcmvdVc1y7j7xfHI1lmwBNhs=
+github.com/Wave-95/boards/wrappers v0.3.1 h1:ja7ZQvdveMON/JipwLnQXObzNwaxpBhZbrA3UxB8oT0=
+github.com/Wave-95/boards/wrappers v0.3.1/go.mod h1:Jl8HKCvpmnp1M5N0T9GPcmvdVc1y7j7xfHI1lmwBNhs=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

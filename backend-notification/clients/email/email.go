@@ -12,7 +12,7 @@ type EmailClient struct {
 
 func NewClient(from, password, host, port string) *EmailClient {
 	// Load env vars
-	auth := smtp.PlainAuth("", "useboards@gmail.com", "wdlrmviaiwalxkkq", "smtp.gmail.com")
+	auth := smtp.PlainAuth("", from, password, host)
 	addr := host + ":" + port
 	return &EmailClient{from: from, auth: auth, addr: addr}
 }

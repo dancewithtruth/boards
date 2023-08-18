@@ -3,7 +3,7 @@ module github.com/Wave-95/boards/backend-notification
 go 1.20
 
 require (
-	github.com/Wave-95/boards/wrappers v0.2.4
+	github.com/Wave-95/boards/wrappers v0.3.1
 	github.com/go-playground/validator/v10 v10.15.0
 	github.com/joho/godotenv v1.5.1
 )
