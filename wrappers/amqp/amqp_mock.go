@@ -10,7 +10,7 @@ func (a *amqpMock) Publish(queue string, task string, v any) error {
 	return nil
 }
 
-func (a *amqpMock) Consume(queue string) error {
+func (a *amqpMock) Consume(queue string, msgTTL int, dlx bool) error {
 	return nil
 }
 

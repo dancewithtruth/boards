@@ -11,7 +11,7 @@ import (
 
 type Amqp interface {
 	Publish(queue string, task string, v any) error
-	Consume(queue string) error
+	Consume(queue string, msgTTL int, dlx bool) error
 	AddHandler(task string, handler func(payload []byte) error)
 }
 
@@ -74,14 +74,24 @@ func (a *amqpClient) Publish(queue string, task string, v any) error {
 
 // Consume is a blocking operation that consumes each new message published to
 // a queue.
-func (a *amqpClient) Consume(queue string) error {
+func (a *amqpClient) Consume(queue string, msgTTL int, dlx bool) error {
+	args := rabbitmq.Table{}
+
+	if msgTTL > 0 {
+		args["x-message-ttl"] = msgTTL
+	}
+
+	if dlx {
+		args["x-dead-letter-exchange"] = queue + "_dlx"
+	}
+
 	_, err := a.ch.QueueDeclare(
 		queue, // name
 		true,  // durable
 		false, // delete when unused
 		false, // exclusive
 		false, // no-wait
-		nil,   // arguments
+		args,  // arguments
 	)
 	if err != nil {
 		return fmt.Errorf("failed to declare a queue: %w", err)
@@ -123,11 +133,13 @@ func (a *amqpClient) Consume(queue string) error {
 				err = handler(msg.Payload)
 				if err != nil {
 					fmt.Printf("failed to handle message: %v", err)
+					d.Nack(false, false)
 					continue
 				}
 				d.Ack(false)
 			} else {
 				fmt.Printf("task does not exist: %v", msg.Task)
+				d.Nack(false, false)
 			}
 		}
 	}()
