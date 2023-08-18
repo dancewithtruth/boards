@@ -10,8 +10,9 @@ import (
 )
 
 type Amqp interface {
+	Declare(queue string, msgTTL int, dlx bool) error
 	Publish(queue string, task string, v any) error
-	Consume(queue string, msgTTL int, dlx bool) error
+	Consume(queue string) error
 	AddHandler(task string, handler func(payload []byte) error)
 }
 
@@ -38,43 +39,7 @@ func New(user, password, host, port string) (*amqpClient, error) {
 	return &amqpClient{conn: conn, ch: ch, handlers: handlers}, nil
 }
 
-// Publish publishes a new durable message to the work queue to be processed
-// by a consumer.
-func (a *amqpClient) Publish(queue string, task string, v any) error {
-	q, err := a.ch.QueueDeclare(
-		queue, // name
-		true,  // durable
-		false, // delete when unused
-		false, // exclusive
-		false, // no-wait
-		nil,   // arguments
-	)
-	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %w", err)
-	}
-
-	msg := tasks.PublishMessage{Task: task, Payload: v}
-	bytes, err := json.Marshal(msg)
-	if err != nil {
-		return fmt.Errorf("failed to marshal the message: %w", err)
-	}
-	err = a.ch.PublishWithContext(context.Background(),
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,
-		rabbitmq.Publishing{
-			DeliveryMode: rabbitmq.Persistent,
-			ContentType:  "text/plain",
-			Body:         bytes,
-		})
-
-	return err
-}
-
-// Consume is a blocking operation that consumes each new message published to
-// a queue.
-func (a *amqpClient) Consume(queue string, msgTTL int, dlx bool) error {
+func (a *amqpClient) Declare(queue string, msgTTL int, dlx bool) error {
 	args := rabbitmq.Table{}
 
 	if msgTTL > 0 {
@@ -93,11 +58,36 @@ func (a *amqpClient) Consume(queue string, msgTTL int, dlx bool) error {
 		false, // no-wait
 		args,  // arguments
 	)
-	if err != nil {
-		return fmt.Errorf("failed to declare a queue: %w", err)
-	}
 
-	err = a.ch.Qos(
+	return err
+}
+
+// Publish publishes a new durable message to the work queue to be processed
+// by a consumer.
+func (a *amqpClient) Publish(queue string, task string, v any) error {
+	msg := tasks.PublishMessage{Task: task, Payload: v}
+	bytes, err := json.Marshal(msg)
+	if err != nil {
+		return fmt.Errorf("failed to marshal the message: %w", err)
+	}
+	err = a.ch.PublishWithContext(context.Background(),
+		"",    // exchange
+		queue, // routing key
+		false, // mandatory
+		false,
+		rabbitmq.Publishing{
+			DeliveryMode: rabbitmq.Persistent,
+			ContentType:  "text/plain",
+			Body:         bytes,
+		})
+
+	return err
+}
+
+// Consume is a blocking operation that consumes each new message published to
+// a queue.
+func (a *amqpClient) Consume(queue string) error {
+	err := a.ch.Qos(
 		1,     // prefetch count
 		0,     // prefetch size
 		false, // global
