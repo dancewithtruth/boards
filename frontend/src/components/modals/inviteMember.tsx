@@ -135,7 +135,7 @@ const SearchPanel = ({ selected, handleSelect, board }: SearchPanelProps) => {
   async function fetchAndSetSearchedUsers() {
     if (email !== '') {
       const response = await listUsersByFuzzyEmail(email);
-      const filteredResults = response.result.filter((user) => !memberIDs.includes(user.id));
+      const filteredResults = response.result.filter((user) => !memberIDs.includes(user.id) && user.is_verified == true);
       setSearch(filteredResults);
     }
   }
