@@ -1,7 +1,7 @@
 ## Boards
 Boards is a live collaboration tool for creating and organizing notes on a digital canvas. Boards is a demo project showcasing event-driven microservices written in Golang and a real-time, interactive UI built with Next.js.
 
-HERO IMAGE
+<img src="frontend/public/Hero.png" alt="Boards" width="500"/>
 
 ## Technology Stack
 ### Frontend
@@ -12,7 +12,6 @@ HERO IMAGE
 ### Backend
 - Chi Router
 - Gorilla WebSockets
-- Uber Zap Logger
 - RabbitMQ
 - Redis PubSub
 
