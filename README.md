@@ -8,20 +8,22 @@ Boards is a live collaboration tool for creating and organizing notes on a digit
 - Next.js 13
 - Tailwind CSS
 - React Drag and Drop
-
 ### Backend
 - Chi Router
 - Gorilla WebSockets
 - RabbitMQ
 - Redis PubSub
-
-## Storage / DB
+### Storage / DB
 - PostgreSQL
 - sqlc
 - pgx
 - Golang Migrate v4
+### Infrastructure / Cloud
+- Docker
+- Kubernetes
+- AWS EKS & EC2
 
-## Architecture
+## Architecture Overview
 
 
 ## Services
