@@ -1,3 +1,45 @@
+## Boards
+Boards is a live collaboration tool for creating and organizing notes on a digital canvas. Boards is a demo project showcasing event-driven microservices written in Golang and a real-time, interactive UI built with Next.js.
+
+HERO IMAGE
+
+## Technology Stack
+### Frontend
+- Next.js 13
+- Tailwind CSS
+- React Drag and Drop
+
+### Backend
+- Chi Router
+- Gorilla WebSockets
+- Uber Zap Logger
+- RabbitMQ
+- Redis PubSub
+
+## Storage / DB
+- PostgreSQL
+- sqlc
+- pgx
+- Golang Migrate v4
+
+## Architecture
+
+
+## Services
+
+No. | Service | URI
+--- | --- | ---
+1 | backend-core | [http://localhost:8080](http://localhost:8080)
+2 | backend-notification | [http://localhost:8082](http://localhost:8082)
+3 | web | [http://localhost:3000](http://localhost:3000)
+4 | docs | [http://localhost:8081](http://localhost:8081)
+
+## Relevant Blog Posts
+- [WebSockets Client and Hub Architecture](https://medium.com/@wu.victor.95/building-a-go-websocket-for-a-live-collaboration-tool-pt-1-f7e5374b1f47)
+- [Implementing Go WebSockets using TDD](https://medium.com/@wu.victor.95/building-a-go-websocket-for-a-live-collaboration-tool-pt-2-5728cd6ec801)
+- [Implementing User Authentication Event](https://medium.com/@wu.victor.95/building-a-go-websocket-for-a-live-collaboration-tool-pt-3-b9a6b23f7fef)
+- [Hashing Passwords and Authenticating Users](https://medium.com/@wu.victor.95/hashing-passwords-and-authenticating-users-with-bcrypt-dc2fdd978568)
+
 ## Project Setup
 
 Before proceeding with the project setup, please ensure that you have [Docker](https://www.docker.com/) installed on your machine. 
