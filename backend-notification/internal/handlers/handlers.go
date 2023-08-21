@@ -37,15 +37,15 @@ func (th *TaskHandler) Run() error {
 // emailVerificationHandler will create an email verification record and send the user
 // a verification email containing the verification link
 func (th *TaskHandler) emailVerificationHandler(payload []byte) error {
-	var data payloads.EmailVerification
-	err := json.Unmarshal(payload, &data)
+	var verification payloads.EmailVerification
+	err := json.Unmarshal(payload, &verification)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
 	// Send verification email
-	emailTemplate := templates.BuildEmailVerification(data.Email, data.Name, data.Code)
-	err = th.emailClient.Send(data.Email, emailTemplate)
+	emailTemplate := templates.BuildEmailVerification(verification.Email, verification.Name, verification.Code)
+	err = th.emailClient.Send(verification.Email, emailTemplate)
 	if err != nil {
 		return fmt.Errorf("failed to send verification email: %w", err)
 	}

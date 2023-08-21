@@ -1,5 +1,7 @@
 github.com/Wave-95/boards/backend-notification v0.2.0 h1:YB5aQKPT85OFInQIHcaiWHcyl/yvkp6TvaGo0H+E5XM=
 github.com/Wave-95/boards/backend-notification v0.2.0/go.mod h1:puJsvQc/pJnqCPpOFhY9wVmoa9Cl3U/cFOX4Q5MsJUo=
+github.com/Wave-95/boards/backend-notification v0.3.0 h1:1/vGsR2dXhNFY5Z4TmvYDQ39A75WUir6PxDEA9vdFnI=
+github.com/Wave-95/boards/backend-notification v0.3.0/go.mod h1:Y4MApkbUx1vaq/Hs7M3r01PW3iY0bXf7pdLOlDKtZm0=
 github.com/Wave-95/boards/wrappers v0.2.4 h1:JzX46MmowqUhKWL6lTcHi2m7FtRaj+F+pR/wMqTgOUk=
 github.com/Wave-95/boards/wrappers v0.2.4/go.mod h1:Jl8HKCvpmnp1M5N0T9GPcmvdVc1y7j7xfHI1lmwBNhs=
 github.com/Wave-95/boards/wrappers v0.3.0 h1:ArvHuXC4kQm34pCVSaoXWRyPrVe1faWr6vcJma4ufy8=

@@ -78,21 +78,12 @@ func (api *API) HandleCreateEmailVerification(w http.ResponseWriter, r *http.Req
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
 
-	// Decode request
-	var input CreateEmailVerificationInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		logger.Errorf("handler: failed to decode request: %v", err)
-		endpoint.HandleDecodeErr(w, err)
-		return
-	}
-	defer r.Body.Close()
+	userID := middleware.UserIDFromContext(ctx)
 
 	// Create user and handle errors
-	verification, err := api.userService.CreateEmailVerification(ctx, input)
+	verification, err := api.userService.CreateEmailVerification(ctx, userID)
 	if err != nil {
 		switch {
-		case validator.IsValidationError(err):
-			endpoint.WriteValidationErr(w, input, err)
 		default:
 			logger.Errorf("handler: failed to create email verification record: %v", err)
 			endpoint.WriteWithError(w, http.StatusInternalServerError, ErrMsgInternalServer)

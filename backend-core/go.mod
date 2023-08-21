@@ -3,7 +3,7 @@ module github.com/Wave-95/boards/backend-core
 go 1.20
 
 require (
-	github.com/Wave-95/boards/backend-notification v0.2.0
+	github.com/Wave-95/boards/backend-notification v0.3.0
 	github.com/Wave-95/boards/wrappers v0.3.1
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/cors v1.2.1

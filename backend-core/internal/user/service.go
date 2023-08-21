@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"strings"
 	"time"
@@ -11,6 +12,7 @@ import (
 	"github.com/Wave-95/boards/backend-core/internal/models"
 	"github.com/Wave-95/boards/backend-core/pkg/security"
 	"github.com/Wave-95/boards/backend-core/pkg/validator"
+	"github.com/Wave-95/boards/backend-notification/constants/payloads"
 	"github.com/Wave-95/boards/backend-notification/constants/queues"
 	"github.com/Wave-95/boards/backend-notification/constants/tasks"
 	"github.com/Wave-95/boards/wrappers/amqp"
@@ -24,7 +26,7 @@ var (
 // Service is an interface that describes all the methods pertaining to the user service.
 type Service interface {
 	CreateUser(ctx context.Context, input CreateUserInput) (models.User, error)
-	CreateEmailVerification(ctx context.Context, input CreateEmailVerificationInput) (models.Verification, error)
+	CreateEmailVerification(ctx context.Context, userID string) (models.Verification, error)
 
 	GetUser(ctx context.Context, userID string) (models.User, error)
 	ListUsersByEmail(ctx context.Context, email string) ([]models.User, error)
@@ -79,15 +81,10 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 
 	// Publish email verification task
 	if input.Email != nil {
-		s.amqp.Publish(queues.Notification, tasks.EmailVerification, struct {
-			ID    string
-			Name  string
-			Email string
-		}{
-			ID:    id.String(),
-			Name:  name,
-			Email: *input.Email,
-		})
+		_, err := s.CreateEmailVerification(ctx, id.String())
+		if err != nil {
+			return models.User{}, fmt.Errorf("service: faled to create email verification: %w", err)
+		}
 	}
 
 	// Hide password
@@ -96,23 +93,23 @@ func (s *service) CreateUser(ctx context.Context, input CreateUserInput) (models
 }
 
 // CreateEmailVerification validates an input and inserts an email verification record into the database.
-func (s *service) CreateEmailVerification(ctx context.Context, input CreateEmailVerificationInput) (models.Verification, error) {
-	// Validate input
-	if err := s.validator.Struct(input); err != nil {
-		return models.Verification{}, fmt.Errorf("service: failed to validate input: %w", err)
+func (s *service) CreateEmailVerification(ctx context.Context, userID string) (models.Verification, error) {
+	user, err := s.GetUser(ctx, userID)
+	if err != nil {
+		return models.Verification{}, fmt.Errorf("service: failed to get user: %w", err)
 	}
 
-	// Prepare user input
+	// Generate 4 digit code
+	randNum := rand.Intn(10000)
+	code := fmt.Sprintf("%04d", randNum)
+
+	// Prepare verification entity
 	id := uuid.New()
-	userUUID, err := uuid.Parse(input.UserID)
-	if err != nil {
-		return models.Verification{}, fmt.Errorf("service: failed to parse user ID into UUID: %w", err)
-	}
 	now := time.Now()
 	verification := models.Verification{
 		ID:        id,
-		Code:      input.Code,
-		UserID:    userUUID,
+		Code:      code,
+		UserID:    user.ID,
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
@@ -121,8 +118,9 @@ func (s *service) CreateEmailVerification(ctx context.Context, input CreateEmail
 		return models.Verification{}, fmt.Errorf("service: failed to create email verification: %w", err)
 	}
 
-	verification.Code = ""
+	s.amqp.Publish(queues.Notification, tasks.EmailVerification, payloads.EmailVerification{Email: *user.Email, Name: user.Name, Code: code})
 
+	verification.Code = ""
 	return verification, nil
 }
 
