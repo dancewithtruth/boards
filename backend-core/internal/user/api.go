@@ -172,10 +172,10 @@ func (api *API) HandleListUsersBySearch(w http.ResponseWriter, r *http.Request) 
 func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) http.Handler) {
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", api.HandleCreateUser)
-		r.Post("/email-verifications", api.HandleCreateEmailVerification)
 		r.Get("/search", api.HandleListUsersBySearch)
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
+			r.Post("/email-verifications", api.HandleCreateEmailVerification)
 			r.Post("/verify-email", api.HandleVerifyEmail)
 			r.Get("/me", api.HandleGetMe)
 		})

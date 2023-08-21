@@ -148,6 +148,12 @@ export async function updateInvite(id: string, params: UpdateInviteParams, token
 
 export async function verifyEmail(code: string, token: string): Promise<VerifyEmailResponse> {
   const url = `${BASE_URL}/users/verify-email`;
-  const params = {code: code}
+  const params = { code: code };
   return sendPostRequest<VerifyEmailResponse>(url, params, token);
+}
+
+export async function sendVerificationEmail(token: string) {
+  const url = `${BASE_URL}/users/email-verifications`;
+  const params = {};
+  return sendPostRequest(url, params, token);
 }

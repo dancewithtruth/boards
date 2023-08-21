@@ -78,7 +78,7 @@ export default function Page() {
                   <img src="/docker.png" width={50} />
                   <img src="/kubernetes.png" width={50} />
                   <img src="/aws.png" width={50} />
-                  <img src="/rabbitmq.png" width={150} />
+                  <img src="/rabbitmq.png" width={50} />
                 </div>
               </div>
             </div>
