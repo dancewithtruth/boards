@@ -4,21 +4,21 @@ Boards is a live collaboration tool for creating and organizing notes on a digit
 <img src="frontend/public/Hero.png" alt="Boards" width="500"/>
 
 ## Technology Stack
-### Frontend
+#### Frontend
 - Next.js 13
 - Tailwind CSS
 - React Drag and Drop
-### Backend
+#### Backend
 - Chi Router
 - Gorilla WebSockets
 - RabbitMQ
 - Redis PubSub
-### Storage / DB
+#### Storage / DB
 - PostgreSQL
 - sqlc
 - pgx
 - Golang Migrate v4
-### Infrastructure / Cloud
+#### Infrastructure / Cloud
 - Docker
 - Kubernetes
 - AWS EKS & EC2

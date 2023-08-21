@@ -172,19 +172,17 @@ paths:
         - users
       summary: Create a email verification record
       description: Create a email verification record
-      parameters:
-        - name: user_id
-          in: query
-          description: ID of user
-          required: true
-          schema:
-            type: string
-        - name: code
-          in: query
-          description: Email verification code
-          required: true
-          schema:
-            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                code:
+                  type: string
+              required:
+                - code
       responses:
         '201':
           description: Successfully verified email
@@ -197,6 +195,8 @@ paths:
                     type: string
                 example:
                   message: Email verified.
+      security:
+        - bearerAuth: []
   /boards:
     post:
       tags:
