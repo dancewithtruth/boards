@@ -10,7 +10,6 @@ import (
 	"github.com/Wave-95/boards/backend-notification/constants/payloads"
 	"github.com/Wave-95/boards/backend-notification/constants/queues"
 	"github.com/Wave-95/boards/backend-notification/constants/tasks"
-	"github.com/Wave-95/boards/backend-notification/internal/code"
 	"github.com/Wave-95/boards/backend-notification/internal/templates"
 	"github.com/Wave-95/boards/wrappers/amqp"
 )
@@ -38,35 +37,19 @@ func (th *TaskHandler) Run() error {
 // emailVerificationHandler will create an email verification record and send the user
 // a verification email containing the verification link
 func (th *TaskHandler) emailVerificationHandler(payload []byte) error {
-	var user payloads.User
-	err := json.Unmarshal(payload, &user)
+	var data payloads.EmailVerification
+	err := json.Unmarshal(payload, &data)
 	if err != nil {
 		return fmt.Errorf("failed to unmarshal payload: %w", err)
 	}
 
-	verificationCode := code.Generate()
-	reqBody := boards.CreateEmailVerificationInput{
-		UserID: user.ID,
-		Code:   verificationCode,
-	}
-
-	resp, err := th.boardsClient.CreateEmailVerification(reqBody)
-	if err != nil {
-		return fmt.Errorf("failed to prepare create email verification request: %w", err)
-	}
-	defer resp.Body.Close()
-
 	// Send verification email
-	if resp.StatusCode == 200 || resp.StatusCode == 201 {
-		emailTemplate := templates.BuildEmailVerification(user.Email, user.Name, verificationCode)
-		err = th.emailClient.Send(user.Email, emailTemplate)
-		if err != nil {
-			return fmt.Errorf("failed to send verification email: %w", err)
-		}
-		return nil
+	emailTemplate := templates.BuildEmailVerification(data.Email, data.Name, data.Code)
+	err = th.emailClient.Send(data.Email, emailTemplate)
+	if err != nil {
+		return fmt.Errorf("failed to send verification email: %w", err)
 	}
-
-	return fmt.Errorf("failed to create email verification: %w", err)
+	return nil
 }
 
 func (th *TaskHandler) emailInviteHandler(payload []byte) error {
