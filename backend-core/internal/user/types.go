@@ -23,7 +23,7 @@ type CreateEmailVerificationInput struct {
 // VerifyEmailInput defines the structure for verifying a user's email.
 type VerifyEmailInput struct {
 	Code   string `json:"code" validate:"required,min=4,max=24"`
-	UserID string `json:"user_id" validate:"required"`
+	UserID string `json:"user_id" validate:"omitempty,required"`
 }
 
 // ListUsersByEmailInput defines the structure for requests to list users by fuzzy email.

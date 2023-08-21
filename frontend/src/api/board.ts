@@ -94,6 +94,10 @@ export type UpdateInviteParams = {
   status: string;
 };
 
+export type VerifyEmailResponse = {
+  message: string;
+};
+
 export async function createBoard(params: CreateBoardParams, token: string): Promise<BoardResponse> {
   const url = `${BASE_URL}/boards`;
   return sendPostRequest<BoardResponse>(url, params, token);
@@ -140,4 +144,10 @@ export async function listInvitesByReceiver(
 export async function updateInvite(id: string, params: UpdateInviteParams, token: string) {
   const url = `${BASE_URL}/invites/${id}`;
   return sendPatchRequest(url, params, token);
+}
+
+export async function verifyEmail(code: string, token: string): Promise<VerifyEmailResponse> {
+  const url = `${BASE_URL}/users/verify-email`;
+  const params = {code: code}
+  return sendPostRequest<VerifyEmailResponse>(url, params, token);
 }

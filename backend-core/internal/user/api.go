@@ -107,16 +107,17 @@ func (api *API) HandleCreateEmailVerification(w http.ResponseWriter, r *http.Req
 func (api *API) HandleVerifyEmail(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	logger := logger.FromContext(ctx)
-	queryParams := r.URL.Query()
-	userID := queryParams.Get("userID")
-	code := queryParams.Get("code")
+	userID := middleware.UserIDFromContext(ctx)
 
-	if userID == "" || code == "" {
-		endpoint.WriteWithError(w, http.StatusBadRequest, ErrMsgInvalidSearchParam)
+	var input VerifyEmailInput
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		logger.Errorf("handler: failed to decode request: %v", err)
+		endpoint.HandleDecodeErr(w, err)
 		return
 	}
+	defer r.Body.Close()
 
-	err := api.userService.VerifyEmail(ctx, VerifyEmailInput{Code: code, UserID: userID})
+	err := api.userService.VerifyEmail(ctx, VerifyEmailInput{Code: input.Code, UserID: userID})
 	if err != nil {
 		logger.Errorf("handler: failed to verify user: %w", err)
 		switch {
@@ -181,10 +182,10 @@ func (api *API) RegisterHandlers(r chi.Router, authHandler func(http.Handler) ht
 	r.Route("/users", func(r chi.Router) {
 		r.Post("/", api.HandleCreateUser)
 		r.Post("/email-verifications", api.HandleCreateEmailVerification)
-		r.Post("/verify-email", api.HandleVerifyEmail)
 		r.Get("/search", api.HandleListUsersBySearch)
 		r.Group(func(r chi.Router) {
 			r.Use(authHandler)
+			r.Post("/verify-email", api.HandleVerifyEmail)
 			r.Get("/me", api.HandleGetMe)
 		})
 	})
