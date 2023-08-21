@@ -1,0 +1,743 @@
+openapi: 3.0.2
+info:
+  title: Boards API
+  description: Boards public API documentation
+  termsOfService: http://swagger.io/terms/
+  contact:
+    email: apiteam@swagger.io
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.17
+servers:
+  - url: http://localhost:8080
+    description: Local server
+externalDocs:
+  description: Find out more about Swagger
+  url: http://swagger.io
+tags:
+  - name: auth
+    description: Manage user authentication such as login
+  - name: users
+    description: Operations about users
+  - name: boards
+    description: Operations about boards
+paths:
+  /auth/login:
+    post:
+      tags:
+        - auth
+      summary: Login user
+      description: Login authenticates a user using email and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2OTQzODY5MDAsInVzZXJJRCI6ImQwODY1ODQzLTg0OTQtNGQ2YS1iOWJlLTVjOGY3ZDBlNTY4ZiJ9.L9a9yoZiAQGv4vgnz02ald_NeCNm8IhLFQqUfbkoqs8
+        '404':
+          description: Unsuccessful login
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 404
+                  message:
+                    type: string
+                    example: User does not exist.
+  /users:
+    post:
+      tags:
+        - users
+      summary: Create user
+      description: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                is_guest:
+                  type: boolean
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+              required:
+                - name
+                - is_guest
+      responses:
+        '201':
+          description: Successfully created user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  /users/me:
+    get:
+      tags:
+        - users
+      summary: Get user
+      description: Get user details using auth bearer token
+      responses:
+        '200':
+          description: Successfully retrieved user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+      security:
+        - bearerAuth: []
+  /users/search:
+    get:
+      tags:
+        - users
+      summary: List users
+      description: Retrieve a list of top 10 users based on query parameter
+      parameters:
+        - name: email
+          in: query
+          description: Search for users using email
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successfully retrieved list of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+  /users/email-verifications:
+    post:
+      tags:
+        - users
+      summary: Create a email verification record
+      description: Create a email verification record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+                code:
+                  type: string
+              required:
+                - user_id
+                - code
+      responses:
+        '201':
+          description: Successfully created email verification
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmailVerification'
+  /users/verify-email:
+    post:
+      tags:
+        - users
+      summary: Create a email verification record
+      description: Create a email verification record
+      parameters:
+        - name: user_id
+          in: query
+          description: ID of user
+          required: true
+          schema:
+            type: string
+        - name: code
+          in: query
+          description: Email verification code
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Successfully verified email
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                example:
+                  message: Email verified.
+  /boards:
+    post:
+      tags:
+        - boards
+      summary: Create board
+      description: Create board
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBoardObject'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Board'
+      security:
+        - bearerAuth: []
+    get:
+      tags:
+        - boards
+      summary: List owned and shared boards
+      description: List boards that a user created and boards the user is a member of
+      responses:
+        '200':
+          description: Successfully listed boards
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  owned:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardWithUsers'
+                  shared:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardWithUsers'
+        '400':
+          description: Invalid ID supplied
+      security:
+        - bearerAuth: []
+  /boards/{boardID}:
+    get:
+      tags:
+        - boards
+      summary: Get board and associated members
+      description: Get board and associated members
+      responses:
+        '200':
+          description: Successfully retrieved board with members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardWithUsers'
+      security:
+        - bearerAuth: []
+  /boards/{boardID}/invites:
+    post:
+      tags:
+        - boards
+      summary: Create board invites
+      description: Create invitations for a specific board
+      operationId: createBoardInvites
+      parameters:
+        - name: boardID
+          in: path
+          description: ID of the board
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                invites:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateInviteObject'
+      responses:
+        '201':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardInvite'
+        '400':
+          description: Invalid ID supplied
+      security:
+        - bearerAuth: []
+    get:
+      tags:
+        - boards
+      summary: List invites that belong to a board
+      description: Returns a list of board invites
+      operationId: listInvitesByBoardID
+      parameters:
+        - name: boardID
+          in: path
+          description: ID of board
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Status filter
+          required: false
+          schema:
+            type: string
+            enum:
+              - ACCEPTED
+              - PENDING
+              - IGNORED
+              - CANCELLED
+            example: PENDING
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardInvite'
+        '400':
+          description: Invalid ID supplied
+      security:
+        - bearerAuth: []
+  /invites:
+    get:
+      tags:
+        - invites
+      summary: List board invites that belong to a user
+      description: Retrieve a list of board invitations.
+      parameters:
+        - name: status
+          in: query
+          description: Filter by invitation status
+          required: false
+          schema:
+            type: string
+            enum: [ACCEPTED, PENDING, IGNORED, CANCELLED]
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BoardInvite'
+  /invites/{inviteID}:
+    get:
+      tags:
+        - invites
+      summary: Get invite
+      description: Retrieve a single invite entity.
+      responses:
+        '200':
+          description: Successfully retrieved board with members
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BoardInvite'
+    patch:
+      tags:
+        - invites
+      summary: Update board invitation
+      description: Update board invitation belonging to a receiver
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - ACCEPTED
+                    - IGNORED
+                    - CANCELLED
+      responses:
+        '204':
+          description: Successfully updated board invite
+      security:
+        - bearerAuth: []
+  /post-groups/:
+    get:
+      tags:
+        - posts
+      summary: List post groups
+      description: List post groups and associated posts
+      parameters:
+        - name: boardID
+          in: query
+          description: Board ID that post groups belong to
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully listed post groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PostGroupWithItems'
+      security:
+        - bearerAuth: []
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the user
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the user
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          uniqueItems: true
+          description: Email of the user
+        password:
+          type: string
+          maxLength: 255
+          description: Password of the user
+        is_guest:
+          type: boolean
+          default: false
+          description: Flag indicating if the user is a guest
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the creation date
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the last update date
+      example:
+        id: a5f4c43f-9ae3-4e6d-9682-97351cbb864e
+        name: John Doe
+        email: johndoe@example.com
+        password: password123
+        is_guest: false
+        created_at: '2023-06-12T10:00:00Z'
+        updated_at: '2023-06-12T10:00:00Z'
+    EmailVerification:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the email verification
+        user_id:
+          type: string
+          format: uuid
+          description: ID of the user
+        is_verified:
+          type: boolean
+          default: false
+          description: Verification status of the record
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the creation date
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the last update date
+      example:
+        id: 426d0f9e-dbbd-4859-884c-276175c94ee3
+        user_id: d0865843-8494-4d6a-b9be-5c8f7d0e568f
+        is_verified: null
+        created_at: '2023-06-12T10:00:00Z'
+        updated_at: '2023-06-12T10:00:00Z'
+    CreateBoardObject:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Name of the board
+        description:
+          type: string
+          description: Description of the board
+    Board:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        name:
+          type: string
+          description: Name of the board
+          example: My first board
+        description:
+          type: string
+          description: Description of the board
+          example: Isn't this board neat?
+        user_id:
+          type: string
+          format: uuid
+          example: d0865843-8494-4d6a-b9be-5c8f7d0e568f
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    BoardWithUsers:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        name:
+          type: string
+          description: Name of the board
+          example: My first board
+        description:
+          type: string
+          description: Description of the board
+          example: Isn't this board neat?
+        user_id:
+          type: string
+          format: uuid
+          example: d0865843-8494-4d6a-b9be-5c8f7d0e568f
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserWithMembership'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    UserWithMembership:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: ID of the user
+        name:
+          type: string
+          maxLength: 255
+          description: Name of the user
+        email:
+          type: string
+          format: email
+          maxLength: 255
+          uniqueItems: true
+          description: Email of the user
+        membership:
+          schema:
+            $ref: '#/components/schemas/Membership'
+        created_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the creation date
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the last update date
+      example:
+        id: a5f4c43f-9ae3-4e6d-9682-97351cbb864e
+        name: John Doe
+        email: johndoe@example.com
+        membership:
+          role: MEMBER
+          added_at: '2023-06-12T10:00:00Z'
+          updated_at: '2023-06-12T10:00:00Z'
+        created_at: '2023-06-12T10:00:00Z'
+        updated_at: '2023-06-12T10:00:00Z'
+    Membership:
+      type: object
+      properties:
+        role:
+          type: string
+          description: Type of membership
+        added_at:
+          type: string
+          format: date-time
+          description: Timestamp when user was added to board
+        updated_at:
+          type: string
+          format: date-time
+          description: Timestamp indicating the last update date
+      example:
+        role: MEMBER
+        added_at: '2023-05-29T11:30:00Z'
+        updated_at: '2023-05-29T11:30:00Z'
+    CreateInviteObject:
+      type: object
+      required:
+        - receiver_id
+      properties:
+        receiver_id:
+          type: string
+          description: ID of the user to be invited
+    BoardInvite:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        board_id:
+          type: string
+          format: uuid
+          example: b9e95ae4-9c3f-412f-8b3b-201bd7083fc1
+        sender_id:
+          type: string
+          format: uuid
+          example: d0865843-8494-4d6a-b9be-5c8f7d0e568f
+        receiver_id:
+          type: string
+          format: uuid
+          example: 3c85c78d-d6a2-48c1-aec0-7fe2a9e2d8db
+        status:
+          type: string
+          description: status of board invite
+          enum: [ACCEPTED, PENDING, IGNORED]
+          example: PENDING
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    PostGroupWithItems:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        board_id:
+          type: string
+          format: uuid
+          example: b9e95ae4-9c3f-412f-8b3b-201bd7083fc1
+        title:
+          type: string
+          example: 'Summary of post group'
+        pos_x:
+          type: integer
+          example: 10
+        pos_y:
+          type: integer
+          example: 15
+        z_index:
+          type: integer
+          example: 3
+        posts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Post'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Post:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: cc143c5c-3a10-46b1-b734-8e2049b719ff
+        user_id:
+          type: string
+          format: uuid
+          example: b9e95ae4-9c3f-412f-8b3b-201bd7083fc1
+        content:
+          type: string
+          example: 'This is my first post!'
+        color:
+          type: string
+          example: 'light_pink'
+        height:
+          type: integer
+          example: 0
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        post_order:
+          type: number
+          format: float
+        post_group_id:
+          type: string
+          format: uuid
+          example: e04f3273-2d62-4c62-8d79-638e61c3b3ae
+  requestBodies:
+    UserArray:
+      description: List of user object
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/User'

@@ -68,7 +68,7 @@ services:
     environment:
       SWAGGER_JSON: "/spec/swagger.yaml"
     volumes:
-      - ./backend-core/swagger.yaml:/spec/swagger.yaml
+      - ./docs/swagger.yaml:/spec/swagger.yaml
     ports:
       - 8081:8080
   redis-ws:
