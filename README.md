@@ -24,7 +24,7 @@ Boards is a live collaboration tool for creating and organizing notes on a digit
 - AWS EKS & EC2
 
 ## Architecture Overview
-
+![architecture](docs/architecture.svg)
 
 ## Services
 
