@@ -3,9 +3,10 @@ kind: Service
 metadata:
   name: backend-core
 spec:
+  type: NodePort
   selector:
     app: backend-core
   ports:
     - name: backend-core-port
       port: 80
-  type: LoadBalancer
+      targetPort: 80

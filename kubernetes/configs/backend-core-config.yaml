@@ -9,3 +9,8 @@ data:
   DB_NAME: boards
   SERVER_PORT: ":80"
   INTERNAL_NETWORK: "true"
+  REDIS_HOST: redis-ws
+  REDIS_PORT: "6379"
+  AMQP_HOST: rabbitmq
+  AMQP_USER: admin
+  AMQP_PORT: "5672"

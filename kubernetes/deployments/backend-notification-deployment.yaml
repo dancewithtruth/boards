@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-notification-deployment
+spec:
+  selector:
+    matchLabels:
+      app: backend-notification
+  template:
+    metadata:
+      labels:
+        app: backend-notification
+    spec:
+      containers:
+        - name: backend-notification
+          image: wuvictor95/backend-notification:1.0.0
+          imagePullPolicy: IfNotPresent
+          envFrom:
+          - configMapRef:
+              name: backend-notification-config
+          env:
+            - name: AMQP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: amqp-password
+                  key: amqp-password
+            - name: EMAIL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: email-password
+                  key: email-password
+

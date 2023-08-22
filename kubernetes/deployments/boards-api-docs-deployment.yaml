@@ -1,0 +1,17 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: boards-api-docs-deployment
+spec:
+  selector:
+    matchLabels:
+      app: boards-api-docs
+  template:
+    metadata:
+      labels:
+        app: boards-api-docs
+    spec:
+      containers:
+        - name: boards-api-docs
+          image: wuvictor95/boards-api-docs:1.0.4
+          imagePullPolicy: IfNotPresent

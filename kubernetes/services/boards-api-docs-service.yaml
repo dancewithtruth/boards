@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: boards-api-docs
+spec:
+  selector:
+    app: boards-api-docs
+  ports:
+    - name: boards-api-docs-port
+      port: 80
+      targetPort: 8080
+    - name: boards-api-docs-port-https
+      port: 443
+      targetPort: 8080
+  type: LoadBalancer

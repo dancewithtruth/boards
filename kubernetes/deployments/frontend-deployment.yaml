@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: wuvictor95/frontend:1.0.2
+          image: wuvictor95/frontend:1.1.2
           envFrom:
           - configMapRef:
               name: frontend-config

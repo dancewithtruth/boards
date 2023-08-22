@@ -9,4 +9,7 @@ spec:
     - name: frontend-port
       port: 80
       targetPort: 3000
+    - name: frontend-port-https
+      port: 443
+      targetPort: 3000
   type: LoadBalancer

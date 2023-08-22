@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-notification-config
+data:
+  ENV: production
+  INTERNAL_NETWORK: "true"
+  AMQP_HOST: rabbitmq
+  AMQP_USER: admin
+  AMQP_PORT: "5672"
+  EMAIL_FROM: useboards@gmail.com
+  EMAIL_HOST: smtp.gmail.com
+  EMAIL_PORT: "587"
+  BOARDS_BASE_URL: https://api.useboards.com
+  FRONTEND_URL: https://useboards.com

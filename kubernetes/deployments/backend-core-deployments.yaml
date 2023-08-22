@@ -13,7 +13,7 @@ spec:
     spec:
       containers:
         - name: backend-core
-          image: wuvictor95/backend-core:1.0.3
+          image: wuvictor95/backend-core:1.1.1
           imagePullPolicy: IfNotPresent
           envFrom:
           - configMapRef:
@@ -39,4 +39,9 @@ spec:
                 secretKeyRef:
                   name: jwt-expiration
                   key: jwt-expiration
+            - name: AMQP_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: amqp-password
+                  key: amqp-password
 

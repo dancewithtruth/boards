@@ -1,0 +1,16 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-ws-deployment
+spec:
+  selector:
+    matchLabels:
+      app: redis-ws
+  template:
+    metadata:
+      labels:
+        app: redis-ws
+    spec:
+      containers:
+        - name: redis-ws
+          image: redis:latest
