@@ -10,7 +10,7 @@ info:
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.17
 servers:
-  - url: http://localhost:8080
+  - url: https://api.useboards.com
     description: Local server
 externalDocs:
   description: Find out more about Swagger

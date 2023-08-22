@@ -1,27 +1,27 @@
 ## Boards
-Boards is a live collaboration tool for creating and organizing notes on a digital canvas. Boards is a demo project showcasing event-driven microservices written in Golang and a real-time, interactive UI built with Next.js.
+Boards is a collaborative desktop web application for creating and organizing notes on a digital canvas. Boards is a demo project showcasing event-driven microservices written in Golang as well as a stateful, interactive UI built with Next.js, Tailwind, and [React DnD](https://react-dnd.github.io/react-dnd/about). The containerized applicaton is orchestrated using Kubernetes and hosted on AWS. Perhaps the most interesting aspect of the application is how data is synchronized in real-time across client connections using Redis Pub-Sub and WebSocket events (create, move, edit posts).
 
 <img src="frontend/public/Hero.png" alt="Boards" width="500"/>
 
 ## Technology Stack
 #### Frontend
-- Next.js 13
-- Tailwind CSS
-- React Drag and Drop
+- [Next.js 13](https://nextjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [React Drag and Drop](https://react-dnd.github.io/react-dnd/about)
 #### Backend
-- Chi Router
-- Gorilla WebSockets
-- RabbitMQ
-- Redis PubSub
+- [Chi Router](https://github.com/go-chi/chi)
+- [Gorilla WebSockets](https://github.com/gorilla/websocket)
+- [RabbitMQ](https://www.rabbitmq.com/tutorials/tutorial-one-go.html)
+- [Redis PubSub](https://redis.io/docs/interact/pubsub/)
 #### Storage / DB
 - PostgreSQL
-- sqlc
-- pgx
-- Golang Migrate v4
+- [sqlc](https://sqlc.dev/)
+- [pgx](https://github.com/jackc/pgx)
+- [Golang Migrate v4](https://github.com/golang-migrate/migrate)
 #### Infrastructure / Cloud
 - Docker
 - Kubernetes
-- AWS EKS & EC2
+- AWS: EKS, EC2, Route 53
 
 ## Architecture Overview
 ![architecture](docs/architecture.svg)
@@ -40,6 +40,18 @@ No. | Service | Local | Hosted
 - [Implementing Go WebSockets using TDD](https://medium.com/@wu.victor.95/building-a-go-websocket-for-a-live-collaboration-tool-pt-2-5728cd6ec801)
 - [Implementing User Authentication Event](https://medium.com/@wu.victor.95/building-a-go-websocket-for-a-live-collaboration-tool-pt-3-b9a6b23f7fef)
 - [Hashing Passwords and Authenticating Users](https://medium.com/@wu.victor.95/hashing-passwords-and-authenticating-users-with-bcrypt-dc2fdd978568)
+- [Building the Posts API](https://medium.com/@wu.victor.95/building-a-post-service-for-our-websocket-endpoint-using-clean-architecture-tdd-f39aae9b2041)
+- [Building Frontend with Next.js & Tailwind](https://medium.com/@wu.victor.95/intro-8435223725f0)
+- [Fuzzy Email Search](https://medium.com/@wu.victor.95/new-feature-invite-members-to-a-board-cddfb6657131)
+- [E2E Implementation for User Invites](https://medium.com/@wu.victor.95/new-feature-board-invitations-pt-2-549e071d0338)
+- [Setting up Kubernetes](https://medium.com/@wu.victor.95/deploying-with-kubernetes-d3a9e9aad767)
+- [Deploying Application Cluster to AWS](https://medium.com/@wu.victor.95/deploying-application-to-aws-1d9b4e758de0)
+- [Frontend: Grouping Posts](https://medium.com/@wu.victor.95/boards-new-feature-grouping-posts-pt-1-680a98701c9b)
+- [Frontend: Ordering Posts](https://medium.com/@wu.victor.95/boards-new-feature-ordering-posts-e3984adcdef5)
+- [Making Backend Server Stateless](https://medium.com/@wu.victor.95/stateless-websocket-server-using-redis-pubsub-bf5f70435ba0)
+- [Creating Email Notification Service using RabbitMQ](https://medium.com/@wu.victor.95/creating-a-notification-service-using-rabbitmq-a488c3d5b8bf)
+- [Implementing Email Verifications](https://medium.com/@wu.victor.95/sending-email-verifications-with-smtp-pt-1-c4ededf5442a)
+- [Using SMTP to Send Emails](https://medium.com/@wu.victor.95/handling-rabbitmq-tasks-and-sending-emails-with-smtp-d2fd6bac695e)
 
 ## Project Setup
 
@@ -53,7 +65,7 @@ cd boards
 docker-compose up
 ```
 
-This will start up the frontend (port 3000), backend (8080), and postgres database (5432) on your local machine. Database migrations should automatically run when the backend service is containerized during the compose step. If you would like test data to start, use `make testdata`. 
+This will start up the frontend, backend, and notification service as well as the PostgreSQL, Redis, and RabbitMQ servers on your local machine. Database migrations should automatically run when the backend service is containerized during the compose step. If you would like test data to start, use `make testdata`. 
 
 ## Development
 
@@ -72,3 +84,17 @@ make testdata
 
 make migrate-create
 ```
+
+## Run Tests
+
+```bash
+make test
+```
+
+## To Do
+- WebSocket API documentation
+- Implement mobile responsiveness
+- Implement high throughput data storage solution
+- Refactor frontend components
+- Add post voting
+- Add board duplication
