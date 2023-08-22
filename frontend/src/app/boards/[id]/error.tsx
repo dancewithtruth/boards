@@ -10,7 +10,6 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
       <Centered>
         <div className="text-center">
           <h1 className="text-4xl font-bold mb-4 text-primary">Oops! Something went wrong.</h1>
-          <p className="mb-8 text-secondary">"{error.message}"</p>
           <Link href="/" className="font-bold text-gray-700">
             Go back to homepage
           </Link>

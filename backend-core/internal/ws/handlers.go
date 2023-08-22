@@ -3,6 +3,7 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -35,6 +36,7 @@ func (ws *WebSocket) HandleConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.Errorf("handler: failed to upgrade connection: %v", err)
+		logger.Info("request:", r)
 		return
 	}
 
@@ -116,16 +118,19 @@ func handleBoardConnect(c *Client, msgReq Request) {
 		go c.subscribe(boardID)
 
 		if err := setUser(rdb, boardID, *user); err != nil {
+			fmt.Printf("Issue setting user using HSet: %v", err)
 			closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		}
 
 		mp, err := getUsers(rdb, boardID)
 		if err != nil {
+			fmt.Printf("Issue getting user using HGetAll: %v", err)
 			closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		}
 
 		connectedUsers, err := formatConnectedUsers(mp)
 		if err != nil {
+			fmt.Printf("Issue formatting connected users: %v", err)
 			closeConnection(c, websocket.CloseProtocolError, CloseReasonInternalServer)
 		}
 

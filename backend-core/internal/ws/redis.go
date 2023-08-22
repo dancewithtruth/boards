@@ -37,7 +37,6 @@ func getUsers(rdb *redis.Client, boardID string) (map[string]string, error) {
 	if res, err := rdb.HGetAll(context.Background(), boardID).Result(); err != nil {
 		return map[string]string{}, err
 	} else {
-		fmt.Println(res)
 		return res, nil
 	}
 }

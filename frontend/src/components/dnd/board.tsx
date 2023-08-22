@@ -178,7 +178,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
 
   // handleDoubleClick creates a new post
   const handleDoubleClick = (event: React.MouseEvent<HTMLDivElement>) => {
-    toast.dismiss();
     if (event.target === event.currentTarget) {
       const { offsetX, offsetY } = event.nativeEvent;
       const newZIndex = getMaxFieldFromObj(data, 'z_index') + 1;
@@ -192,17 +191,6 @@ export const Board: FC<BoardProps> = ({ board, postGroups: initialPostGroups }) 
       };
       createPost(params, send);
     }
-  };
-
-  const handleDeletePost = (post: Post) => {
-    // Delete post only if more than 1 posts in post group
-    if (data[post.post_group_id]?.posts.length >= 2) {
-      const params = { post_id: post.id, board_id: board.id };
-      deletePost(params, send);
-      return;
-    }
-    // Delete post group if only 1 post in post group
-    deletePostGroup(post.post_group_id, send);
   };
 
   const setPostGroup = (postGroup: PostGroupWithPosts) => {

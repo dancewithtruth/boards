@@ -28,7 +28,9 @@ export const useWebSocket = (url: string) => {
       messages.forEach((message: any) => {
         try {
           const parsedMessage = JSON.parse(message);
-          console.log(parsedMessage);
+          if (process.env.NEXT_PUBLIC_ENV == 'development') {
+            console.log(parsedMessage);
+          }
           // Process each individual message
           parsedMessages.push(parsedMessage);
         } catch (error) {

@@ -15,7 +15,7 @@ export default function Page() {
               Collaborate with others and turn your ideas into actions
             </p>
             <div className="flex space-x-4">
-              <Link href="/signup" className="btn btn-primary">
+              <Link href="/auth/signup" className="btn btn-primary">
                 Sign Up
               </Link>
               <Link href="/dashboard" className="btn btn-secondary btn-outline">
@@ -60,8 +60,12 @@ export default function Page() {
                   events.
                 </p>
                 <div className="flex space-x-6 pt-6">
-                  <div className="btn btn-primary">API Docs</div>
-                  <div className="btn btn-outline">WebSocket Docs</div>
+                  <a className="btn btn-primary" href={process.env.NEXT_PUBLIC_API_DOCS_URL} target="_blank">
+                    API Docs
+                  </a>
+                  <a className="btn btn-outline" href={process.env.NEXT_PUBLIC_API_DOCS_URL} target="_blank">
+                    WebSocket Docs
+                  </a>
                 </div>
               </div>
             </div>

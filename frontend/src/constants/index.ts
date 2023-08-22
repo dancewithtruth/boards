@@ -17,11 +17,7 @@ export const ENV = {
   DEVELOPMENT: 'development',
   PRODUCTION: 'production',
 };
-export const WS_URLS = {
-  DEVELOPMENT: 'ws://localhost:8080/ws',
-  PRODUCTION: 'ws://api.useboards.com/ws',
-};
-export const WS_URL = process.env.NEXT_PUBLIC_ENV === ENV.DEVELOPMENT ? WS_URLS.DEVELOPMENT : WS_URLS.PRODUCTION;
+export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || `ws://localhost:8080/ws`
 export const INVITE_STATUS = {
   PENDING: 'PENDING',
   ACCEPTED: 'ACCEPTED',
