@@ -28,12 +28,12 @@ Boards is a live collaboration tool for creating and organizing notes on a digit
 
 ## Services
 
-No. | Service | URI
---- | --- | ---
-1 | backend-core | [http://localhost:8080](http://localhost:8080)
-2 | backend-notification | [http://localhost:8082](http://localhost:8082)
-3 | web | [http://localhost:3000](http://localhost:3000)
-4 | docs | [http://localhost:8081](http://localhost:8081)
+No. | Service | Local | Hosted
+--- | --- | --- | ---
+1 | backend-core | [http://localhost:8080](http://localhost:8080) | [https://api.useboards.com](https://api.useboards.com)
+2 | backend-notification | [http://localhost:8082](http://localhost:8082) |
+3 | web | [http://localhost:3000](http://localhost:3000) | [https://useboards.com](https://useboards.com)
+4 | docs | [http://localhost:8081](http://localhost:8081) | [https://docs.useboards.com](https://docs.useboards.com)
 
 ## Relevant Blog Posts
 - [WebSockets Client and Hub Architecture](https://medium.com/@wu.victor.95/building-a-go-websocket-for-a-live-collaboration-tool-pt-1-f7e5374b1f47)
