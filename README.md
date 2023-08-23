@@ -65,11 +65,11 @@ cd boards
 docker-compose up
 ```
 
-This will start up the frontend, backend, and notification service as well as the PostgreSQL, Redis, and RabbitMQ servers on your local machine. Database migrations should automatically run when the backend service is containerized during the compose step. If you would like test data to start, use `make testdata`. 
+This will start up the frontend, backend, and notification service as well as the PostgreSQL, Redis, and RabbitMQ servers on your local machine. Database migrations should automatically run when a container is created for the backend service during docker compose. If you would like to insert test data into the database, use `make testdata`. 
 
 ## Development
 
-The `docker-compose.yml` file loads in env vars for the server and frontend containers in their respective `.env` files. Depending on the `ENV` env varaible, the containers will either boot up in development or production mode. The backend uses [air](https://github.com/cosmtrek/air) and the frontend uses `next dev`. 
+The `docker-compose.yml` file loads in env vars for the server and frontend containers in their respective `.env` files. Depending on the `ENV` env varaible, the containers will either boot up in development or production mode. The backend uses [air](https://github.com/cosmtrek/air) and the frontend uses `next dev`. Feel free to rename the `.env.example` files to `.env` to get local development up and running.
 
 ## Database Migrations
 
