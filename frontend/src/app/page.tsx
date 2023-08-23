@@ -1,10 +1,18 @@
 import Footer from '@/components/footer';
 import WidthContainer from '@/components/widthContainer';
-import { NAVBAR_HEIGHT_PX } from '@/constants';
+import { COOKIE_NAME_JWT_TOKEN, NAVBAR_HEIGHT_PX } from '@/constants';
+import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { FaPaperPlane, FaStickyNote, FaRegFileCode } from 'react-icons/fa';
 
-export default function Page() {
+async function getToken() {
+  const cookieStore = cookies();
+  const jwtToken = cookieStore.get(COOKIE_NAME_JWT_TOKEN);
+  return jwtToken;
+}
+
+export default async function Page() {
+  const token = await getToken();
   return (
     <div>
       <div className="hero bg-base-200" style={{ height: `calc(100vh - ${NAVBAR_HEIGHT_PX})` }}>
@@ -18,7 +26,7 @@ export default function Page() {
               <Link href="/auth/signup" className="btn btn-primary">
                 Sign Up
               </Link>
-              <Link href="/dashboard" className="btn btn-secondary btn-outline">
+              <Link href={token ? '/dashboard' : '/auth/signin'} className="btn btn-secondary btn-outline">
                 Visit app
               </Link>
             </div>
@@ -26,9 +34,9 @@ export default function Page() {
           <img src="/Hero.png" style={{ width: '700px' }} className="rounded-lg shadow-2xl" alt="Boards app" />
         </div>
       </div>
-      <div className="bg-white h-[70vh]">
-        <WidthContainer className="h-full flex flex-col justify-evenly items-center">
-          <div className="flex items-center justify-between w-full">
+      <div className="bg-white">
+        <WidthContainer className="h-full flex flex-col justify-evenly items-center my-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between w-full my-8">
             <div className="card w-80 border !rounded-none">
               <div className="card-body">
                 <FaPaperPlane size={30} />
@@ -51,8 +59,8 @@ export default function Page() {
               </div>
             </div>
           </div>
-          <div className="pt-10 w-full flex">
-            <div className="w-[60%]">
+          <div className="w-full flex flex-col lg:flex-row my-8">
+            <div className="flex-1 my-4">
               <div>
                 <h2 className="font-bold text-xl pb-4">Documentation</h2>
                 <p className="max-w-lg text-gray-700">
@@ -69,9 +77,9 @@ export default function Page() {
                 </div>
               </div>
             </div>
-            <div className="w-[40%]">
+            <div className="flex-1 my-4">
               <div className="flex flex-col justify-between">
-                <h2 className="font-bold text-xl pb-4">Boards is built with</h2>
+                <h2 className="font-bold text-xl pb-4 pt-8 lg:pt-0">Boards is built with</h2>
                 <div className="flex justify-between">
                   <img src="/golang.png" width={50} />
                   <img src="/nextjs.png" width={50} />

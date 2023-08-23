@@ -34,8 +34,8 @@ async function getPendingInvites() {
 }
 
 export default async function DashboardPage() {
-  const boardsData = listBoardsData();
-  const invitesData = getPendingInvites();
+  const boardsData = await listBoardsData();
+  const invitesData = await getPendingInvites();
 
   const [boards, pendingInvites] = await Promise.all([boardsData, invitesData]);
 

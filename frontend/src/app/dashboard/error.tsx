@@ -10,7 +10,7 @@ export default function Error({ error, reset }: { error: Error; reset: () => voi
   const router = useRouter();
   if (error.message === 'Please log in.') {
     toast.error('You must be signed in to view the app.', { toastId: 'auth' });
-    router.replace('/auth/signin');
+    router.push('/auth/signin');
   }
   
   return (
